@@ -29,9 +29,14 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
+  import { useRoute } from 'vue-router'
 
-  // TODO: 將 Grafana URL 移至環境變數或設定檔
-  const grafanaUrl = 'http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro'
+  const route = useRoute()
+  const projectId = route.params.projectId
+
+  // TODO: 將 Grafana 基礎 URL 移至環境變數或設定檔
+  // 目前使用固定 URL，未來可依 projectId 動態調整
+  const grafanaUrl = `http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro`
 
   const iframeRef = ref<HTMLIFrameElement | null>(null)
   const isLoading = ref(true)
@@ -54,6 +59,9 @@
       iframeRef.value.src = grafanaUrl
     }
   }
+
+  // 預留 projectId 使用，未來可能需要依專案載入不同 dashboard
+  console.log('Performance MRO - Project ID:', projectId)
 </script>
 
 <style scoped>

@@ -142,7 +142,7 @@
   const projectMenu = computed(() => [
     //{ title: 'Profile', to: '/profile' },
     { title: 'Overview', to: `/projects/${projectId.value}/overviews` },
-    { 
+    {
       title: 'Configuration',
       children: [
         //{ title: 'AI model', to: `/projects/${projectId.value}/config/ai` },
@@ -150,7 +150,13 @@
         { title: 'Evaluation', to: `/projects/${projectId.value}/config/evaluations` }
       ]
     },
-    //{ title: 'Performance', to: `/projects/${projectId.value}/performance` },
+    {
+      title: 'Performance',
+      children: [
+        { title: 'NES', to: `/projects/${projectId.value}/performance/nes` },
+        { title: 'MRO', to: `/projects/${projectId.value}/performance/mro` }
+      ]
+    },
     { title: 'Projects List', to: '/' },
     { title: 'Project Setting', to: `/projects/${projectId.value}/setting` }
   ])

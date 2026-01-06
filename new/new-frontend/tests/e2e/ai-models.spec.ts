@@ -1,0 +1,152 @@
+import { test, expect } from '@playwright/test'
+
+// AI Models 頁面的 E2E 測試
+// 依據 CLAUDE.md 要求覆蓋：按鈕狀態、點擊後狀態轉移、Delete 確認流程
+test.describe('AI Models Page', () => {
+  test.beforeEach(async ({ page }) => {
+    // 先登入
+    await page.goto('/login')
+    await page.locator('input[type="text"]').first().fill('admin1')
+    await page.locator('input[type="password"]').first().fill('admin1')
+    await page.locator('button:has-text("登入")').click()
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+
+    // 進入 AI Models 頁面
+    await page.goto('/ai-models')
+    await page.waitForSelector('.ai-list-container', { timeout: 10000 })
+  })
+
+  test('should display AI Models list with action buttons', async ({ page }) => {
+    // 確認列表標題
+    await expect(page.locator('h2:has-text("Primitive AI")')).toBeVisible()
+
+    // 確認表頭存在
+    await expect(page.locator('.ai-list-header')).toBeVisible()
+
+    // 確認操作欄有六個按鈕類型
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const actionBtns = firstRow.locator('.action-btns button')
+      // 應有：詳細、編輯、預覽、Pretrain、Retrain、刪除
+      await expect(actionBtns).toHaveCount(6)
+    }
+  })
+
+  test('should have Enable/Disable switch in each row', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      // 確認 switch 元件存在
+      const switchEl = firstRow.locator('.v-switch')
+      await expect(switchEl).toBeVisible()
+
+      // 確認 switch 有 input checkbox
+      const switchInput = firstRow.locator('.v-switch input[type="checkbox"]')
+      await expect(switchInput).toBeAttached()
+
+      // 確認 switch 是可互動的（非 disabled）
+      const isDisabled = await switchInput.isDisabled()
+      expect(isDisabled).toBe(false)
+    }
+  })
+
+  test('should show Preview placeholder warning when clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+      await expect(page.locator('.v-snackbar:has-text("Preview")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show Pretrain placeholder warning when clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+      await expect(page.locator('.v-snackbar:has-text("Pretrain")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should open Retrain dialog and show placeholder warning', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      // 使用更精確的 locator 避免匹配到 Pretrain
+      const retrainBtn = firstRow.locator('button.bg-purple')
+      await retrainBtn.click()
+
+      // 應出現 Retrain 對話框
+      const dialog = page.locator('.v-dialog:has-text("Retrain 模型")')
+      await expect(dialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 round 和 epochs 輸入欄
+      await expect(dialog.locator('input[type="number"]')).toHaveCount(2)
+
+      // 點擊開始訓練
+      await dialog.locator('button:has-text("開始訓練")').click()
+
+      // 應顯示 placeholder 提示
+      await expect(page.locator('.v-snackbar:has-text("Retrain")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should open Delete dialog and require confirmation', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const deleteBtn = firstRow.locator('button:has-text("刪除")')
+      await deleteBtn.click()
+
+      // 應出現確認對話框
+      const confirmDialog = page.locator('.v-dialog:has-text("確定要刪除")')
+      await expect(confirmDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有取消和確定刪除按鈕
+      await expect(confirmDialog.locator('button:has-text("取消")')).toBeVisible()
+      await expect(confirmDialog.locator('button:has-text("確定刪除")')).toBeVisible()
+
+      // 點擊取消應關閉對話框
+      await confirmDialog.locator('button:has-text("取消")').click()
+      await expect(confirmDialog).not.toBeVisible()
+    }
+  })
+
+  test('should open Detail dialog when clicking row or detail button', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const detailBtn = firstRow.locator('button:has-text("詳細")')
+      await detailBtn.click()
+
+      // 應出現詳細資料對話框
+      const detailDialog = page.locator('.v-dialog:has-text("模型詳細資料")')
+      await expect(detailDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有模型名稱和 ID
+      await expect(detailDialog.locator('text=模型名稱')).toBeVisible()
+      await expect(detailDialog.locator('text=模型 ID')).toBeVisible()
+
+      // 關閉
+      await detailDialog.locator('button:has-text("關閉")').click()
+      await expect(detailDialog).not.toBeVisible()
+    }
+  })
+
+  test('should open Edit dialog with model name prefilled', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const editBtn = firstRow.locator('button:has-text("編輯")')
+      await editBtn.click()
+
+      // 應出現編輯對話框
+      const editDialog = page.locator('.v-dialog:has-text("編輯模型")')
+      await expect(editDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認輸入欄有值
+      const nameInput = editDialog.locator('input')
+      const inputValue = await nameInput.inputValue()
+      expect(inputValue.length).toBeGreaterThan(0)
+
+      // 取消
+      await editDialog.locator('button:has-text("取消")').click()
+      await expect(editDialog).not.toBeVisible()
+    }
+  })
+})

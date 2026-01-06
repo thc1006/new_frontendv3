@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1/api', // 後端 API 基礎 URL
+      apiBase: '/api', // 使用相對路徑，讓 nginx 反向代理處理
       NOMINATIM_API_URL: process.env.NUXT_PUBLIC_NOMINATIM_API_URL || '',
       logoStyle: process.env.NUXT_PUBLIC_LOGO_STYLE || 'WiSDON',
       isOnline: process.env.NUXT_PUBLIC_IS_ONLINE === 'true',

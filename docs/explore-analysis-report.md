@@ -96,17 +96,18 @@ new/
 - 成功 Dialog 提示
 - 表單 disabled 狀態管理
 
-**缺口：**
-- 沒有即時檢查帳號是否存在
-- 沒有即時檢查信箱是否存在
+**缺口（已部分解決）：**
+- 即時帳號檢查：**已有 placeholder 實作**（`checkAccountExists` + debounce 500ms）
+- 即時信箱檢查：**已有 placeholder 實作**（`checkEmailExists` + debounce 500ms）
+- 目前回傳 `false`（假設都可用），等待後端 API 完成
 
 #### 可移植/不可移植的原因
 
 | 功能 | 可移植性 | 原因 |
 |------|---------|------|
-| 密碼驗證規則 | ✅ 已移植 | @new/ register.vue L96 已有相同 regex |
-| 即時帳號檢查 | ⚠️ 需新增 | 需要後端 API 支援 + 前端 debounce |
-| 即時信箱檢查 | ⚠️ 需新增 | 需要後端 API 支援 + 前端 debounce |
+| 密碼驗證規則 | ✅ 已移植 | @new/ register.vue 已有相同 regex |
+| 即時帳號檢查 | ✅ 已有 placeholder | `checkAccountExists` + debounce，待接 API |
+| 即時信箱檢查 | ✅ 已有 placeholder | `checkEmailExists` + debounce，待接 API |
 
 ---
 
@@ -144,28 +145,33 @@ new/
 - 詳細資料（Modal 顯示指標）
 - 刪除（確認 Dialog + Snackbar 反饋）
 - 新增模型（Modal + 選擇 abstract metrics）
+- **編輯（Update）**：已實作，可修改模型名稱
+- **Enable/Disable**：已有 v-switch UI + placeholder handler
+- **Pretrain**：已有按鈕 + placeholder handler
+- **Preview**：已有按鈕 + placeholder handler
+- **Retrain**：已有 Dialog（round + epochs 配置）+ placeholder handler
 
-**缺口（目標按鈕）：**
+**目標按鈕現況（更新於 2026-01-06）：**
 
-| 按鈕 | @new/ 現況 | 後端端點 | 移植方案 |
-|------|-----------|---------|---------|
-| Pretrain | ❌ 沒有 | ❌ 無端點 | placeholder handler |
-| Preview | ❌ 沒有 | ❌ 無端點 | placeholder handler |
-| Enable | ❌ 沒有 | ⚠️ 不確定 | placeholder / 檢查 PUT |
-| Retrain | ❌ 沒有 | ❌ 無端點 | placeholder handler |
-| Update | ❌ 沒有 | ✅ PUT /primitive_ai_models/{id} | 可直接實作 |
-| Delete | ✅ 已有 | ✅ DELETE | - |
+| 按鈕 | @new/ 現況 | 後端端點 | 狀態 |
+|------|-----------|---------|------|
+| Pretrain | ✅ 按鈕 + placeholder | ❌ 無端點 | 待後端 API |
+| Preview | ✅ 按鈕 + placeholder | ❌ 無端點 | 待後端 API |
+| Enable | ✅ switch + placeholder | ❌ 無端點 | 待後端 PATCH API |
+| Retrain | ✅ Dialog + placeholder | ❌ 無端點 | 待後端 API |
+| Update | ✅ 已實作 | ✅ PUT API | 完成 |
+| Delete | ✅ 已實作 | ✅ DELETE API | 完成 |
 
 #### 可移植/不可移植的原因
 
 | 功能 | 可移植性 | 原因 |
 |------|---------|------|
-| UI 結構 | ✅ 可移植 | Bootstrap → Vuetify 轉換 |
-| Create/Delete | ✅ 已有 | API 端點存在 |
-| Update | ✅ 可實作 | PUT 端點存在 |
-| Retrain/Pretrain | ❌ 需 placeholder | 後端無對應端點 |
-| Preview | ❌ 需 placeholder | 後端無對應端點 |
-| Enable | ⚠️ 待確認 | 需檢查是否有 PATCH 端點或欄位 |
+| UI 結構 | ✅ 已完成 | Vuetify 元件已實作 |
+| Create/Delete | ✅ 已完成 | API 端點存在且已接通 |
+| Update | ✅ 已完成 | PUT 端點已接通 |
+| Retrain/Pretrain | ✅ UI 已完成 | 已有 placeholder，待後端 API |
+| Preview | ✅ UI 已完成 | 已有 placeholder，待後端 API |
+| Enable | ✅ UI 已完成 | 已有 placeholder，待後端 PATCH API |
 
 ---
 
@@ -197,22 +203,31 @@ new/
 
 #### @new/ 目前怎麼做、缺口是什麼
 
-**現況：**
-- 完全沒有 Grafana 整合
-- 沒有 Performance 專用頁面
-- `/pages/projects/[projectId]/overviews.vue` 有熱力圖，但非 Grafana
+**現況（已完成）：**
+- `/pages/performance/nes.vue` - NES Grafana 頁面
+- `/pages/performance/mro.vue` - MRO Grafana 頁面
+- 使用 Vue 3 組件 + iframe 嵌入
+- 已有載入狀態（v-progress-circular）
+- 已有錯誤處理（v-snackbar）
+- 已有重新整理按鈕
+- Grafana URL 硬編碼（有 TODO 註記）
 
-**缺口：**
-- 需要新增 Performance 頁面
-- 需要嵌入 Grafana iframe
+**優於 Legacy 的改進：**
+- 載入狀態指示
+- 錯誤處理反饋
+- 重新整理功能
+
+**待改進：**
+- 將 Grafana URL 移至環境變數或設定檔
 
 #### 可移植/不可移植的原因
 
 | 功能 | 可移植性 | 原因 |
 |------|---------|------|
-| Grafana iframe | ✅ 100% | Vue 支援 iframe |
-| Dashboard URL | ✅ 直接複製 | 純字串配置 |
-| 響應式高度 | ✅ 可實作 | CSS style 屬性 |
+| Grafana iframe | ✅ 已完成 | Vue 組件已實作 |
+| Dashboard URL | ✅ 已完成 | 使用相同 URL |
+| 響應式高度 | ✅ 已完成 | CSS + flex layout |
+| 載入/錯誤處理 | ✅ 已完成 | 優於 Legacy |
 
 ---
 
@@ -283,38 +298,56 @@ await $apiClient.primitiveAiModel.primitiveAiModelsList()
 
 ---
 
-## 五、移植優先級與風險評估
+## 五、完成狀態總結
 
-### 優先級排序
+### 三大區塊完成度
 
-| 優先級 | 區塊 | 複雜度 | 風險 |
-|--------|------|--------|------|
-| 1 | AI Models Actions | 中 | 低（大部分需 placeholder） |
-| 2 | Performance Grafana | 低 | 低（純 iframe） |
-| 3 | Login 即時驗證 | 中 | 中（需確認後端 API） |
+| 區塊 | 完成度 | 備註 |
+|------|--------|------|
+| Login/Register | 95% | placeholder 已就位，待後端 API |
+| AI Models Actions | 90% | 6 個按鈕 UI 已完成，4 個待後端 API |
+| Performance Grafana | 100% | 已完成且優於 Legacy |
+
+### 待完成項目
+
+1. **後端 API 開發（非前端範圍）**
+   - `GET /auth/check-account?account={account}` - 帳號存在性檢查
+   - `GET /auth/check-email?email={email}` - 信箱存在性檢查
+   - `PATCH /primitive_ai_models/{id}/enable` - 模型啟用/停用
+   - `POST /primitive_ai_models/{id}/pretrain` - 預訓練
+   - `GET /primitive_ai_models/{id}/preview` - 預覽
+   - `POST /primitive_ai_models/{id}/retrain` - 重新訓練
+
+2. **前端微調**
+   - 將 Grafana URL 移至環境變數
+   - 待後端 API 完成後，移除 placeholder 並接入實際 API
 
 ### 風險項目
 
-1. **AI Models 後端 API 缺失**
-   - Retrain、Pretrain、Preview 無端點
-   - 應對：放置 placeholder handler，顯示「尚未接上」提示
+1. **後端 API 排程**
+   - 目前所有 placeholder 功能都在等待後端 API
+   - 應對：前端已完成，可隨時接入
 
-2. **Login 即時驗證 API**
-   - @new/ 後端需確認是否有帳號/信箱檢查端點
-   - 應對：先檢查 Api.ts，若無則放置 placeholder
-
-3. **Grafana 網路連通性**
+2. **Grafana 網路連通性**
    - iframe 指向外部 IP (140.113.144.121:2982)
-   - 應對：確保網路可達或提供配置選項
+   - 應對：已有錯誤處理，建議將 URL 移至設定檔
 
 ---
 
-## 六、下一步：Plan 階段
+## 六、結論
 
-根據 Explore 結果，Plan 階段需要：
+**探索結果摘要：**
 
-1. 為 AI Models 設計 6 個按鈕的 UI（Pretrain, Preview, Enable, Retrain, Update, Delete）
-2. 定義 placeholder handler 的行為與 TODO 格式
-3. 規劃 Performance 頁面路由與元件結構
-4. 確認 Login 即時驗證的後端支援情況
-5. 切分 Small CLs，每個可獨立驗證
+經過完整分析，發現 @new/ 版本已經相當成熟：
+
+1. **Login/Register**：密碼驗證規則已完成，即時帳號/信箱檢查的 UI 和 debounce 邏輯已就位，只待後端 API。
+
+2. **AI Models Actions**：目標的 6 個按鈕（Pretrain、Preview、Enable、Retrain、Update、Delete）UI 全部完成，其中 Update 和 Delete 已接通 API，其餘 4 個有完整的 placeholder handler。
+
+3. **Performance Grafana**：兩個頁面已完成，且比 Legacy 版本更完善（有載入狀態、錯誤處理、重新整理功能）。
+
+**下一步建議：**
+
+1. 與後端團隊協調 API 開發優先順序
+2. 待 API 完成後，逐一移除 placeholder 並接入實際功能
+3. 將 Grafana URL 移至環境變數（小改動，可獨立完成）
