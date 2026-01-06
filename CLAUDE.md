@@ -90,3 +90,116 @@ D) Commit（僅允許本地提交；嚴禁 push）
 進行實作時，計畫當中設計的 TDD 原則請你務必都要進行實作（所有的任務都要實作），不能有任何的任務被 SKIPED，通通都要 implementation。同時，程式碼的檔案的變量和變數命名，不要像是 AI 生成的異常完美，要像是人類撰寫的，實作時要確保有清晰的邏輯，同時請務必保持程式碼自然，不要讓人看出是 AI 生成，也請務必遵循 Code Readability，記住代碼是寫給人看的，所以要有自然的代碼流程（無論在任何階段通通不可以 push）。同時註解要用台灣的繁體中文口語邏輯還進行撰寫，程式碼的註解不得比程式碼本身還長。請注意決定不行在不需要的地方強行使用最新的炫技語法，同時不要一直嘗試 Refactor ，要保持專案程式碼的命名一致性，不要在不同檔案定義了五（數個）一樣功能的函數。同時，當遇到　BUG 時間，解決 BUG 的方式應該是一步一步的分析 Log 或 Stack Trace。
 
 commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
+
+---
+
+# 當前實作狀態 (2026-01-06 更新)
+
+## 已完成功能
+
+### 1. Login UI (100%)
+- 檔案：`new/new-frontend/pages/login.vue`
+- 完整的登入流程：帳號/密碼輸入、表單驗證、錯誤處理、成功跳轉
+- E2E 測試：`new/new-frontend/tests/e2e/login.spec.ts` (4 個測試)
+
+### 2. AI Models 頁面 (前端 100%，後端 API 部分完成)
+- 檔案：`new/new-frontend/pages/ai-models.vue`
+- 6 個按鈕實作狀態：
+
+| 按鈕 | 前端 UI | 後端 API | 狀態 |
+|------|---------|----------|------|
+| Pretrain | ✅ | ❌ | Placeholder (顯示「尚未接上後端」) |
+| Preview | ✅ | ❌ | Placeholder |
+| Enable/Disable | ✅ | ❌ | Placeholder |
+| Retrain | ✅ | ❌ | Placeholder (有完整對話框) |
+| Update | ✅ | ✅ | 完成 |
+| Delete | ✅ | ✅ | 完成 (有二次確認) |
+
+- E2E 測試：`new/new-frontend/tests/e2e/ai-models.spec.ts` (11 個測試)
+
+### 3. Performance 頁面 (100%)
+- NES：`new/new-frontend/pages/projects/[projectId]/performance/nes.vue`
+- MRO：`new/new-frontend/pages/projects/[projectId]/performance/mro.vue`
+- Grafana URL 已環境變數化
+- E2E 測試：`new/new-frontend/tests/e2e/performance.spec.ts` (6 個測試)
+
+## 待後端實作的 API
+
+```
+PATCH /primitive_ai_models/{id}/enable    → 啟用/停用模型
+GET   /primitive_ai_models/{id}/preview   → 預覽模型
+POST  /primitive_ai_models/{id}/pretrain  → 預訓練
+POST  /primitive_ai_models/{id}/retrain   → 重新訓練 (需 round, epochs 參數)
+```
+
+---
+
+# 快速部署指南
+
+## 前置需求
+- Docker & Docker Compose
+- 確保 port 80 可用
+
+## 部署步驟
+
+```bash
+# 1. 進入專案目錄
+cd new/
+
+# 2. 建立前端 Docker image
+docker compose build frontend
+
+# 3. 啟動所有服務
+docker compose up -d
+
+# 4. 驗證部署 (可選)
+cd new-frontend && npx playwright test
+```
+
+## 環境變數 (new/new-frontend/.env)
+
+```bash
+# API 設定
+NUXT_PUBLIC_API_BASE=/api
+
+# Logo 樣式 (WiSDON | TFN)
+NUXT_PUBLIC_LOGO_STYLE=WiSDON
+
+# Grafana Dashboard URLs
+NUXT_PUBLIC_GRAFANA_NES_URL=http://140.113.144.121:2982/d/adkys2aoyeqkgf/nes
+NUXT_PUBLIC_GRAFANA_MRO_URL=http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro
+
+# 地圖服務 (離線模式用)
+NUXT_PUBLIC_IS_ONLINE=true
+NUXT_PUBLIC_NOMINATIM_API_URL=http://nominatim:8080/search
+NUXT_PUBLIC_OFFLINE_MAPBOX_GL_JS_URL=http://127.0.0.1/tiles/styles/basic-preview/style.json
+```
+
+## 測試帳號
+- 帳號：`admin1`
+- 密碼：`admin1`
+
+---
+
+# 關鍵檔案導覽
+
+```
+new/new-frontend/
+├── pages/
+│   ├── login.vue .................. 登入頁面
+│   ├── index.vue .................. 首頁 (專案列表)
+│   ├── ai-models.vue .............. AI 模型管理
+│   └── projects/[projectId]/
+│       ├── performance/
+│       │   ├── nes.vue ............ NES Grafana
+│       │   └── mro.vue ............ MRO Grafana
+│       └── config/
+│           └── evaluations.vue .... 評估設定
+├── apis/
+│   └── Api.ts ..................... 自動生成的 API 客戶端
+├── stores/
+│   └── user.ts .................... 使用者狀態管理
+├── tests/e2e/ ..................... E2E 測試 (Playwright)
+├── nuxt.config.ts ................. Nuxt 設定 (含環境變數)
+└── .env ........................... 環境變數
+```

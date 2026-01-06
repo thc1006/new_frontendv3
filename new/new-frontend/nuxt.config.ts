@@ -17,7 +17,10 @@ export default defineNuxtConfig({
       NOMINATIM_API_URL: process.env.NUXT_PUBLIC_NOMINATIM_API_URL || '',
       logoStyle: process.env.NUXT_PUBLIC_LOGO_STYLE || 'WiSDON',
       isOnline: process.env.NUXT_PUBLIC_IS_ONLINE === 'true',
-      offlineMapboxGLJSURL: process.env.NUXT_PUBLIC_OFFLINE_MAPBOX_GL_JS_URL || 'http://127.0.0.1/tiles/styles/basic-preview/style.json'
+      offlineMapboxGLJSURL: process.env.NUXT_PUBLIC_OFFLINE_MAPBOX_GL_JS_URL || 'http://127.0.0.1/tiles/styles/basic-preview/style.json',
+      // Grafana dashboard URLs
+      grafanaNesUrl: process.env.NUXT_PUBLIC_GRAFANA_NES_URL || 'http://140.113.144.121:2982/d/adkys2aoyeqkgf/nes',
+      grafanaMroUrl: process.env.NUXT_PUBLIC_GRAFANA_MRO_URL || 'http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro'
     },
   }
 })

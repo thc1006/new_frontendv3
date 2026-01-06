@@ -32,11 +32,11 @@
   import { useRoute } from 'vue-router'
 
   const route = useRoute()
+  const config = useRuntimeConfig()
   const projectId = route.params.projectId
 
-  // TODO: 將 Grafana 基礎 URL 移至環境變數或設定檔
-  // 目前使用固定 URL，未來可依 projectId 動態調整
-  const grafanaUrl = `http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro`
+  // 從環境變數取得 Grafana URL，未來可依 projectId 動態調整
+  const grafanaUrl = config.public.grafanaMroUrl as string
 
   const iframeRef = ref<HTMLIFrameElement | null>(null)
   const isLoading = ref(true)
