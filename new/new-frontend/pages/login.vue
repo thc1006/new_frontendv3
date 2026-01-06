@@ -17,35 +17,54 @@
 
       <!-- 登入區塊 -->
       <div class="login-block">
-        <v-card class="login-card" elevation="8">
-          <v-card-title class="headline text-center">登入</v-card-title>
+        <v-card class="login-card" elevation="12">
+          <v-card-title class="card-title">
+            <v-icon class="title-icon">mdi-account-circle</v-icon>
+            系統登入
+          </v-card-title>
           <v-card-text>
             <v-form ref="loginForm" v-model="valid">
               <v-text-field
                 v-model="account"
-                label="Account"
+                label="帳號"
+                placeholder="請輸入帳號"
                 :rules="[rules.required]"
                 variant="outlined"
                 density="comfortable"
+                prepend-inner-icon="mdi-account"
+                class="mb-3"
               />
               <v-text-field
                 v-model="password"
-                label="Password"
-                :append-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                label="密碼"
+                placeholder="請輸入密碼"
+                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                 :type="showPassword ? 'text' : 'password'"
                 :rules="[rules.required]"
                 variant="outlined"
                 density="comfortable"
-                @click:append="showPassword = !showPassword"
+                prepend-inner-icon="mdi-lock"
+                @click:append-inner="showPassword = !showPassword"
               />
             </v-form>
           </v-card-text>
-          <v-card-actions>
-            <v-spacer/>
-            <v-btn color="primary" variant="text" @click="handleRegister">
-              註冊
+          <v-card-actions class="card-actions">
+            <v-btn
+              variant="text"
+              color="primary"
+              @click="handleRegister"
+            >
+              註冊帳號
             </v-btn>
-            <v-btn color="primary" :disabled="!valid" @click="submit">
+            <v-spacer />
+            <v-btn
+              color="primary"
+              size="large"
+              :disabled="!valid"
+              :loading="loginMutation.isPending.value"
+              @click="submit"
+            >
+              <v-icon left>mdi-login</v-icon>
               登入
             </v-btn>
           </v-card-actions>
@@ -69,14 +88,13 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
-  import type { VForm } from 'vuetify/components';
+  import type { VForm } from 'vuetify/components'
   import { useMutation, useQueryClient } from '@tanstack/vue-query'
   import type { LoginRequest } from '~/apis/Api'
-  import { navigateTo } from '#app';
+  import { navigateTo } from '#app'
 
   function useLoginMutation() {
     const { $apiClient } = useNuxtApp()
-
     const queryClient = useQueryClient()
 
     return useMutation({
@@ -157,7 +175,6 @@
 </script>
 
 <style lang="scss" scoped>
-// 引入 Joti One 字體（同 legacy）
 @import url('https://fonts.cdnfonts.com/css/joti-one');
 
 .login-page {
@@ -167,7 +184,7 @@
   position: relative;
 }
 
-// 背景圖層（半透明）
+// 背景圖層
 .bg-overlay {
   position: absolute;
   top: 0;
@@ -242,11 +259,12 @@
   }
 }
 
-// 登入區塊（右下角）
+// 登入區塊
 .login-block {
   position: absolute;
   bottom: 20%;
   right: 5%;
+  animation: riseIn 0.8s ease 0.3s both;
 
   @media (max-width: 768px) {
     right: 50%;
@@ -255,10 +273,68 @@
   }
 }
 
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .login-card {
-  min-width: 320px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  min-width: 340px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  overflow: hidden;
+
+  // 卡片頂部漸層裝飾
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1976d2, #42a5f5, #1976d2);
+  }
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 24px 12px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.title-icon {
+  font-size: 28px;
+  color: #1976d2;
+}
+
+.card-actions {
+  padding: 8px 16px 20px;
+}
+
+// 輸入欄位優化
+:deep(.v-field) {
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+
+  &:focus-within {
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+  }
+}
+
+:deep(.v-field__prepend-inner) {
+  color: #666;
 }
 
 .register-hint {
@@ -270,8 +346,11 @@
   a {
     color: #90caf9;
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
 
     &:hover {
+      color: #bbdefb;
       text-decoration: underline;
     }
   }

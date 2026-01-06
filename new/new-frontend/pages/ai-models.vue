@@ -413,7 +413,20 @@
   margin-top: 40px;
   margin-left: 32px;
   margin-right: 32px;
+  animation: fadeIn 0.4s ease;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+  color: #1a1a1a;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
 .ai-list-table {
   width: 100%;
   display: flex;
@@ -422,40 +435,74 @@
   margin-top: 16px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
+
 .ai-list-header,
 .ai-list-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 80px 3fr;
   align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
+  gap: 12px;
+  padding: 14px 20px;
 }
+
 .action-btns {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
+
+/* 按鈕樣式優化 */
+.action-btns :deep(.v-btn) {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+.action-btns :deep(.v-btn:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
 .ai-list-header {
-  background: #000000;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: #fff;
-  font-weight: bold;
-  border-radius: 12px 12px 0 0;
-  letter-spacing: 1px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-size: 14px;
 }
+
 .ai-list-row {
   background: #fff;
   color: #333;
-  border-bottom: 1px solid #e0e0e0;
-  transition: background 0.2s;
-  font-weight: bold;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.25s ease;
+  font-weight: 500;
 }
+
 .ai-list-row:last-child {
-  border-radius: 0 0 12px 12px;
+  border-bottom: none;
 }
+
 .ai-list-row:hover {
-  background: #333;
-  color: #fff;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #1a1a1a;
+}
+
+/* Switch 樣式 */
+:deep(.v-switch) {
+  transform: scale(0.9);
+}
+
+/* 新增模型按鈕區塊 */
+.ai-list-container > div:last-of-type {
+  margin-top: 24px;
+}
+
+.ai-list-container > div:last-of-type :deep(.v-btn) {
+  font-weight: 600;
+  padding: 0 24px;
 }
 </style>
