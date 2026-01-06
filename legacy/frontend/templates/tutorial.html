@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block style %}
+<style>
+  div {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 30px;
+    margin-right: 30px;
+  }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav></nav>
+{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <div class="py-3">
+      <h2>Project Description</h2>
+    </div>
+    <div>
+      <h2>Walkthrough</h2>
+      <div>
+        <h5>Create Page</h5>
+        <div>
+          <h6>Project Name:</h6>
+          <div>
+            <p>You can specify a name for your new project.</p>
+            <p>In the "Project Name" field, type the desired name for your project.</p>
+            <p>This name will be used to identify your project in the website.</p>
+          </div>
+          <h6>3D Floor Plan:</h6>
+          <div>
+            <p>You have two options to add a 3D model with the "Upload" switch.</p>
+            <ul>
+              <li>
+                <p>Select Existing Model:</p>
+                <p>You can choose from existing models that you have access to.</p>
+                <p>If you prefer to use an existing model, ensure the "Upload" switch is off.</p>
+                <p>Choose a model from the dropdown list of available models.</p>
+              </li>
+              <li>
+                <p>Model Upload:</p>
+                <p>Toggle the switch next to "Upload" to enable file upload.</p>
+                <p>Click the file input field that appears and select a<code> .gltf </code>file from your device.</p>
+              </li>
+            </ul>
+          </div>
+          <h6>Mapbox:</h6>
+          <div>
+            <p>This website uses Mapbox to render maps and allows precise placement of the 3D model based on longitude and latitude coordinates.</p>
+            <p>The map will load with your selected model.</p>
+            <p>You can recenter, drag, and rotate the selected model on the map to fit your desired location.<span style="color: #DDAACC;">  *Only when you have uploaded a file.</span></p>
+            <p>Use the following controls to adjust the model:</p>
+            <ul>
+              <li>Recenter: Click the "Recenter" button to move the model to the center of the map.</li>
+              <li>Drag the Model: Click on the model while holding the<code> Shift </code>key to move it around the map.</li>
+              <li>Rotate the Model: Hold the<code> Alt </code>key and use the left or right arrow keys to rotate the model in smaller steps.</li>
+            </ul>
+          </div>
+          <h6>Create:</h6>
+          <div>
+            <p>After setting up the model, you can create the project or cancel the process.</p>
+            <p>Once satisfied with your setup, click the "Create" button to finalize and create the project.</p>
+            <p>If you decide not to proceed, click "Cancel" to return to the project overview without saving any changes.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h5>Map Page</h5>
+      </div>
+    </div>
+    <br>
+    <div class="pb-3">
+      <h2>About Us</h2>
+      <img src="/static/img/team.png" style="width: 75%">
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block style %}
+<!-- Mapbox -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<!-- Turf -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+<!-- css -->
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/projects.css') }}">
+{% endblock %}
+
+{% block nav %} 
+<nav>
+</nav>
+{% endblock %}
+
+{% block content %}
+<section>
+    <div class="container-fluid" id="gridContainer">
+        <div class="row">
+            <!-- Map -->
+            <div class="col rounded" id="mapContainer"></div>
+            <!-- Sidebar -->
+            <div class="col-3 d-flex flex-column" id="sidebar">
+                <div class="d-flex align-items-center ms-3 mb-2" id="pageTitle">
+                    <!-- flex-shrink-0 to prevent icon resizing with window -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-stack flex-shrink-0" viewBox="0 0 16 16">
+                        <path d="m14.12 10.163 1.715.858c.22.11.22.424 0 .534L8.267 15.34a.6.6 0 0 1-.534 0L.165 11.555a.299.299 0 0 1 0-.534l1.716-.858 5.317 2.659c.505.252 1.1.252 1.604 0l5.317-2.66zM7.733.063a.6.6 0 0 1 .534 0l7.568 3.784a.3.3 0 0 1 0 .535L8.267 8.165a.6.6 0 0 1-.534 0L.165 4.382a.299.299 0 0 1 0-.535z"/>
+                        <path d="m14.12 6.576 1.715.858c.22.11.22.424 0 .534l-7.568 3.784a.6.6 0 0 1-.534 0L.165 7.968a.299.299 0 0 1 0-.534l1.716-.858 5.317 2.659c.505.252 1.1.252 1.604 0z"/>
+                    </svg>
+                    <span style="margin-left: 0.5em">Projects</span>
+                </div>
+                <div class="list-group" id="projectsList">
+                    {% if not projects %}
+                        <div style="padding: 1em;">You don't have any projects yet.</div>
+                    {% else %}
+                        {% for key, values in projects.items() %}
+                            <form method='get' action="{{ url_for('overview', PID=values['PID']) }}">
+                                <button type="submit" class="list-group-item list-group-item-action" id="project{{ values['PID'] }}">{{ values['title'] }}</button>
+                                <!-- <input type="hidden" name="PID" value="{{ values['PID'] }}"> -->
+                            </form>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-center mx-2 mt-auto" id="sidebarButtons">
+                    <div class="d-grid col-9 pe-3">
+                        <form method='get' action="{{ url_for('create') }}">
+                            <button type="submit" class="btn btn-primary" style="width:100%;" id="create_btn">Create Project</button>
+                        </form>
+                    </div>
+                    <div class="d-grid col-3">
+                        <form method='post' action="{{ url_for('logout') }}">
+                            <button type="submit" class="btn btn-danger" style="width:100%;" id="logout_btn">Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const tmp_data = {{ tmp_data|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/projects.js') }}"></script>
+{% endblock %}

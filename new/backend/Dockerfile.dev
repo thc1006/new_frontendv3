@@ -1,0 +1,48 @@
+
+# Smaller base image
+FROM python:3.10
+
+# Avoid writing .pyc; unbuffered stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /app
+
+# (Optional) system deps for building some wheels; enable only if needed
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     build-essential gcc libpq-dev default-libmysqlclient-dev \
+#  && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python deps first for better layer caching
+COPY requirements.txt .
+# Use pip cache if BuildKit is available; fallback still works
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy app source (compose 開發可用 bind mount 覆蓋)
+COPY . .
+
+# Runtime dirs: uploads & Prometheus multiprocess (even if dev usually single-process)
+RUN mkdir -p /app/img /prometheus/tmp \
+ && adduser --disabled-password --gecos "" appuser \
+ && chown -R appuser:appuser /app /prometheus
+
+# Prometheus multiprocess dir (kept for compatibility; dev 多半用不到)
+ENV PROMETHEUS_MULTIPROC_DIR=/prometheus/tmp
+
+# Flask dev server host/port
+ENV FLASK_RUN_HOST=0.0.0.0 \
+    FLASK_RUN_PORT=8000
+# If your entry point is app.py with `app` inside, keep this; otherwise adjust
+ENV FLASK_APP=app.py
+# Enable Flask debugger/reloader
+ENV FLASK_DEBUG=1
+
+EXPOSE 8000
+
+# Drop privileges
+USER appuser
+
+# Dev server: Flask reloader is handy in development
+CMD ["python", "-m", "flask", "run"]

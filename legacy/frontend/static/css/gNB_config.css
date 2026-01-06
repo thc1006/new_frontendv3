@@ -1,0 +1,146 @@
+#gridContainer {
+    min-height: 82vh;
+    padding: 1em 0;
+    position: relative;
+}
+.accordion {
+    --bs-accordion-btn-bg: #22252B;
+    --bs-accordion-btn-color: #CCCCDC;
+    --bs-accordion-border-width: 0;
+    --bs-accordion-bg: #22252B;
+    --bs-accordion-color: #CCCCDC;
+    --bs-accordion-btn-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23CCCCDC'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
+    --bs-accordion-btn-focus-box-shadow: 0;
+}
+#configContainer {
+    background-color: #22252B;
+    min-height: 77vh;
+    max-height: 100%;
+    overflow-y: auto;
+}
+#currentDevice {
+    font-size: xx-large;
+    color: #CCCCDC;
+}
+.deviceOption {
+    padding: 0.6em 2em;
+}
+.form-select {
+    text-align: center;
+}
+
+/* Scrollbar */
+#configContainer::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: #22252B;
+}
+#configContainer::-webkit-scrollbar {
+    width: 5px;
+    background-color: #22252B;
+}
+#configContainer::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #CCCCDC;
+}
+/* end */
+
+.list-group-item {
+    --bs-list-group-color: #CCCCDC;
+    --bs-list-group-bg: 0;
+    --bs-list-group-border-width: 0;
+    --bs-list-group-item-padding-y: 0.5em;
+    --bs-list-group-action-hover-color: #FFFFFF;
+    --bs-list-group-action-hover-bg: 0;
+    --bs-list-group-action-active-color: #FFFFFF;
+    --bs-list-group-action-active-bg: 0;
+    --bs-list-group-active-bg: 0;
+}
+#mapContainer { 
+    position: relative;
+    height: 70vh;
+    width: 100%;
+    margin: auto;
+}
+.coordinates {
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    padding: 5px 10px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 18px;
+    border-radius: 3px;
+    display: none;
+}
+
+
+/*for tree diagram*/
+.tree-diagram ul{
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    /*reset ul format*/
+    list-style-type: none;
+    margin: 0;
+    padding: 2px 0 2px 60px;
+}
+.tree-diagram ul ul::before{
+    border-top:2px solid #a0a0a0;
+    content: '';
+
+    /*position*/
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 50%;
+}
+
+
+.tree-diagram li{
+    display: flex;
+    padding: 2px 0 2px 60px;
+    position: relative;
+    align-items: center;
+}
+
+.tree-diagram li::before{
+    border-left: 2px solid #a0a0a0;
+    border-bottom: 2px solid #a0a0a0;
+    content: '';
+
+    /*position*/
+    position: absolute;
+    bottom: 50%;
+    left: 0;
+    width: 60px;
+    height: 50%;
+
+}
+.tree-diagram li::after{
+    border-left: 2px solid #a0a0a0;
+    content: '';
+
+    /*position*/
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 50%;
+}
+.tree-diagram li:first-child::before, .tree-diagram li:last-child::after{
+    border-left: none; 
+}
+.tree-diagram li:last-child::before{
+    border-bottom-left-radius: 4px;
+}
+.tree-diagram li:first-child::before{
+    border-bottom: none;
+}
+.tree-diagram li:not(.tree-diagram-root):first-child::after{
+    border-top: 2px solid #a0a0a0;
+    border-top-left-radius: 4px;
+}

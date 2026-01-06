@@ -1,0 +1,165 @@
+/* 
+    就是整個網頁基底的設計 css
+    包含 header、section
+    且 import nav.css 跟 footer.css 跟 totop.scc
+ */
+
+
+@charset "utf-8";
+/* CSS Document */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courgette&display=swap');
+
+ 
+/* *{
+    margin: 0;
+    padding: 0;
+} */
+ 
+body{
+    /* font-family: 'Times New Roman', 'Noto Serif TC', serif; */
+    /* font-family: 'Open Sans', Arial, sans-serif; */
+    font-family: Inter,sans-serif;
+    font-family: sans-serif;
+    background-color: #111217;
+    color: #FFFFFF;
+    height: 100vh; /*view height*/
+}
+
+/*********************************************header****************************************/
+header{
+    height: 12%;
+    width: 100%; /*撐滿整個瀏覽器寬度*/
+    background: #D9D9D9;
+    display: flex;
+}
+header .empty{
+    flex: .6;
+}
+header nav{
+    flex: 7;
+}
+header nav ul{
+    margin-left: 4em;
+    margin-right: auto;
+}
+header nav li{
+    margin: 0 1em;
+}
+header .header_right{
+    flex: 2.5;
+    font-size: 30px;
+    color: #111217;
+    margin: auto;
+    /* margin-top: 15px; */
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Dropdown on hover */
+nav .dropdown:hover > .dropdown-menu {
+    display: block;
+}
+nav .dropdown-menu {
+    margin-top: 0 !important;
+    background-color: white;
+    border-color: transparent;
+}
+
+.nycu-brand{
+    height: 40px;
+    /* height: 60px; */
+    /* width: 60px; */
+    margin: auto;
+    object-fit: contain;
+
+}
+.wisdon-brand{
+    height: 40px;
+    margin: auto;
+    /* maintain aspect ratio */
+    object-fit: contain;
+}
+
+/****************************************************** section ************************************************/
+/* 基本上文字有分這幾種 : 
+    title : 水平置中大標，28px
+    subtitle : 水平置中的幾行次標題，25px
+    h1 : 文字中置左的標題，25px，自己加粗體
+    h2 : 文字中置左次標題，23px
+    context : 基本文字，19px
+    comment : 放在圖片下面的註解，不須在 css 做任何設定的原始 <p>
+    code : 包在 <pre><code> .... </code></pre> 中間就可以了，但是要注意縮排要往左，因為他連縮排都會顯示在 web 上
+    link : 超連結 <a> 的文字，就是要記得基於你的網頁色調改顏色
+
+    圖片則是 : 
+    single picture (.single_pic) : 整個水平線只有這張圖，置中。這邊要記得在 html 設定這張圖的 width 比較好
+    card : 上圖片 + 下文字，需要額外 import card.css
+    article : 左圖片 + 右文字(或者反之)， 需要額外 import article.css 
+*/
+
+section{
+    min-height: 82%;
+}
+section .title{
+    font-size: 28px;   
+}
+section .subtitle{
+    /* padding-top: 10px; */
+    /* padding-bottom: 10px; */
+    /* line-height: 30px; */
+    font-size: 25px;
+    color: #1A63A4;
+}
+section .context{
+    /* padding-top: 10px; */
+    /* padding-bottom: 10px; */
+    /* line-height: 30px; */
+    font-size: 19px;
+    color: #000000;
+}
+section .comment{
+    font-size: 15px;
+    margin-top: 20px;
+    clear: both;
+}
+section a:link{
+    color: #4C94D9;
+}
+section h1{
+    font-size: 25px;
+}
+section h2{
+    font-size: 23px;
+}
+section .code{
+    font-family: monospace;
+    background-color: #111217;
+    font-size: 17px;
+}
+
+section ul{
+    font-size: 19px;   
+}
+section .single_pic{
+    text-align: center;
+}
+
+
+/* for padding div，就相當於<br>但是<br>在 float 裡面有限制，所以直接這樣做*/
+.padding{
+    clear: both; /*取消之前打的 float*/
+    height: 50px;
+    background-color: #111217;
+}
+
+/* Disable text highlight */
+.no-select {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+  }

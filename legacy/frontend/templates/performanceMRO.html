@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block style %}
+{% endblock %}
+
+{% block nav %} 
+<ul class="navbar-nav">
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('overview', PID=PID) }}">Overview</a>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Configuration
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="nav-link" href="{{ url_for('gNB_config', PID=PID) }}">gNodeB</a></li>
+            <li><a class="nav-link" href="{{ url_for('AI_config', PID=PID) }}">AI Models</a></li>
+            <li><a class="nav-link" href="{{ url_for('evaluation', PID=PID) }}">Evaluation</a></li>
+        </ul>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Performance
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="nav-link" href="{{ url_for('performanceNES', PID=PID) }}">NES</a></li>
+            <li><a class="nav-link active" aria-current="page" href="{{ url_for('performanceMRO', PID=PID) }}">MRO</a></li>
+        </ul>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('edit', PID=PID) }}">Edit</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('projects') }}">Projects List</a>
+    </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<section>
+    <iframe src="http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro" frameborder="0" style="width: 100%; height: 1000px" ></iframe>
+</section>
+{% endblock %}

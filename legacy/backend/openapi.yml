@@ -1,0 +1,1896 @@
+openapi: 3.0.2
+info:
+  title: ORAN Flask RESTful API
+  description: NYCU 2024 ORAN RESTful API MySQL
+  version: 0.1.0
+servers:
+  - url: http://127.0.0.1:8000
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        UID:
+          type: integer
+          example: 1
+        account:
+          type: string
+          example: user1
+        password:
+          type: string
+          example: 1
+        email:
+          type: string
+          example: user1@gmail.com
+        salt:
+          type: string
+          example: asdfghjkl;
+
+    User_info:
+      type: object
+      properties:
+        account:
+          type: string
+          example: user1
+        password:
+          type: string
+          example: 1
+        email:
+          type: string
+          example: user1@gmail.com
+        salt:
+          type: string
+          example: asdfghjkl;
+
+    Project:
+      type: object
+      properties:
+        PID:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: project1
+        date:
+          type: string
+          example: "2024-07-03"
+
+    3D_model:
+      type: object
+      properties:
+        scenes:
+          example: ...
+
+    Project_Map:
+      type: object
+      properties:
+        PID:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: project1
+        date:
+          type: string
+          example: "2024-07-03"
+        MID:
+          type: integer
+          example: 1
+        image:
+          $ref: '#/components/schemas/3D_model'
+        position:
+          $ref: '#/components/schemas/Position'
+
+
+    Project_info:
+      type: object
+      properties:
+        title:
+          type: string
+          example: project1
+        date:
+          type: string
+          example: "2024-07-03"
+
+    Project_list:
+      type: object
+      properties:
+        project1:
+          $ref: '#/components/schemas/Project'
+        project2:
+          $ref: '#/components/schemas/Project'
+
+    User_list:
+      type: object
+      properties:
+        user1:
+          $ref: '#/components/schemas/User'
+        user2:
+          $ref: '#/components/schemas/User'
+
+    User_Project_Relation:
+      type: object
+      properties:
+        UID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        auth:
+          type: string
+          example: admin
+
+    CU:
+      type: object
+      properties:
+        CUID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: p1_cu1
+        brand_ID:
+          type: integer
+          example: 1
+
+    CU_info:
+      type: object
+      properties:
+        PID:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: p1_cu1
+        brand_ID:
+          type: integer
+          example: 1
+
+    DU:
+      type: object
+      properties:
+        DUID:
+          type: integer
+          example: 1
+        CUID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: p1_du1
+        brand_ID:
+          type: integer
+          example: 1
+
+    DU_info:
+      type: object
+      properties:
+        CUID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: p1_du1
+        brand_ID:
+          type: integer
+          example: 1
+
+    DU_list:
+      type: object
+      properties:
+        DU1:
+          $ref: '#/components/schemas/DU'
+        DU2:
+          $ref: '#/components/schemas/DU'
+          
+    RU_info:
+      type: object
+      properties:
+        DUID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        location_x:
+          type: number
+          example: 1.2
+        location_y:
+          type: number
+          example: 1.2
+        location_z:
+          type: number
+          example: 1.2
+        name:
+          type: string
+          example: p1_ru1
+        brand_ID:
+          type: integer
+          example: 1
+        IP:
+          type: string
+          example: 127.0.0.1
+        state:
+          type: integer
+          example: 1
+        power:
+          type: integer
+          example: 1
+        mac_4g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        mac_5g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        ch:
+          type: integer
+          example: 1
+        protocol:
+          type: string
+          example: protocal/xx 8.0.3
+        format:
+          type: number
+          example: 1.2
+        throughput:
+          type: number
+          example: 1.2
+    
+    RU_config:    
+      type: object
+      properties:
+        IP:
+          type: string
+          example: 127.0.0.1
+        state:
+          type: integer
+          example: 1
+        power:
+          type: integer
+          example: 1
+        mac_4g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        mac_5g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        ch:
+          type: integer
+          example: 1
+        protocol:
+          type: string
+          example: protocal/xx 8.0.3
+        format:
+          type: number
+          example: 1.2
+        throughput:
+          type: number
+          example: 1.2
+          
+    RU:
+      type: object
+      properties:
+        RUID:
+          type: integer
+          example: 1
+        DUID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        location_x:
+          type: number
+          example: 1.2
+        location_y:
+          type: number
+          example: 1.2
+        location_z:
+          type: number
+          example: 1.2
+        name:
+          type: string
+          example: p1_ru1
+        brand_ID:
+          type: integer
+          example: 1
+        config:
+          $ref: '#/components/schemas/RU_config'
+
+    RU_list:
+      type: object
+      properties:
+        RU1:
+          $ref: '#/components/schemas/RU'
+        RU2:
+          $ref: '#/components/schemas/RU'
+
+    Position:
+      type: object
+      properties:
+        left_down_long:
+          type: number
+          example: 101.123321
+        left_down_lat:
+          type: number
+          example: 101.123321
+        left_up_long:
+          type: number
+          example: 101.123321
+        left_up_lat:
+          type: number
+          example: 101.123321
+        right_down_long:
+          type: number
+          example: 101.123321
+        right_down_lat:
+          type: number
+          example: 101.123321
+        right_up_long:
+          type: number
+          example: 101.123321
+        right_up_lat:
+          type: number
+          example: 101.123321
+
+    Map:
+      type: object
+      properties:
+        MID:
+          type: integer
+          example: 1
+        PID:
+          type: integer
+          example: 1
+        image:
+          $ref: '#/components/schemas/3D_model'
+        position:
+          $ref: '#/components/schemas/Position'
+
+    Map_info:
+      type: object
+      properties:
+        image:
+          $ref: '#/components/schemas/3D_model'
+        position:
+          $ref: '#/components/schemas/Position'
+          
+    Brand_info:
+      type: object
+      properties:
+        IP:
+          type: string
+          example: 127.0.0.1
+        state:
+          type: integer
+          example: 1
+        power:
+          type: integer
+          example: 1
+        mac_4g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        mac_5g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        ch:
+          type: integer
+          example: 1
+        protocol:
+          type: string
+          example: protocal/xx 8.0.3
+        format:
+          type: number
+          example: 1.2
+        throughput:
+          type: number
+          example: 1.2
+        brand_name:
+          type: string
+          example: WiSDON
+          
+    Brand_config:
+      type: object
+      properties:
+        IP:
+          type: string
+          example: 127.0.0.1
+        state:
+          type: integer
+          example: 1
+        power:
+          type: integer
+          example: 1
+        mac_4g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        mac_5g:
+          type: string
+          example: xx:xx:xx:xx:xx:xx
+        ch:
+          type: integer
+          example: 1
+        protocol:
+          type: string
+          example: protocal/xx 8.0.3
+        format:
+          type: number
+          example: 1.2
+        throughput:
+          type: number
+          example: 1.2
+  
+    Brand:
+      type: object
+      properties:
+        brand_ID:
+          type: integer
+          example: 1
+        brand_name:
+          type: string
+          example: WiSDON
+        config:
+          $ref: '#/components/schemas/Brand_config'
+    
+    AI_input:
+      type: object
+      properties:
+        measurement: 
+          type: string
+          example: "NES"
+        tags:
+          type: object
+          properties:
+            AI_ID:
+              type: integer
+              example: 1
+            PID:
+              type: integer
+              example: 1
+        fields:
+          type: object
+          properties: 
+            RU1: 
+              type: integer
+              example: 30
+            RU2:
+              type: integer
+              example: 40
+            RU3:
+              type: integer
+              example: 50
+    
+    AI_output:
+      type: object
+      properties:
+        value1:
+          type: integer
+          example: 30
+        value2:
+          type: integer
+          example: 40
+        value3:
+          type: integer             
+          example: 50
+          
+    Heatmap_input:
+      type: object
+      properties:
+        areaId:
+          type: integer
+          example: 1
+        ms_x:
+          type: number
+          example: -7.77217
+        ms_y:
+          type: number
+          example: 5.3276
+        RU5:
+          type: number
+          example: -37.614
+        RU6:
+          type: number
+          example: -65.2872
+        RU9:
+          type: number
+          example: -250
+        RU11:
+          type: number
+          example: -250
+        RU12:
+          type: number
+          example: -250.0
+          
+    Heatmap:
+      type: object
+      properties:
+        heatmap_ID:
+          type: integer
+          example: 1
+        MID:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Heatmap_input'
+            
+    Model:
+      type: object
+      properties:
+        model_ID:
+          type: integer
+          example: 1
+        PID: 
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: NES
+          
+    Throughtput_input:
+      type: object
+      properties:
+        areaId:
+          type: integer
+          example: 1
+        ms_x:
+          type: number
+          example: -7.77217
+        ms_y:
+          type: number
+          example: 5.3276
+        throughtput:
+          type: number
+          example: 50
+          
+    Throughtput:
+      type: object
+      properties:
+        throughtput_ID:
+          type: integer
+          example: 1
+        MID:
+          type: integer
+          example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Throughtput_input'
+
+tags:
+  - name: User
+  - name: Project
+  - name: User Project Relation
+  - name: CU
+  - name: DU
+  - name: RU
+  - name: Map
+  - name: Brand
+  - name: Executor
+  - name: Influx
+  - name: Heatmap
+  - name: RU_cache
+  - name: AI Model
+  - name: Throughtput
+
+paths:
+  /User:
+    post:
+      tags:
+        - User
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User_info'
+
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /User/Account/{account}:
+    get:
+      tags:
+        - User
+      summary: Return a user by account
+      parameters:
+        - name: account
+          in: path
+          required: true
+          schema:
+            type: string
+            example: user1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found!
+
+  /User/Email/{email}:
+    get:
+      tags:
+        - User
+      summary: Return a user by email
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            example: user1@gmail.com
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found!
+
+  /User/{UID}:
+    put:
+      tags:
+        - User
+      summary: Update a user by UID
+      parameters:
+        - name: UID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User_info'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found!
+
+    delete:
+      tags:
+        - User
+      summary: Delete a user by UID
+      parameters:
+        - name: UID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: User not found!
+
+  /Project:
+    post:
+      tags:
+        - Project
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project_info'
+
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /Project/{PID}:
+    get:
+      tags:
+        - Project
+      summary: Search project and its related map with PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project_Map'
+        '404':
+          description: Project not found!
+
+    put:
+      tags:
+        - Project
+      summary: Update a project by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project_info'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found!
+
+    delete:
+      tags:
+        - Project
+      summary: Delete a project by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Project not found!
+
+  /User_Project/User/{UID}:
+    get:
+      tags:
+        - User Project Relation
+      summary: Search all project associate with UID
+      parameters:
+        - name: UID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project_list'
+        '404':
+          description: User's Project not found!
+
+  /User_Project/Project/{PID}:
+    get:
+      tags:
+        - User Project Relation
+      summary: Search all user associate with PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User_list'
+        '404':
+          description: Project not found!
+
+  /User_Project/{PID}/{UID}:
+    post:
+      tags:
+        - User Project Relation
+      summary: Create a relation between UID and PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - name: UID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth:
+                  type: string
+                  example: "admin"
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User_Project_Relation'
+
+  /CU/{PID}:
+    get:
+      tags:
+        - CU
+      summary: Search CU by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CU'
+        '404':
+          description: CU not found!
+
+  /CU:
+    post:
+      tags:
+        - CU
+      summary: Create CU
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CU_info'
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CU'
+
+
+  /CU/{CUID}:
+    delete:
+      tags:
+        - CU
+      summary: Delete a CU by CUID
+      parameters:
+        - name: CUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request (There is still DU associate with this CUID)
+        '404':
+          description: CU not found!
+
+    put:
+      tags:
+        - CU
+      summary: Update a CU by CUID
+      parameters:
+        - name: CUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CU_info'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CU'
+        '404':
+          description: CU not found!
+
+  /DU:
+    post:
+      tags:
+        - DU
+      summary: Create a DU by CUID and PID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DU_info'
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DU'
+
+  /DU/CUID/{CUID}:
+    get:
+      tags:
+        - DU
+      summary: Search DU by CUID
+      parameters:
+        - name: CUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DU_list'
+        '404':
+          description: DU not found!
+
+  /DU/PID/{PID}:
+    get:
+      tags:
+        - DU
+      summary: Search DU by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DU_list'
+        '404':
+          description: DU not found!
+
+  /DU/{DUID}:
+    delete:
+      tags:
+        - DU
+      summary: Delete DU by DUID
+      parameters:
+        - name: DUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request (There is still RU associate with this DUID)
+        '404':
+          description: DU not found!
+
+    put:
+      tags:
+        - DU
+      summary: Update DU by DUID
+      parameters:
+        - name: DUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DU_info'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DU'
+        '404':
+          description: DU not found!
+
+
+  /RU:
+    post:
+      tags:
+        - RU
+      summary: Create a RU by RU_info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RU_info'
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RU'
+
+  /RU/DUID/{DUID}:
+    get:
+      tags:
+        - RU
+      summary: Search RU by DUID
+      parameters:
+        - name: DUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RU_list'
+        '404':
+          description: RU not found!
+
+  /RU/PID/{PID}:
+    get:
+      tags:
+        - RU
+      summary: Search RU by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RU_list'
+        '404':
+          description: RU not found!
+
+  /RU/{RUID}:
+    delete:
+      tags:
+        - RU
+      summary: Delete RU by RUID
+      parameters:
+        - name: RUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: DU not found!
+
+    put:
+      tags:
+        - RU
+      summary: Update RU by RUID
+      parameters:
+        - name: RUID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RU_info'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RU'
+        '404':
+          description: RU not found!
+
+  /Map/{PID}:
+    post:
+      tags:
+        - Map
+      summary: Create Map by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Map_info'
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Map'
+
+  /Map/Image/{MID}:
+    put:
+      tags:
+        - Map
+      summary: Update Map image
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/3D_model'
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Map not found!
+
+  /Map/Position/{MID}:
+    put:
+      tags:
+        - Map
+      summary: Update Map position
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Position'
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Map not found!
+
+  /Map/{MID}:
+    delete:
+      tags:
+        - Map
+      summary: Delete Map by MID
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Map not found!
+  /Map/UID/{UID}:
+    get:
+      tags:
+        - Map
+      summary: Get all Map upload by UID
+      parameters:
+        - name: UID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Map'
+        '404':
+          description: Map not found!
+
+  /Map/MID/{MID}:
+    get:
+      tags:
+        - Map
+      summary: Get Map by MID
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Map'
+        '404':
+          description: Map not found!
+          
+  /Brand:
+    post:
+      tags:
+        - Brand
+      summary: Create a brand's default RU config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Brand_info'
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+                
+  /Brand/{brand_ID}:
+    delete:
+      tags:
+        - Brand
+      summary: Delete Brand by brand_ID
+      parameters:
+        - name: brand_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Map not found!
+          
+    put:
+      tags:
+        - Brand
+      summary: Update Brand by brand_ID
+      parameters:
+        - name: brand_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Brand_info'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '404':
+          description: Map not found!
+      
+  /Brand/brand_ID/{brand_ID}:
+    get:
+      tags:
+        - Brand
+      summary: Search Brand by brand_ID
+      parameters:
+        - name: brand_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '404':
+          description: Map not found!
+          
+  /Brand/brand_name/{brand_name}:
+    get:
+      tags:
+        - Brand
+      summary: Search Brand by brand_name
+      parameters:
+        - name: brand_name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: WiSDON
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '404':
+          description: Map not found!
+          
+  /Script/{script_name}:
+    get:
+      tags:
+        - Executor
+      summary: Execute script (currently not available!!)
+      parameters:
+        - name: script_name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: tmp_simulator
+        - name: args
+          in: query
+          required: false
+          schema:
+            type: string
+            example: WiSDON 2 600 600 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  output:
+                    type: string
+                    example: message
+                    
+  /Simulator/{option}/{scenario}:
+    get:
+      tags:
+        - Executor
+      summary: Pass scenario to simulator
+      parameters:
+        - name: option
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - name: scenario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+                    
+  /Influx/{database}/{measurement}/{time}:
+    get:
+      tags:
+        - Influx
+      summary: For AI to get data from Influxdb 
+      description: When the time parameter is -1, return the latest entry for every unique Ue-Id; otherwise, return the entry corresponding to the specified time (in seconds)
+      parameters:
+        - name: database
+          in: path
+          required: true
+          schema:
+            type: string
+            example: inference_result
+        - name: measurement
+          in: path
+          required: true
+          schema:
+            type: string
+            example: NES
+        - name: time
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AI_output'
+        '404':
+          description: Database not found
+  
+  /Influx/{database}:                  
+    post:
+      tags:
+        - Influx
+      summary: For AI to insert data into Influxdb
+      parameters:
+        - name: database
+          in: path
+          required: true
+          schema:
+            type: string
+            example: inference_result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/AI_input'
+      responses:
+        '201':
+          description: OK
+        '404':
+          description: Database not found
+  
+  /Influx/{database}/drop_measurement/{measurement}:
+    post:
+      tags:
+        - Influx
+      summary: Drop a measurement from a specific InfluxDB database
+      parameters:
+        - name: database
+          in: path
+          required: true
+          schema:
+            type: string
+            example: wisdon-ue
+        - name: measurement
+          in: path
+          required: true
+          schema:
+            type: string
+            example: wisdon-ue
+      responses:
+        '200':
+          description: Measurement dropped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Measurement wisdon-ue dropped.
+        '500':
+          description: Error dropping measurement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /Heatmap/{MID}:
+    post:
+      tags:
+        - Heatmap
+      summary: Insert heatmap info into MySQL by MID
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Heatmap_input'
+      responses:
+        '201':
+          description: Create
+        '409':
+          description: Conflict
+
+    put:
+      tags:
+        - Heatmap
+      summary: Insert heatmap info into MySQL by MID, replaces existing heatmap
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Heatmap_input'
+      responses:
+        '201':
+          description: Create
+          
+  /Heatmap/{heatmap_ID}:
+    get:
+      tags:
+        - Heatmap
+      summary: Get all heatmap info by heatmap_ID
+      parameters:
+        - name: heatmap_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Heatmap'
+        '404':
+          description: Heatmap not found
+          
+    delete:
+      tags:
+        - Heatmap
+      summary: Delete all heatmap info relate to heatmap_ID
+      parameters:
+        - name: heatmap_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+          '200':
+            description: OK
+          '404':
+            description: Heatmap not found
+            
+  /RU_cache/{PID}:
+    get:
+      tags:
+        - RU_cache
+      summary: Get RU tmp info by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Position'
+        '404':
+          description: RU_cache not found
+          
+    delete:
+      tags:
+        - RU_cache
+      summary: Deletet RU tmp info by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: RU_cache not found
+          
+    post:
+      tags:
+        - RU_cache
+      summary: Insert RU tmp info into DB by PID
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Position'
+      responses:
+        '201':
+          description: Create
+        '200':
+          description: OK
+          
+  /HeatmapUpdater/{heatmap_ID}:
+    get:
+      tags:
+        - Executor
+      summary: Update Heatmap by AI result
+      parameters:
+        - name: heatmap_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Heatmap'
+                  
+  /Model/{PID}:
+    get:
+      tags: 
+        - AI Model
+      summary: Get all AI model belong to this project
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+        '404':
+          description: No AI model belongs to this project
+          
+    post:
+      tags:
+        - AI Model
+      summary: Add new AI model to project
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: NES
+      responses:
+        '201':
+          description: Create
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+                
+    delete:
+      tags: 
+        - AI Model
+      summary: Delete all model belongs to  this project  
+      parameters:
+        - name: PID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: No AI model belongs to this project
+          
+  /Throughtput/{MID}:
+    post:
+      tags:
+        - Throughtput
+      summary: Insert throughtput info into MySQL by MID
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Throughtput_input'
+      responses:
+        '201':
+          description: Create
+          
+    get:
+      tags:
+        - Throughtput
+      summary: Get all throughtput info by MID
+      parameters:
+        - name: MID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Throughtput'
+        '404':
+          description: Throughtput not found
+          
+  /Throughtput/{throughtput_ID}:        
+    delete:
+      tags:
+        - Throughtput
+      summary: Delete all throughtput info relate to throughtput_ID
+      parameters:
+        - name: throughtput_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+          '200':
+            description: OK
+          '404':
+            description: Throughtput not found
+            
+  /RunThroughtput/{heatmap_ID}:
+    get:
+      tags:
+        - Executor
+      summary: Calculate throughtput
+      parameters:
+        - name: heatmap_ID
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: OK

@@ -1,0 +1,71 @@
+The network topology is like the following:
+The O-RAN architecture has 2 gnbs (including CU and DU) and 4 RUs. The configuration of those network elements are listed as following: 
+Gnb1: 192.168.2.101
+Gnb2: 192.168.2.103
+Ru11: 192.168.100.1, PCI: 11, gNbId: 1, cellId: 1, NrCellId: 16385
+Ru12: 192.168.100.2, PCI: 12, gNbId: 1, cellId: 2, NrCellId: 16386
+Ru21: 192.168.100.1, PCI: 21, gNbId: 2, cellId: 1, NrCellId: 32769
+Ru22: 192.168.100.2, PCI: 22, gNbId: 2, cellId: 2, NrCellId: 32770
+
+Other information:
+The connection between core network and gnbs is limited to 1 Gbps.
+The gnb should be restarted after 15 mins
+
+Few Shot example:
+If the question is related to shutdown and rebooting the system, here are some few shot examples.
+{{Question:
+    You are a 5G expert. And need to provide the root cause analysis of network failure.
+    The problem is that a cell cannot be connected after rebooting.
+
+    The following are the fault management logs:
+    1753339290330000000 F1_C_ALARM_F1_C_COMM_DOWN         false  Indicates the connection to a DU that has completed the registration (F1 SETUP) previously is broken, gNB: 2\n                       2025-07-24T06:41:30.33Z  
+    1753339290338000000 CU_ALARM_ALL_AMF_COMM_DOWN         false  NGC down, gNB: 2\n                                                                                         2025-07-24T06:41:30.338Z 
+    1753340151254000000 CELL_ALARM_CELL_PHY_START_SUCCESS    false  DU YS Layer will handle UL Message from PHY. If YS recv PHY UL MSG == MSG_OK, DU will generate this alarm, gNB: 2\n                      2025-07-24T06:55:51.254Z 
+    1753340166615000000 ORURxArrayCarrierNotReady          false  The O-RU with instance 192.168.2.103 and IP 192.168.100.1 RX array carrier radio_2 is not ready. Current status: 0 (2=Ready, 1=Busy, 0=Disabled, other=Unknown).\n 2025-07-24T06:56:06.615Z 
+    1753340166622000000 ORUTxArrayCarrierNotReady          false  The O-RU with instance 192.168.2.103 and IP 192.168.100.2 TX array carrier radio_2 is not ready. Current status: 0 (2=Ready, 1=Busy, 0=Disabled, other=Unknown).\n 2025-07-24T06:56:06.622Z 
+    1753340758869000000 CELL_ALARM_SLEEPING_CELL_DETECTION   false  No UE attach for 10 minutes after a cell is up, gNB: 2\n                                                                                         2025-07-24T07:05:58.869Z
+
+    The following are the PTP state logs:
+    1753339897000000000 CONNECTION-BROKEN 10           2025-07-24T06:51:37Z 192.168.2.103
+    1753340108000000000 PORT-LINKDOWN     3            2025-07-24T06:55:08Z 192.168.2.103
+    1753340138000000000 PORT-LINKDOWN     3            2025-07-24T06:55:38Z 192.168.2.103
+    1753340168000000000 GM Preparing      18           2025-07-24T06:56:08Z 192.168.2.103
+    
+
+Answer:
+        The root cause of the failure is a loss of PTP synchronization at the Radio Units (RUs), which was triggered by a network connectivity issue. 
+A step-by-step analysis of the logs reveals a clear failure chain. The PTP log shows that device 192.168.2.103, which is critical for the timing chain, experienced a CONNECTION-BROKEN event followed by a decisive PORT-LINKDOWN at 06:55:08. 
+This failure events likely caused the RUs to lose the timing reference. The fault management log confirms this at 06:58:43 with two active (true) SYNC Major Alarm: External SYNC Lost alarms for both RUs. In an O-RAN architecture, RUs cannot function without precise synchronization.
+Consequently, the RUs failed to enable their radio carriers, resulting in numerous ORUTx/RxArrayCarrierNotReady alarms. The cell never became truly operational, leading to the final SLEEPING_CELL_DETECTION alarm as a secondary symptom.
+
+}}
+{{Question:
+    Will there be any synchronization issue if I reboot gNB 2 right now?
+
+    The following are the ueList record:
+    time                CellRadioNetworkTemp_id DataNetworkName PhysicalCell_id TrackingAreaCode dlThroughputBps dl_rsrp dl_sinr fgcConnectedState gNB_id mytime                     nrCellId ranRegisteredState supi                 ulThroughputBps
+    ----                ----------------------- --------------- --------------- ---------------- --------------- ------- ------- ----------------- ------ ------                     -------- ------------------ ----                 ---------------
+    1753416747243000000 17286                   *               21              1                279560192       -76     23      connected         2      2025-07-25T04:12:27.243000 32769    registered         imsi-001010123456021 138720
+    1753416747243000000 17289                   *               21              1                274977696       -76     23      connected         2      2025-07-25T04:12:27.243000 32769    registered         imsi-001010123456024 174624
+    1753416747243000000 17347                   *               21              1                306861472       -80     23      connected         2      2025-07-25T04:12:27.243000 32769    registered         imsi-001010123456029 137088
+    1753416747243000000 17358                   *               12              1                0               -92     23      connected         1      2025-07-25T04:12:27.243000 16386    registered         imsi-001010123456020 0
+    1753416747243000000 17402                   *               12              1                0               -100    23      connected         1      2025-07-25T04:12:27.243000 16386    registered         imsi-001010123456028 0
+
+Answer:
+    Yes! Becuase gNB 2 still has heavy dlThroughput or heavy ulThroughput, and shutting down gNB 2 might cause some DPDK error resulting in failure PTP synchronization issue after reboot. 
+}}
+{{Question:
+    Will there be any synchronization issue if I reboot gNB 2 right now?
+
+    The following are the ueList record:
+    time                CellRadioNetworkTemp_id DataNetworkName PhysicalCell_id TrackingAreaCode dlThroughputBps dl_rsrp dl_sinr fgcConnectedState gNB_id mytime                     nrCellId ranRegisteredState supi                 ulThroughputBps
+    ----                ----------------------- --------------- --------------- ---------------- --------------- ------- ------- ----------------- ------ ------                     -------- ------------------ ----                 ---------------
+    1753416747243000000 17286                   *               21              1                10192           -76     23      connected         2      2025-07-25T04:12:27.243000 32769    registered         imsi-001010123456021 138720
+    1753416747243000000 17289                   *               21              1                7696            -76     23      connected         2      2025-07-25T04:12:27.243000 32769    registered         imsi-001010123456024 174624
+    1753416747243000000 17347                   *               21              1                1472            -80     23      connected         2      2025-07-25T04:12:27.243000 32769    registered         imsi-001010123456029 137088
+    1753416747243000000 17358                   *               12              1                0               -92     23      connected         1      2025-07-25T04:12:27.243000 16386    registered         imsi-001010123456020 0
+    1753416747243000000 17402                   *               12              1                0               -100    23      connected         1      2025-07-25T04:12:27.243000 16386    registered         imsi-001010123456028 0
+
+Answer:
+    No! Becuase gNB 2 only has small dlThroughput or heavy ulThroughput (<1000000), and shutting down gNB 2 should be fine after reboot. 
+}}

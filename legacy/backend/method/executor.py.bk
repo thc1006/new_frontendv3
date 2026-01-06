@@ -1,0 +1,184 @@
+import subprocess, requests, logging, json # type: ignore
+from flask import request, jsonify, make_response
+from flask_restful import Resource
+from config import Config, get_db_connection
+import mysql.connector
+
+# Create logger
+logger = logging.getLogger("executor.py")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] executor.py - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+class RunHeatmapUpdater(Resource):
+    def get(self, id):
+        # Open base.json for calculations
+        try:
+            f = open('./heatmap/base.json', 'r')
+            data = json.load(f)
+        except FileNotFoundError:
+            logger.error('base.json not found')
+            return 'base.json not found', 404
+        
+        result = requests.get(f'http://{Config.ctrl_ip}:{Config.ctrl_port}/Influx/inference_result/heatmap/-1')
+        try:
+            config = result.json()[0]
+        except IndexError as err:
+            logger.error(err)
+            return 'Influxdb/inference_result/heatmap returned empty', 404
+
+        totalEnergy = 248.7 * 2
+        numberOfActiveRU = 0
+
+        RUswitch = []
+        RUtxoffset = []
+        for i in range(5):
+            idx = 'ru' + str(i + 1)
+            if config[idx + '_switch']:
+                RUswitch.append(1)
+            else:
+                RUswitch.append(0)
+            RUtxoffset.append(config[idx] - 24)
+            numberOfActiveRU += RUswitch[i]
+            totalEnergy += RUswitch[i] * 37
+
+        # cur = conn.cursor()
+        # cur.execute('select * from heatmap where heatmap_ID = %s Limit 1;', (id,))
+        # if not result:
+        #     return make_response(jsonify(f'Heatmap ID {id} not found', 404))
+        # result = cur.fetchone()
+        # cur.close()
+
+        # if result:
+        #     MID = result[1]
+        #     with open(result[2], 'r') as heatmap_file:
+        #         data = json.load(heatmap_file)
+        #     arr = []
+        #     for i in data:
+        #         tmp = {
+        #             "areaId": i['areaId'],
+        #             "ms_x": i['ms_x'],
+        #             "ms_y": i['ms_y']
+        #         }
+        #         tmp['RU5'] = i['RU5'] + (RUswitch[0] - 1) * 250 + RUtxoffest[0]
+        #         tmp['RU6'] = i['RU6'] + (RUswitch[1] - 1) * 250 + RUtxoffest[1]
+        #         tmp['RU9'] = i['RU9'] + (RUswitch[2] - 1) * 250 + RUtxoffest[2]
+        #         tmp['RU11'] = i['RU11'] + (RUswitch[3] - 1) * 250 + RUtxoffest[3]
+        #         tmp['RU12'] = i['RU12'] + (RUswitch[4] - 1) * 250 + RUtxoffest[4]
+        #         arr.append(tmp)
+		
+        arr = []
+        flag = 0
+        for i in data:
+            #if flag==0: logger.error(i);
+            tmp = {
+                "areaId": i['areaId'],
+                "ms_x": i['ms_x'],
+                "ms_y": i['ms_y']
+            }
+            tmp['RU5'] = i['RU5'] + (RUswitch[0] - 1) * 250 + RUtxoffset[0]
+            tmp['RU6'] = i['RU6'] + (RUswitch[1] - 1) * 250 + RUtxoffset[1]
+            tmp['RU9'] = i['RU9'] + (RUswitch[2] - 1) * 250 + RUtxoffset[2]
+            tmp['RU11'] = i['RU11'] + (RUswitch[3] - 1) * 250 + RUtxoffset[3]
+            tmp['RU12'] = i['RU12'] + (RUswitch[4] - 1) * 250 + RUtxoffset[4]
+            arr.append(tmp)
+            #if flag==0: logger.error(tmp); flag=1
+
+        #logger.error(RUswitch)
+        #logger.error(RUtxoffest)
+        sql_result = requests.put(f'http://{Config.ctrl_ip}:{Config.ctrl_port}/Heatmap/{id}', json = arr)
+
+        return sql_result.json(), 200
+
+class RunSimulator(Resource):
+    def get(self, option = 1, scenario = 1):
+        data = {
+            'key1' : option, 
+            'key2' : scenario
+        }
+        result = requests.post('http://192.168.1.110:5003/api/data', json = data)
+        response = make_response(result.json(), result.status_code)
+        return response
+    
+class RunThroughtput(Resource):
+    def get(self, id):
+        conn = get_db_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute('select * from heatmap where heatmap_ID = %s Limit 1;', (id,))
+        except mysql.connector.Error as err:
+            return jsonify(f'Failed to get throughput heatmap with heatmap_ID: {err}'), 500
+        else:
+            result = cur.fetchone()
+        finally:
+            cur.close()
+
+        if result:
+            with open(result[2], 'r') as heatmap_file:
+                heatmap = json.load(heatmap_file)
+
+            data = {
+                'MID' : result[1],
+                'data' : heatmap
+            }
+
+            requests.post(url = 'http://192.168.1.110:5900/api/data', json = data)
+            response = make_response(jsonify(''), 200)
+        else:
+            response = make_response(jsonify(''), 404)
+
+        return response
+
+class RunScript(Resource):
+    def tmp_simulator(self, data):
+        RU_manufacturer = data['RU_manufacturer']
+        RU_number = data['RU_number']
+        RU_x = data['RU_x']
+        RU_y = data['RU_y']
+        PID = data['PID']
+
+        response = requests.get('http://' + Config.ctrl_ip + ':' + Config.ctrl_port + '/Brand/brand_name/' + RU_manufacturer)
+        response_data = response.json()
+        for i in range(0, int(RU_number)):
+            data = response_data
+            data['name'] = "RU" + str(i)
+            data['PID'] = int(PID)
+            data['location_x'] = RU_x
+            data['location_y'] = RU_y
+            data['location_z'] = 0
+
+            response = requests.post('http://' + Config.ctrl_ip + ':' + Config.ctrl_port + '/RU', json = data)
+            if response.status_code != 201:
+                return "create default RU wrong"
+
+        return "OK"
+
+    def get(self, script_name = ''):
+        args = request.args.getlist('args')
+        logger.info(f'executor.py {args}')                  # ['WiSDON 2 600 600 7']
+        args_list = args[0].split()
+
+        script_path = './script/' + script_name + '.py'
+        try:
+            command = ['python', script_path] + args_list
+            result = subprocess.run(command, capture_output = True, text = True, check = True)
+            output = result.stdout
+            logger.info(f'executor.py, output = {type(output)}')
+            logger.info(f'executor.py, output = {output}')            # a string like : {'RU_manufacturer': 'WiSDON', 'RU_number': '2', 'RU_coordinate': [(217, 491), (16, 350)], 'PID': '7'}
+            output_fixed = output.replace("'", '"')
+            logger.info(f'executor.py, output_fixed = {type(output_fixed)}')
+            logger.info(f'executor.py, output_fixed = {output_fixed}')
+            output_json = eval(output_fixed)
+            
+            if script_name == "tmp_simulator":
+                OK = self.tmp_simulator(output_json)
+                         
+            response = make_response(jsonify({"output": output, "OK": OK}), 200)
+            return response
+        
+        except subprocess.CalledProcessError as err:
+            logger.error(f'executor.py {err}')
+            response = make_response(jsonify({"error": str(err), "output": err.output}), 404)
+            return response

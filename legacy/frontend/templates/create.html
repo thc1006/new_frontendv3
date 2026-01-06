@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block style %}
+<!-- Mapbox -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet"/>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<!-- Mapbox-GL-DRAW -->
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" type="text/css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.min.js" integrity="sha512-jbyG1RrSkvPKbN4EcqBFLl3FdRxCRvSiKCEN4loIR2lz/Aglr37TxL1rcWV7xwD21/D+1q4Gb44KWioX3ZlxJw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Threebox -->
+<script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.7/dist/threebox.min.js" type="text/javascript"></script>
+<link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.7/dist/threebox.css" rel="stylesheet">
+<!-- Turf -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+<!-- css -->
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/create.css')}}"/>
+{% endblock %}
+
+
+{% block nav %} 
+<nav></nav>
+{% endblock %}
+
+
+{% block content %}
+<section>
+    <div class="container" id="inputContainer">
+        <div class="row g-4">
+            <div class="col-4">
+                <!-- Project Name -->
+                <div>
+                    <label for="projectName" class="form-label white-text">Project Name</label>
+                    <input class="form-control" id="projectName" type="text" placeholder="">
+                </div>
+                <!-- Floor Plan Model -->
+                <div class="d-flex justify-content-between mt-3">
+                    <label class="form-label white-text">Model</label>
+                    <div class="form-check form-switch form-check-reverse">
+                        <input class="form-check-input" type="checkbox" role="switch" id="uploadSwitch">
+                        <label class="form-check-label white-text no-select" for="uploadSwitch">Upload</label>
+                    </div>
+                </div>
+                <!-- Model Selection -->
+                <select class="form-select" aria-label="model selection" id="modelSelection">
+                    <option value='' selected>Select an existing model</option>
+                    {% for key, map in maps_can_access.items() %}
+                        <option value="{{ map.MID }}">{{ map.name }}</option>
+                    {% endfor %}
+                </select>
+                <!-- Model Upload -->
+                <div class="collapse" id="modelUploadContainer">
+                    <input class="form-control" id="uploadInput" type="file" accept=".gltf"/>
+                    <label class="form-label white-text mt-3" for="modelNameInput">Model Name</label>
+                    <input class="form-control" id="modelNameInput" type="text"/>
+                </div>
+            </div>
+            <!-- Recenter button -->
+            <div class="col d-flex align-items-end justify-content-end">
+                <button class="btn btn-secondary" id="btnRecenter" role="button" disabled>Recenter</a>
+            </div>
+            <!-- LngLat -->
+            <div class="col d-flex align-items-end justify-content-end">
+                <div class="d-flex-column justify-content-center">
+                    <label for="longitude" class="form-label white-text">Lng: </label>
+                    <input class="form-control-plaintext white-text" id="longitude" name="longitude" type="number" placeholder="none" readonly>
+                </div>
+                <div class="d-flex-column justify-content-center">
+                    <label for="latitude" class="form-label white-text">Lat: </label>
+                    <input class="form-control-plaintext white-text" id="latitude" name="latitude" type="number" placeholder="none" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="position: relative">
+            <div id="mapContainer"></div>
+            <div class="rounded collapse" id="mapInstructions">
+                Select the model by clicking on it.<br>
+                Drag by holding shift,<br>
+                Rotate by holding alt or with left / right arrow for smaller steps.
+            </div>
+        </div>
+        
+        <div class="row g-3">
+            <div class="d-flex align-items-start justify-content-end">
+                <a class="btn btn-primary fullWidth me-3" id="createBtn" type="button">Create</a>
+                <a class="btn btn-danger fullWidth" href="{{url_for('projects')}}" type="button">Cancel</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="{{url_for('static', filename='js/create.js')}}" type="module"></script>
+<script>
+    maps_can_access = {{ maps_can_access|tojson }};
+    console.log(maps_can_access);
+</script>
+{% endblock %}

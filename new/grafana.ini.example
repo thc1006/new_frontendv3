@@ -1,0 +1,16 @@
+[server]
+root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana_proxy/
+
+[security]
+allow_embedding = true
+admin_user = 
+admin_password = 
+
+[users]
+default_org_role = Viewer
+
+[auth.proxy]
+enabled = true
+header_name = X-WEBAUTH-USER
+header_property = username
+auto_sign_up = false

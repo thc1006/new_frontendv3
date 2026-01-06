@@ -1,0 +1,102 @@
+@import url('https://fonts.cdnfonts.com/css/joti-one');
+
+.background {
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+.background::before {
+    background-image: url(/static/img/background.jpg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    content: "";
+    height: 100%;
+    width: 100%;
+    opacity: 0.5;
+    position: absolute;
+    z-index: -1;
+}
+
+/*
+banner : 網頁最上方背景圖片 + 大標題文字
+特別注意，後面的背景圖片每一個網頁可能都不一樣，所以還是要記得換圖片跟 height，不能只有 import
+*/
+.foreground {
+    position: relative;
+    height: 100%;
+    z-index: 1;
+}
+
+.banner .BigText {
+    position: absolute;
+    top: 25%;
+    left: 5%;
+    /* font-family: 'Open Sans', Arial, sans-serif; */
+    font-family: 'Joti One', sans-serif;
+    font-size: 90px;
+    color: #E7E3E3;
+    text-shadow: 3px 3px 4px rgba(202, 198, 198, 0.5);
+    /*文字的陰影位於原始文字右方 2 個像素，下方 2 個像素，模糊程度為 4 個像素，顏色為半透明的黑色 (RGBA 值為 (0, 0, 0, 0.5)，表示黑色並且透明度為 0.5)。*/
+    -webkit-text-stroke: 1.5px rgba(41, 39, 39, 0.5);
+    text-stroke: 1.5px rgba(41, 39, 39, 0.5);
+}
+
+.banner .SmallText {
+    position: absolute;
+    top: 17%;
+    left: 5%;
+    font-size: 50px;
+    /* font-family: 'Open Sans', Arial, sans-serif; */
+    font-family: 'Joti One', sans-serif;
+    color: #E7E3E3;
+    text-shadow: 3px 3px 4px rgba(202, 198, 198, 0.5);
+    /*文字的陰影位於原始文字右方 2 個像素，下方 2 個像素，模糊程度為 4 個像素，顏色為半透明的黑色 (RGBA 值為 (0, 0, 0, 0.5)，表示黑色並且透明度為 0.5)。*/
+    -webkit-text-stroke: 1.5px rgba(41, 39, 39, 0.5);
+    text-stroke: 1.5px rgba(41, 39, 39, 0.5);
+}
+
+.anitext {
+    opacity: 0;
+
+    /*上下內容一樣， for 瀏覽器而已*/
+    animation-name: ant;
+    animation-duration: 4s;
+    animation-iteration-count: 1;
+    animation-timing-function: ease;
+    animation-delay: 1s;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+    
+    -webkit-animation-name: ant; /* 動畫名稱，要用名稱來呼叫他 */
+    -webkit-animation-duration: 4s; /* 動畫時間3秒 */
+    -webkit-animation-iteration-count: 1; /* 播放次數1次 */
+    -webkit-animation-timing-function: ease; /* 動態方式漸慢開始與結束 */
+    -webkit-animation-delay: .4s; /* 1秒後播放 ，給瀏覽器跑慢一點的扣搭，不然背景還沒載完就開始波動畫*/
+    -webkit-animation-direction: normal; /* 動畫播放順序為順向，順播或者逆播 */
+    -webkit-animation-fill-mode: forwards; /* 動畫結束後停格於最後一格，需搭配direction，比如方形漸變成圓形，如果這編寫 forward 他就會停留在圓形，
+                                                阿如果你  direstion 寫的是逆播，就會變成圓形變成方形之後最後停留在圓形，爆醜 */
+}
+
+@keyframes ant {
+    /*這邊 ant 是你前面設定的動畫名稱，上面 anitext 有設定的都可以修改*/
+    from {
+        left: 0%;
+        /*根據上面 anitext 設定，最後會定格在 left 10%，往右移*/
+        /*比如你想要左下移動到右上，就可以在這邊在家上 top*/
+    }
+    to {
+        opacity: 1;
+        /*根據上面 anitext 設定，原本是 0，會後變成 1 ，也就是逐漸顯示*/
+    }
+}
+
+/************************************ login block **********************************/
+.login_block {
+    position: absolute;
+    bottom: 25%;
+    right: 5%;
+    color: #E7E3E3;
+    text-align: center;
+}
