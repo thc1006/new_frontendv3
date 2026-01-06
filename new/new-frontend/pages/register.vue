@@ -10,16 +10,30 @@
               <v-text-field
                 v-model="form.account"
                 label="帳號"
-                :rules="[rules.required]"
+                :rules="[rules.required, rules.accountCheck]"
+                :loading="accountCheckStatus === 'checking'"
+                :color="accountCheckStatus === 'available' ? 'success' : undefined"
                 required
-              />
+                @update:model-value="debouncedCheckAccount"
+              >
+                <template v-if="accountCheckStatus === 'available'" #append>
+                  <v-icon color="success">mdi-check-circle</v-icon>
+                </template>
+              </v-text-field>
               <!-- Email Field -->
               <v-text-field
                 v-model="form.email"
                 label="電子郵件"
-                :rules="[rules.required, rules.email]"
+                :rules="[rules.required, rules.email, rules.emailCheck]"
+                :loading="emailCheckStatus === 'checking'"
+                :color="emailCheckStatus === 'available' ? 'success' : undefined"
                 required
-              />
+                @update:model-value="debouncedCheckEmail"
+              >
+                <template v-if="emailCheckStatus === 'available'" #append>
+                  <v-icon color="success">mdi-check-circle</v-icon>
+                </template>
+              </v-text-field>
               <!-- Password Field -->
               <v-text-field
                 v-model="form.password"
@@ -88,6 +102,62 @@
   const formRef = ref<any>(null)           // for v-form reference
   const showSuccessDialog = ref(false)     // control for success dialog
 
+  // 即時檢查狀態：'idle' | 'checking' | 'available' | 'taken'
+  const accountCheckStatus = ref<string>('idle')
+  const emailCheckStatus = ref<string>('idle')
+
+  // debounce timer
+  let accountCheckTimer: ReturnType<typeof setTimeout> | null = null
+  let emailCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+  // 帳號存在性檢查 (placeholder)
+  async function checkAccountExists(account: string): Promise<boolean> {
+    // TODO: 後端需新增 GET /auth/check-account?account={account}
+    // 預期回應：{ exists: boolean }
+    console.warn('[TODO] Account check API not implemented', { account })
+    // 模擬延遲，假設帳號可用
+    await new Promise(resolve => setTimeout(resolve, 300))
+    return false // 暫時假設都可用
+  }
+
+  // 信箱存在性檢查 (placeholder)
+  async function checkEmailExists(email: string): Promise<boolean> {
+    // TODO: 後端需新增 GET /auth/check-email?email={email}
+    // 預期回應：{ exists: boolean }
+    console.warn('[TODO] Email check API not implemented', { email })
+    // 模擬延遲，假設信箱可用
+    await new Promise(resolve => setTimeout(resolve, 300))
+    return false // 暫時假設都可用
+  }
+
+  // debounced 帳號檢查
+  function debouncedCheckAccount(value: string) {
+    if (accountCheckTimer) clearTimeout(accountCheckTimer)
+    if (!value) {
+      accountCheckStatus.value = 'idle'
+      return
+    }
+    accountCheckStatus.value = 'checking'
+    accountCheckTimer = setTimeout(async () => {
+      const exists = await checkAccountExists(value)
+      accountCheckStatus.value = exists ? 'taken' : 'available'
+    }, 500)
+  }
+
+  // debounced 信箱檢查
+  function debouncedCheckEmail(value: string) {
+    if (emailCheckTimer) clearTimeout(emailCheckTimer)
+    if (!value || !/.+@.+\..+/.test(value)) {
+      emailCheckStatus.value = 'idle'
+      return
+    }
+    emailCheckStatus.value = 'checking'
+    emailCheckTimer = setTimeout(async () => {
+      const exists = await checkEmailExists(value)
+      emailCheckStatus.value = exists ? 'taken' : 'available'
+    }, 500)
+  }
+
   // validation rules
   const rules = {
     required: (v: string) => !!v || '此欄位為必填',
@@ -96,6 +166,8 @@
       /^(?!.*(.)\1\1)(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$/.test(v)
       || '密碼需 8-20 字元，含大小寫、數字、符號，且不可連續 3 個相同字元',
     confirm:  (v: string) => v === form.value.password || '密碼與確認密碼不符',
+    accountCheck: () => accountCheckStatus.value !== 'taken' || '此帳號已被使用',
+    emailCheck: () => emailCheckStatus.value !== 'taken' || '此信箱已被使用',
   }
 
   // custom register mutation
