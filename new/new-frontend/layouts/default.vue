@@ -84,7 +84,7 @@
           target="_blank"
           style="text-decoration: none; color: inherit; cursor: pointer;"
         >
-          Copyright © 2025 NYCU WiSDON All Rights Reserved 
+          Copyright © 2026 NYCU WiSDON All Rights Reserved 
         </a>
       </v-col>
     </v-footer>

@@ -116,7 +116,7 @@
     <v-dialog v-model="retrainDialog" max-width="500">
       <v-card>
         <v-card-title>Retrain 模型</v-card-title>
-        <v-card-subtitle v-if="retrainTarget">
+        <v-card-subtitle v-if="retrainTarget" class="pb-2">
           {{ retrainTarget.model_name }} (ID: {{ retrainTarget.model_id }})
         </v-card-subtitle>
         <v-card-text>
@@ -151,19 +151,21 @@
       <v-card>
         <v-card-title>新增 Primitive AI 模型</v-card-title>
         <v-card-text>
-          <v-text-field v-model="newAI.model_name" label="模型名稱" required style="margin-bottom:16px;" />
-          <div v-for="metric in allMetrics" :key="metric.abstract_metrics_id" style="margin-top:24px;">
+          <v-text-field v-model="newAI.model_name" label="模型名稱" required class="mb-4" />
+          <div v-for="metric in allMetrics" :key="metric.abstract_metrics_id" class="metric-item">
             <v-checkbox
               v-model="metric.selected"
               :label="metric.display_name"
+              density="compact"
+              hide-details
             />
-            <div v-if="metric.selected" style="margin-left:24px;">
-              <v-text-field v-model="metric.input.name" label="名稱" style="display:block;max-width:400px;margin-bottom:12px;" />
-              <v-text-field v-model="metric.input.description" label="描述" style="display:block;max-width:400px;margin-bottom:12px;" />
-              <v-text-field v-model="metric.input.type" label="類型" style="display:block;max-width:400px;margin-bottom:12px;" />
-              <v-text-field v-model="metric.input.interval" label="間隔" type="number" style="display:block;max-width:400px;margin-bottom:12px;" />
-              <v-text-field v-model="metric.input.operator" label="Operator" style="display:block;max-width:400px;margin-bottom:12px;" />
-              <v-text-field v-model="metric.input.unit" label="單位" style="display:block;max-width:400px;margin-bottom:12px;" />
+            <div v-if="metric.selected" class="metric-fields">
+              <v-text-field v-model="metric.input.name" label="名稱" density="compact" />
+              <v-text-field v-model="metric.input.description" label="描述" density="compact" />
+              <v-text-field v-model="metric.input.type" label="類型" density="compact" />
+              <v-text-field v-model="metric.input.interval" label="間隔" type="number" density="compact" />
+              <v-text-field v-model="metric.input.operator" label="Operator" density="compact" />
+              <v-text-field v-model="metric.input.unit" label="單位" density="compact" />
             </div>
           </div>
         </v-card-text>
@@ -504,5 +506,29 @@ h2 {
 .ai-list-container > div:last-of-type :deep(.v-btn) {
   font-weight: 600;
   padding: 0 24px;
+}
+
+/* 新增模型 Modal 樣式 */
+.metric-item {
+  margin-top: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.metric-item:last-child {
+  border-bottom: none;
+}
+
+.metric-fields {
+  margin-left: 32px;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  max-width: 600px;
+}
+
+.metric-fields :deep(.v-text-field) {
+  margin-bottom: 0;
 }
 </style>

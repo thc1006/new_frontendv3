@@ -2,11 +2,11 @@
   <v-container>
     <v-row class="mb-6">
       <v-col cols="12">
-        <v-card>
+        <v-card class="welcome-card">
           <v-card-title class="text-h4">
             Welcome, {{ userStore.user?.account }}
           </v-card-title>
-          <v-card-subtitle class="text-subtitle-1">
+          <v-card-subtitle class="text-subtitle-1 pb-4">
             Role: {{ userStore.user?.role }}
           </v-card-subtitle>
         </v-card>
