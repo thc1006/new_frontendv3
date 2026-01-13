@@ -149,4 +149,57 @@ test.describe('AI Models Page', () => {
       await expect(editDialog).not.toBeVisible()
     }
   })
+
+  test('should have version selector in each row', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      // 確認版本選擇器存在
+      const versionSelect = firstRow.locator('.version-select')
+      await expect(versionSelect).toBeVisible()
+
+      // 點擊展開下拉選單
+      await versionSelect.click()
+
+      // 應該有選項出現
+      const menuItems = page.locator('.v-list-item')
+      await expect(menuItems.first()).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should be able to select different version', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const versionSelect = firstRow.locator('.version-select')
+      await versionSelect.click()
+
+      // 等一下讓選單出現
+      await page.waitForTimeout(300)
+
+      // 選擇 v2 選項 (使用文字匹配更精準)
+      const v2Option = page.locator('.v-overlay--active .v-list-item:has-text("v2")')
+      await expect(v2Option).toBeVisible({ timeout: 3000 })
+      await v2Option.click()
+
+      // 確認選單關閉
+      await expect(page.locator('.v-overlay--active .v-list')).not.toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show placeholder warning when changing version', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const versionSelect = firstRow.locator('.version-select')
+      await versionSelect.click()
+
+      await page.waitForTimeout(300)
+
+      // 選擇 v2
+      const v2Option = page.locator('.v-overlay--active .v-list-item:has-text("v2")')
+      await expect(v2Option).toBeVisible({ timeout: 3000 })
+      await v2Option.click()
+
+      // 確認顯示 placeholder 警告
+      await expect(page.locator('.v-snackbar:has-text("版本切換功能尚未接上後端")')).toBeVisible({ timeout: 3000 })
+    }
+  })
 })

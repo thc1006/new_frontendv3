@@ -1,11 +1,30 @@
 <template>
   <div class="ai-list-container">
     <h2>Primitive AI 模型列表</h2>
-    <div class="ai-list-table">
+
+    <!-- 載入中狀態 -->
+    <div v-if="isLoading" class="loading-state">
+      <v-progress-circular indeterminate color="primary" />
+      <span>載入中...</span>
+    </div>
+
+    <!-- 錯誤狀態 -->
+    <div v-else-if="loadError" class="error-state">
+      <span>{{ loadError }}</span>
+      <v-btn color="primary" size="small" @click="fetchAIs">重試</v-btn>
+    </div>
+
+    <!-- 空狀態 -->
+    <div v-else-if="!aiList.length" class="empty-state">
+      <span>目前沒有模型資料</span>
+    </div>
+
+    <div v-else class="ai-list-table">
       <div class="ai-list-header">
         <div>模型名稱</div>
         <div>模型 ID</div>
         <div>指標數量</div>
+        <div>版本</div>
         <div>啟用</div>
         <div>操作</div>
       </div>
@@ -19,6 +38,17 @@
         <div>{{ ai.model_name }}</div>
         <div>{{ ai.model_id }}</div>
         <div>{{ ai.ai_metrics?.length ?? 0 }}</div>
+        <div @click.stop>
+          <v-select
+            v-model="selectedVersions[ai.model_id]"
+            :items="getVersionList(ai)"
+            class="version-select"
+            density="compact"
+            hide-details
+            variant="outlined"
+            @update:model-value="handleVersionChange(ai, $event)"
+          />
+        </div>
         <div @click.stop>
           <v-switch
             :model-value="ai.enabled ?? false"
@@ -209,15 +239,63 @@
   const retrainConfig = ref({ round: 10, epochs: 5 })
   const isRetraining = ref(false)
 
+  // 版本選擇器狀態
+  const selectedVersions = ref({})
+
+  // 頁面載入狀態
+  const isLoading = ref(true)
+  const loadError = ref(null)
+
   onMounted(async () => {
     await fetchAIs()
     await fetchAllMetrics()
   })
 
   async function fetchAIs () {
-    const res = await $apiClient.primitiveAiModel.primitiveAiModelsList()
-    // aiList.value = res.data
-    aiList.value = res.data.sort((a, b) => a.model_id - b.model_id)
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const res = await $apiClient.primitiveAiModel.primitiveAiModelsList()
+      aiList.value = res.data.sort((a, b) => a.model_id - b.model_id)
+      // 初始化各模型的版本選擇
+      aiList.value.forEach(ai => {
+        if (!selectedVersions.value[ai.model_id]) {
+          const versions = getVersionList(ai)
+          selectedVersions.value[ai.model_id] = versions[0] || 'v1'
+        }
+      })
+    } catch (e) {
+      loadError.value = '載入模型列表失敗'
+      snackbar.value = { show: true, text: '載入模型列表失敗', color: 'error' }
+      console.error('Failed to fetch AI models:', e)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 取得模型的可用版本清單
+  // TODO: 待後端提供版本 API 後，改為從 ai 物件讀取
+  function getVersionList(_ai) {
+    // 暫時用假資料，未來會從 _ai 物件讀取實際版本
+    const baseVersions = ['v1', 'v2', 'v3']
+    return baseVersions
+  }
+
+  // 版本切換處理 (placeholder)
+  function handleVersionChange(ai, newVersion) {
+    // TODO: 後端需新增 PATCH /primitive_ai_models/{id}/version
+    // 預期請求：{ version: string }
+    // 預期回應：{ model_id, current_version }
+    snackbar.value = {
+      show: true,
+      text: `版本切換功能尚未接上後端 (${ai.model_name} → ${newVersion})`,
+      color: 'warning'
+    }
+    console.warn('[TODO] Version switch API not implemented', {
+      modelId: ai.model_id,
+      modelName: ai.model_name,
+      selectedVersion: newVersion
+    })
   }
 
   // 只取 abstract metrics 的 display_name 與 id，並初始化一組 input 欄位
@@ -444,7 +522,7 @@ h2 {
 .ai-list-header,
 .ai-list-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 80px 3fr;
+  grid-template-columns: 2fr 1fr 1fr 120px 80px 3fr;
   align-items: center;
   gap: 12px;
   padding: 14px 20px;
@@ -496,6 +574,40 @@ h2 {
 /* Switch 樣式 */
 :deep(.v-switch) {
   transform: scale(0.9);
+}
+
+/* 版本選擇器樣式 */
+.version-select {
+  max-width: 100px;
+}
+
+.version-select :deep(.v-field) {
+  font-size: 13px;
+}
+
+.version-select :deep(.v-field__input) {
+  padding: 4px 8px;
+  min-height: 32px;
+}
+
+/* 載入/錯誤/空狀態 */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  margin-top: 16px;
+  color: #666;
+}
+
+.error-state {
+  color: #d32f2f;
 }
 
 /* 新增模型按鈕區塊 */
