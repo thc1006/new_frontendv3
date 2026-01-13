@@ -154,7 +154,9 @@
       title: 'Performance',
       children: [
         { title: 'NES', to: `/projects/${projectId.value}/performance/nes` },
-        { title: 'MRO', to: `/projects/${projectId.value}/performance/mro` }
+        { title: 'MRO', to: `/projects/${projectId.value}/performance/mro` },
+        { title: 'AI Model Performance', to: `/projects/${projectId.value}/performance/ai-model` },
+        { title: 'Ran Slice Performance', to: `/projects/${projectId.value}/performance/ran-slice` }
       ]
     },
     { title: 'Projects List', to: '/' },
