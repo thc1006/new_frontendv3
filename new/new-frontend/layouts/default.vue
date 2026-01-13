@@ -124,11 +124,11 @@
 
   const mainMenu = [
     { title: 'Projects List', to: '/' },
+    { title: 'Profile', to: '/profile' },
     { title: 'User List', to: '/users', requiredRole: 'ADMIN' },
     { title: 'Brands', to: '/brands', requiredRole: 'ADMIN' },
     { title: 'AI Models', to: '/ai-models', requiredRole: 'ADMIN'},
-    /*{ title: 'Profile', to: '/profile' },
-    { title: 'Upload AI Model', to: '/upload' },
+    /*{ title: 'Upload AI Model', to: '/upload' },
     { title: 'Scenario', to: '/scenario' },
     { title: 'Unapproved Model', to: '/unapproved-model', requiredRole: 'ADMIN' },*/
   ]
