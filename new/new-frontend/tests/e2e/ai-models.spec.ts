@@ -49,12 +49,13 @@ test.describe('AI Models Page', () => {
     }
   })
 
-  test('should show Preview placeholder warning when clicked', async ({ page }) => {
+  test('should open Preview dialog when clicked', async ({ page }) => {
     const firstRow = page.locator('.ai-list-row').first()
     if (await firstRow.isVisible()) {
       const previewBtn = firstRow.locator('button:has-text("預覽")')
       await previewBtn.click()
-      await expect(page.locator('.v-snackbar:has-text("Preview")')).toBeVisible({ timeout: 3000 })
+      // 現在 Preview 會開啟對話框
+      await expect(page.locator('.v-dialog:has-text("Preview")')).toBeVisible({ timeout: 3000 })
     }
   })
 
@@ -261,6 +262,68 @@ test.describe('AI Models Page', () => {
     }
   })
 
+  // Phase 1.4: Preview 模態視窗測試
+  test('should open Preview dialog after Preview button is clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 loading 結束後應顯示 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有標題
+      await expect(previewDialog.locator('.v-card-title')).toContainText('Preview')
+    }
+  })
+
+  test('should show model info in Preview dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有模型資訊區塊
+      await expect(previewDialog.locator('.preview-model-info')).toBeVisible()
+    }
+  })
+
+  test('should show placeholder content area in Preview dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 placeholder 內容區塊
+      await expect(previewDialog.locator('.preview-content-area')).toBeVisible()
+    }
+  })
+
+  test('should close Preview dialog with close button', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 點擊關閉
+      await previewDialog.locator('button:has-text("關閉")').click()
+      await expect(previewDialog).not.toBeVisible()
+    }
+  })
+
   // Phase 1.2: 按鈕狀態優化測試
   test('should show loading state when Pretrain button is clicked', async ({ page }) => {
     const firstRow = page.locator('.ai-list-row').first()
@@ -295,8 +358,8 @@ test.describe('AI Models Page', () => {
       // 應該出現 loading 狀態
       await expect(previewBtn.locator('.v-progress-circular')).toBeVisible({ timeout: 1000 })
 
-      // 等待 loading 結束後應顯示 snackbar
-      await expect(page.locator('.v-snackbar:has-text("Preview")')).toBeVisible({ timeout: 3000 })
+      // 等待 loading 結束後應顯示 Preview 對話框
+      await expect(page.locator('.v-dialog:has-text("Preview")')).toBeVisible({ timeout: 3000 })
     }
   })
 

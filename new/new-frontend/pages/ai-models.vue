@@ -226,6 +226,57 @@
       </v-card>
     </v-dialog>
 
+    <!-- Preview Modal -->
+    <v-dialog v-model="previewDialog" max-width="900">
+      <v-card>
+        <v-card-title class="preview-header">Preview</v-card-title>
+        <v-card-subtitle v-if="previewTarget" class="pb-2">
+          {{ previewTarget.model_name }} (ID: {{ previewTarget.model_id }})
+        </v-card-subtitle>
+        <v-card-text>
+          <!-- 模型資訊區塊 -->
+          <div class="preview-model-info">
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">模型名稱</span>
+                <span class="info-value">{{ previewTarget?.model_name || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">模型 ID</span>
+                <span class="info-value">{{ previewTarget?.model_id || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">指標數量</span>
+                <span class="info-value">{{ previewTarget?.ai_metrics?.length ?? 0 }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">當前版本</span>
+                <span class="info-value">{{ selectedVersions[previewTarget?.model_id] || 'v1' }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- 預覽內容區塊 (placeholder) -->
+          <div class="preview-content-area">
+            <div class="content-placeholder">
+              <v-icon size="64" color="grey-lighten-1">mdi-eye-outline</v-icon>
+              <div class="content-placeholder-text">模型預覽內容</div>
+              <div class="content-placeholder-subtext">
+                TODO: 待接入 GET /primitive_ai_models/{'{'}id{'}'}/preview
+              </div>
+            </div>
+          </div>
+          <div class="placeholder-notice">
+            <v-icon size="small">mdi-information-outline</v-icon>
+            <span>預覽功能尚未接上後端 API</span>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="previewDialog = false">關閉</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 新增模型按鈕 -->
     <div style="margin-top:32px; text-align:right;">
       <v-btn color="success" @click="addDialog = true">新增模型</v-btn>
@@ -297,6 +348,10 @@
   // Pretrain Result 相關狀態
   const pretrainResultDialog = ref(false)
   const pretrainResultTarget = ref(null)
+
+  // Preview 相關狀態
+  const previewDialog = ref(false)
+  const previewTarget = ref(null)
 
   // 版本選擇器狀態
   const selectedVersions = ref({})
@@ -465,22 +520,21 @@
     }, 500)
   }
 
-  // Preview (placeholder)
+  // Preview (placeholder) - 顯示模型預覽對話框
   function handlePreview(ai) {
     // TODO: 後端需新增 GET /primitive_ai_models/{id}/preview
     // 預期回應：{ preview_data, metrics_summary }
+    // TODO: 實際流程應該要呼叫 API 取得真正的預覽資料
     setBtnLoading(ai.model_id, 'preview', true)
     setTimeout(() => {
-      snackbar.value = {
-        show: true,
-        text: 'Preview 功能尚未接上後端',
-        color: 'warning'
-      }
       console.warn('[TODO] Preview API not implemented', {
         modelId: ai.model_id,
         modelName: ai.model_name
       })
       setBtnLoading(ai.model_id, 'preview', false)
+      // 開啟預覽對話框（顯示 placeholder 資料）
+      previewTarget.value = ai
+      previewDialog.value = true
     }, 500)
   }
 
@@ -812,6 +866,70 @@ h2 {
 }
 
 .chart-placeholder-subtext {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #aaa;
+}
+
+/* Preview 樣式 */
+.preview-header {
+  background: linear-gradient(135deg, #c7c7c7 0%, #e0e0e0 100%);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.preview-model-info {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #666;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.preview-content-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.content-placeholder {
+  text-align: center;
+  color: #999;
+}
+
+.content-placeholder-text {
+  font-size: 16px;
+  margin-top: 8px;
+  color: #666;
+}
+
+.content-placeholder-subtext {
   font-size: 12px;
   margin-top: 4px;
   color: #aaa;
