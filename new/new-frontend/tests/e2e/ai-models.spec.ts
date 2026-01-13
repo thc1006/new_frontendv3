@@ -172,10 +172,7 @@ test.describe('AI Models Page', () => {
       const versionSelect = firstRow.locator('.version-select')
       await versionSelect.click()
 
-      // 等一下讓選單出現
-      await page.waitForTimeout(300)
-
-      // 選擇 v2 選項 (使用文字匹配更精準)
+      // 等待選單出現（使用 Playwright auto-waiting）
       const v2Option = page.locator('.v-overlay--active .v-list-item:has-text("v2")')
       await expect(v2Option).toBeVisible({ timeout: 3000 })
       await v2Option.click()
@@ -191,9 +188,7 @@ test.describe('AI Models Page', () => {
       const versionSelect = firstRow.locator('.version-select')
       await versionSelect.click()
 
-      await page.waitForTimeout(300)
-
-      // 選擇 v2
+      // 等待選單出現並選擇 v2（使用 Playwright auto-waiting）
       const v2Option = page.locator('.v-overlay--active .v-list-item:has-text("v2")')
       await expect(v2Option).toBeVisible({ timeout: 3000 })
       await v2Option.click()
