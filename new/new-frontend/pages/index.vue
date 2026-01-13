@@ -117,6 +117,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import type { Project } from '~/apis/Api'
 
 const userStore = useUserStore()
 const { $apiClient } = useNuxtApp()
@@ -156,7 +157,7 @@ const { data: projects, isPending, isError, error } = useQuery({
 })
 
 // 安全取得專案 ID
-const getProjectId = (project: any): number => {
+const getProjectId = (project: Project): number => {
   const rawId = project?.project_id
   if (rawId == null) return 0
   const numId = Number(rawId)
@@ -164,7 +165,7 @@ const getProjectId = (project: any): number => {
 }
 
 // 取得專案經緯度，若無則回傳 null
-const getProjectCoords = (project: any): [number, number] | null => {
+const getProjectCoords = (project: Project): [number, number] | null => {
   const lat = project?.lat
   const lon = project?.lon
   if (lat == null || lon == null) return null
@@ -177,7 +178,7 @@ const getProjectCoords = (project: any): [number, number] | null => {
 // TODO: 後端目前無 category 欄位，暫時使用 project_id 奇偶數模擬分類
 const outdoorProjects = computed(() => {
   if (!projects.value) return []
-  return projects.value.filter((p: any) => {
+  return projects.value.filter((p: Project) => {
     const id = getProjectId(p)
     return id > 0 && id % 2 === 1
   })
@@ -185,7 +186,7 @@ const outdoorProjects = computed(() => {
 
 const indoorProjects = computed(() => {
   if (!projects.value) return []
-  return projects.value.filter((p: any) => {
+  return projects.value.filter((p: Project) => {
     const id = getProjectId(p)
     return id > 0 && id % 2 === 0
   })
@@ -194,7 +195,7 @@ const indoorProjects = computed(() => {
 // 取得所有有座標的專案
 const projectsWithCoords = computed(() => {
   if (!projects.value) return []
-  return projects.value.filter((p: any) => getProjectCoords(p) !== null)
+  return projects.value.filter((p: Project) => getProjectCoords(p) !== null)
 })
 
 // 初始化地圖
@@ -230,7 +231,7 @@ const updateMarkers = () => {
   // 建立新的 markers
   const coords: [number, number][] = []
 
-  projects.value?.forEach((project: any) => {
+  projects.value?.forEach((project: Project) => {
     const projectCoords = getProjectCoords(project)
     if (!projectCoords) return
 
@@ -277,7 +278,7 @@ const updateMarkers = () => {
 }
 
 // 卡片 hover 事件
-const onCardHover = (project: any) => {
+const onCardHover = (project: Project) => {
   const projectId = getProjectId(project)
   hoveredProjectId.value = projectId
 
@@ -336,7 +337,7 @@ const formatDate = (dateString: string) => {
 }
 
 // 檢視專案
-const viewProject = async (project: any) => {
+const viewProject = async (project: Project) => {
   const projectId = getProjectId(project)
   try {
     const response = await $apiClient.project.getProjectRUs(projectId)
@@ -354,7 +355,7 @@ const viewProject = async (project: any) => {
 }
 
 // 刪除專案
-const deleteProject = async (project: any) => {
+const deleteProject = async (project: Project) => {
   const projectId = getProjectId(project)
   if (confirm(`Are you sure you want to delete project "${project.title}"?`)) {
     try {
