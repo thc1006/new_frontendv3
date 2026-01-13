@@ -11,6 +11,13 @@ export default defineNuxtConfig({
   build: {
     transpile: ['vuetify'],
   },
+  vite: {
+    // 生產環境移除 console.log/debugger，保留 error/warn 用於錯誤追蹤
+    esbuild: {
+      drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+      pure: process.env.NODE_ENV === 'production' ? ['console.log'] : [],
+    },
+  },
   // Vue Query 全域設定 - 減少不必要的重複請求
   vueQuery: {
     queryClientOptions: {
