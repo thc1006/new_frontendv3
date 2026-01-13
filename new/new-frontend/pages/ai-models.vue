@@ -49,20 +49,24 @@
             @update:model-value="handleVersionChange(ai, $event)"
           />
         </div>
-        <div @click.stop>
+        <div class="enable-switch-container" @click.stop>
           <v-switch
             :model-value="ai.enabled ?? false"
+            :disabled="btnLoading[ai.model_id]?.enable"
             hide-details
             density="compact"
             color="success"
             @update:model-value="handleToggleEnable(ai, $event)"
           />
+          <div v-if="btnLoading[ai.model_id]?.enable" class="switch-loading">
+            <v-progress-circular size="16" width="2" indeterminate />
+          </div>
         </div>
         <div class="action-btns" @click.stop>
           <v-btn color="primary" size="small" @click="showAIDetail(ai)">詳細</v-btn>
           <v-btn color="warning" size="small" @click="openEditDialog(ai)">編輯</v-btn>
-          <v-btn color="info" size="small" @click="handlePreview(ai)">預覽</v-btn>
-          <v-btn color="secondary" size="small" @click="handlePretrain(ai)">Pretrain</v-btn>
+          <v-btn color="info" size="small" :loading="btnLoading[ai.model_id]?.preview" @click="handlePreview(ai)">預覽</v-btn>
+          <v-btn color="secondary" size="small" :loading="btnLoading[ai.model_id]?.pretrain" @click="handlePretrain(ai)">Pretrain</v-btn>
           <v-btn color="purple" size="small" @click="openRetrainDialog(ai)">Retrain</v-btn>
           <v-btn color="error" size="small" @click="openDeleteDialog(ai)">刪除</v-btn>
         </div>
@@ -246,6 +250,9 @@
   const isLoading = ref(true)
   const loadError = ref(null)
 
+  // 各按鈕的 loading 狀態（per model）
+  const btnLoading = ref({})
+
   onMounted(async () => {
     await fetchAIs()
     await fetchAllMetrics()
@@ -374,36 +381,52 @@
     }
   }
 
+  // 設定按鈕 loading 狀態的輔助函式
+  function setBtnLoading(modelId, btnType, value) {
+    if (!btnLoading.value[modelId]) {
+      btnLoading.value[modelId] = {}
+    }
+    btnLoading.value[modelId][btnType] = value
+  }
+
   // Enable/Disable 切換 (placeholder)
   function handleToggleEnable(ai, newState) {
     // TODO: 後端需新增 PATCH /primitive_ai_models/{id}/enable
     // 預期請求：{ enabled: boolean }
     // 預期回應：{ model_id, enabled }
-    snackbar.value = {
-      show: true,
-      text: '啟用/停用功能尚未接上後端',
-      color: 'warning'
-    }
-    console.warn('[TODO] Enable API not implemented', {
-      modelId: ai.model_id,
-      modelName: ai.model_name,
-      newState
-    })
+    setBtnLoading(ai.model_id, 'enable', true)
+    setTimeout(() => {
+      snackbar.value = {
+        show: true,
+        text: '啟用/停用功能尚未接上後端',
+        color: 'warning'
+      }
+      console.warn('[TODO] Enable API not implemented', {
+        modelId: ai.model_id,
+        modelName: ai.model_name,
+        newState
+      })
+      setBtnLoading(ai.model_id, 'enable', false)
+    }, 500)
   }
 
   // Preview (placeholder)
   function handlePreview(ai) {
     // TODO: 後端需新增 GET /primitive_ai_models/{id}/preview
     // 預期回應：{ preview_data, metrics_summary }
-    snackbar.value = {
-      show: true,
-      text: 'Preview 功能尚未接上後端',
-      color: 'warning'
-    }
-    console.warn('[TODO] Preview API not implemented', {
-      modelId: ai.model_id,
-      modelName: ai.model_name
-    })
+    setBtnLoading(ai.model_id, 'preview', true)
+    setTimeout(() => {
+      snackbar.value = {
+        show: true,
+        text: 'Preview 功能尚未接上後端',
+        color: 'warning'
+      }
+      console.warn('[TODO] Preview API not implemented', {
+        modelId: ai.model_id,
+        modelName: ai.model_name
+      })
+      setBtnLoading(ai.model_id, 'preview', false)
+    }, 500)
   }
 
   // Pretrain (placeholder)
@@ -411,15 +434,19 @@
     // TODO: 後端需新增 POST /primitive_ai_models/{id}/pretrain
     // 預期請求：{ config?: PretrainConfig }
     // 預期回應：{ job_id, status: 'queued' }
-    snackbar.value = {
-      show: true,
-      text: 'Pretrain 功能尚未接上後端',
-      color: 'warning'
-    }
-    console.warn('[TODO] Pretrain API not implemented', {
-      modelId: ai.model_id,
-      modelName: ai.model_name
-    })
+    setBtnLoading(ai.model_id, 'pretrain', true)
+    setTimeout(() => {
+      snackbar.value = {
+        show: true,
+        text: 'Pretrain 功能尚未接上後端',
+        color: 'warning'
+      }
+      console.warn('[TODO] Pretrain API not implemented', {
+        modelId: ai.model_id,
+        modelName: ai.model_name
+      })
+      setBtnLoading(ai.model_id, 'pretrain', false)
+    }, 500)
   }
 
   // 開啟 Retrain 對話框
@@ -574,6 +601,23 @@ h2 {
 /* Switch 樣式 */
 :deep(.v-switch) {
   transform: scale(0.9);
+}
+
+/* Enable/Disable switch 容器 */
+.enable-switch-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.switch-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 4px;
 }
 
 /* 版本選擇器樣式 */

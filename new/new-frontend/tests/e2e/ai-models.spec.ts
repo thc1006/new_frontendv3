@@ -202,4 +202,61 @@ test.describe('AI Models Page', () => {
       await expect(page.locator('.v-snackbar:has-text("版本切換功能尚未接上後端")')).toBeVisible({ timeout: 3000 })
     }
   })
+
+  // Phase 1.2: 按鈕狀態優化測試
+  test('should show loading state when Pretrain button is clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+
+      // 點擊前應該沒有 loading
+      await expect(pretrainBtn.locator('.v-progress-circular')).not.toBeVisible()
+
+      // 點擊按鈕
+      await pretrainBtn.click()
+
+      // 應該出現 loading 狀態 (v-btn 的 loading 屬性會顯示 v-progress-circular)
+      await expect(pretrainBtn.locator('.v-progress-circular')).toBeVisible({ timeout: 1000 })
+
+      // 等待 loading 結束後應顯示 snackbar
+      await expect(page.locator('.v-snackbar:has-text("Pretrain")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show loading state when Preview button is clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+
+      // 點擊前應該沒有 loading
+      await expect(previewBtn.locator('.v-progress-circular')).not.toBeVisible()
+
+      // 點擊按鈕
+      await previewBtn.click()
+
+      // 應該出現 loading 狀態
+      await expect(previewBtn.locator('.v-progress-circular')).toBeVisible({ timeout: 1000 })
+
+      // 等待 loading 結束後應顯示 snackbar
+      await expect(page.locator('.v-snackbar:has-text("Preview")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show loading state when Enable/Disable switch is toggled', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      // 找到 switch 的容器（包含 loading overlay）
+      const switchContainer = firstRow.locator('.enable-switch-container')
+      const switchEl = switchContainer.locator('.v-switch')
+
+      // 點擊 switch
+      await switchEl.click()
+
+      // 應該出現 loading overlay
+      await expect(switchContainer.locator('.switch-loading')).toBeVisible({ timeout: 1000 })
+
+      // 等待 loading 結束後應顯示 snackbar
+      await expect(page.locator('.v-snackbar:has-text("啟用/停用")')).toBeVisible({ timeout: 3000 })
+    }
+  })
 })
