@@ -159,6 +159,7 @@
         { title: 'RAN Slice Performance', to: `/projects/${projectId.value}/performance/ran-slice` }
       ]
     },
+    { title: 'AI Model Evaluation', to: `/projects/${projectId.value}/ai-model-evaluation` },
     { title: 'Projects List', to: '/' },
     { title: 'Project Setting', to: `/projects/${projectId.value}/setting` }
   ])
