@@ -248,5 +248,18 @@ new_design/
     └── pages/admin/
         ├── pretrain.vue ........... Pretrain 結果模態設計
         ├── preview.vue ............ Preview 模態設計
+        ├── projects-list.vue ...... 專案列表設計 (INDOOR/OUTDOOR)
+        ├── ai-model-evaluation.vue  AI 模型評估設計
         └── menu-*.vue ............. 選單設計
 ```
+
+---
+
+# 待規劃功能 (Phase 5+)
+
+> 詳細規劃請參考 `.claude/handoff.md` 中的 Phase 5 和 Phase 6 章節。
+
+| Phase | 功能 | 優先級 | 狀態 |
+|-------|------|--------|------|
+| 5 | AI Model Evaluation 頁面 | P1 (高) | 待實作 - 全新功能 |
+| 6 | Projects List 改進 | P2 (中) | 待實作 - INDOOR/OUTDOOR 分類 |
