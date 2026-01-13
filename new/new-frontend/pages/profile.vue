@@ -109,6 +109,7 @@
   const isChangingPassword = ref(false)
   const snackbar = ref({ show: false, text: '', color: 'success' })
 
+  // TODO: 後端 API 實作後，需加入舊密碼欄位以提升安全性
   const passwordForm = ref({
     newPassword: '',
     confirmPassword: ''
@@ -127,11 +128,21 @@
   const user = computed(() => userStore.user)
 
   onMounted(async () => {
-    // 確保用戶資料已載入
-    if (!userStore.user) {
-      await userStore.fetchUser()
+    try {
+      // 確保用戶資料已載入
+      if (!userStore.user) {
+        await userStore.fetchUser()
+      }
+    } catch (err) {
+      console.error('載入用戶資料失敗:', err)
+      snackbar.value = {
+        show: true,
+        text: '無法載入個人資料，請稍後再試',
+        color: 'error'
+      }
+    } finally {
+      isLoading.value = false
     }
-    isLoading.value = false
   })
 
   function formatDate(dateStr) {
@@ -162,21 +173,17 @@
     }
 
     // TODO: 後端需提供 PATCH /user/password 端點
-    // 預期請求：{ password: string }
+    // 預期請求：{ old_password: string, new_password: string }
     // 預期回應：{ success: boolean }
     isChangingPassword.value = true
-    setTimeout(() => {
-      console.warn('[TODO] Change password API not implemented', {
-        newPassword: '***'
-      })
-      snackbar.value = {
-        show: true,
-        text: '修改密碼功能尚未接上後端',
-        color: 'warning'
-      }
-      isChangingPassword.value = false
-      closePasswordDialog()
-    }, 500)
+    console.warn('[TODO] Change password API not implemented')
+    snackbar.value = {
+      show: true,
+      text: '修改密碼功能尚未接上後端',
+      color: 'warning'
+    }
+    isChangingPassword.value = false
+    closePasswordDialog()
   }
 </script>
 

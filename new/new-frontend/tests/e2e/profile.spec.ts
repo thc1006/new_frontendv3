@@ -135,4 +135,28 @@ test.describe('Profile Page', () => {
     // 確認顯示 snackbar 錯誤訊息
     await expect(page.locator('.v-snackbar:has-text("密碼不一致")')).toBeVisible({ timeout: 3000 })
   })
+
+  test('should show validation error when password is too short', async ({ page }) => {
+    await page.goto('/profile')
+
+    await expect(page.locator('.profile-container')).toBeVisible({ timeout: 10000 })
+
+    // 點擊修改密碼按鈕
+    await page.locator('button:has-text("修改密碼")').click()
+
+    // 確認對話框開啟
+    const dialog = page.locator('.v-dialog:has-text("修改密碼")')
+    await expect(dialog).toBeVisible({ timeout: 3000 })
+
+    // 輸入過短的密碼
+    const passwordInputs = dialog.locator('input[type="password"]')
+    await passwordInputs.nth(0).fill('12345')
+    await passwordInputs.nth(1).fill('12345')
+
+    // 點擊確認
+    await dialog.locator('button:has-text("確認")').click()
+
+    // 確認顯示 snackbar 錯誤訊息
+    await expect(page.locator('.v-snackbar:has-text("密碼至少 6 個字元")')).toBeVisible({ timeout: 3000 })
+  })
 })
