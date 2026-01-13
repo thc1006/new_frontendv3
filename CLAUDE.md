@@ -146,11 +146,20 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 - 切換開關觸發 placeholder handler (待後端 API)
 - E2E 測試：`new/new-frontend/tests/e2e/ai-model-evaluation.spec.ts` (11 個測試)
 
+### 7. Projects List 改進 (100%)
+- 檔案：`new/new-frontend/pages/index.vue`
+- OUTDOOR/INDOOR 分類標籤：藥丸形狀深灰底白字
+- 專案卡片樣式升級：日期藍色藥丸、用戶灰色藥丸
+- View Project (藍字) / Delete Project (紅字) 連結
+- CREATE NEW PROJECT 按鈕 (藍底白字)
+- E2E 測試：`new/new-frontend/tests/e2e/projects-list.spec.ts` (12 個測試)
+
 ## PR 狀態
 - PR #1：已合併 (Phase 1 AI Models 增強)
 - PR #2：已合併 (Phase 3 Profile 頁面)
 - PR #3：已合併 (Phase 4 導航選單)
-- PR #4：待建立 (Phase 5 AI Model Evaluation)
+- PR #5：已合併 (Phase 5 AI Model Evaluation)
+- PR #6：待建立 (Phase 6 Projects List 改進)
 
 ## 待後端實作的 API
 
@@ -241,7 +250,8 @@ new/new-frontend/
 │   ├── performance.spec.ts ........ 效能頁面測試 (10)
 │   ├── profile.spec.ts ............ 個人資料測試 (9)
 │   ├── navigation.spec.ts ......... 導航選單測試 (9)
-│   └── ai-model-evaluation.spec.ts  AI 模型評估測試 (11)
+│   ├── ai-model-evaluation.spec.ts  AI 模型評估測試 (11)
+│   └── projects-list.spec.ts ...... 專案列表測試 (12)
 ├── nuxt.config.ts ................. Nuxt 設定 (含環境變數)
 └── .env ........................... 環境變數
 ```
@@ -266,11 +276,12 @@ new_design/
 
 ---
 
-# 待規劃功能 (Phase 6+)
+# 待規劃功能 (Phase 7+)
 
-> 詳細規劃請參考 `.claude/handoff.md` 中的 Phase 6 章節。
+> 詳細規劃請參考 `.claude/handoff.md`。
 
 | Phase | 功能 | 優先級 | 狀態 |
 |-------|------|--------|------|
 | 5 | AI Model Evaluation 頁面 | P1 (高) | ✅ 已完成 |
-| 6 | Projects List 改進 | P2 (中) | 待實作 - INDOOR/OUTDOOR 分類 |
+| 6 | Projects List 改進 | P2 (中) | ✅ 已完成 (INDOOR/OUTDOOR 分類) |
+| 6.3 | Projects List 地圖背景 | P3 (低) | 待實作 (可選) |
