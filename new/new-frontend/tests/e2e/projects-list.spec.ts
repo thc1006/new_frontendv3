@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 // Projects List 頁面的 E2E 測試
-// 測試專案列表頁面的結構與功能
+// 測試專案列表頁面的結構與功能（新版：左側地圖 + 右側卡片）
 test.describe('Projects List Page', () => {
   test.beforeEach(async ({ page }) => {
     // 先登入
@@ -12,23 +12,45 @@ test.describe('Projects List Page', () => {
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
   })
 
-  // Task 6.1: 頁面基本結構
+  // 頁面基本結構
   test.describe('Page Structure', () => {
-    test('should display projects list page', async ({ page }) => {
+    test('should display projects page with map and panel', async ({ page }) => {
       await page.goto('/')
 
       // 確認頁面載入
-      await expect(page.locator('.projects-list-container')).toBeVisible({ timeout: 10000 })
+      await expect(page.locator('.projects-page')).toBeVisible({ timeout: 10000 })
     })
 
-    test('should display welcome message with username', async ({ page }) => {
+    test('should display map section on the left', async ({ page }) => {
       await page.goto('/')
 
-      // 確認歡迎訊息
-      await expect(page.locator('text=Welcome')).toBeVisible({ timeout: 10000 })
+      // 確認地圖區域存在
+      const mapSection = page.locator('.map-section')
+      await expect(mapSection).toBeVisible({ timeout: 10000 })
+
+      // 確認地圖容器存在
+      const mapContainer = page.locator('#projectsMap')
+      await expect(mapContainer).toBeVisible({ timeout: 10000 })
     })
 
-    test('should have create project button', async ({ page }) => {
+    test('should display projects panel on the right', async ({ page }) => {
+      await page.goto('/')
+
+      // 確認專案面板存在
+      const projectsPanel = page.locator('.projects-panel')
+      await expect(projectsPanel).toBeVisible({ timeout: 10000 })
+    })
+
+    test('should display Projects title in panel header', async ({ page }) => {
+      await page.goto('/')
+
+      // 確認標題
+      const panelTitle = page.locator('.panel-title')
+      await expect(panelTitle).toBeVisible({ timeout: 10000 })
+      await expect(panelTitle).toContainText('Projects')
+    })
+
+    test('should have create project button at bottom', async ({ page }) => {
       await page.goto('/')
 
       // 確認有建立專案按鈕
@@ -38,7 +60,7 @@ test.describe('Projects List Page', () => {
     })
   })
 
-  // Task 6.1: 專案分類標籤
+  // 專案分類標籤
   test.describe('Category Labels', () => {
     test('should display OUTDOOR section label', async ({ page }) => {
       await page.goto('/')
@@ -57,7 +79,7 @@ test.describe('Projects List Page', () => {
     })
   })
 
-  // Task 6.2: 專案卡片樣式
+  // 專案卡片樣式
   test.describe('Project Cards', () => {
     test('should display project cards with proper styling', async ({ page }) => {
       await page.goto('/')
@@ -102,7 +124,7 @@ test.describe('Projects List Page', () => {
     })
   })
 
-  // Task 6.4: 互動功能
+  // 互動功能
   test.describe('Interactions', () => {
     test('should navigate to create page on button click', async ({ page }) => {
       await page.goto('/')
@@ -138,6 +160,43 @@ test.describe('Projects List Page', () => {
 
       // 驗證對話框確實被觸發
       expect(dialogTriggered).toBe(true)
+    })
+
+    test('should highlight card on hover', async ({ page }) => {
+      await page.goto('/')
+
+      // 等待專案卡片載入
+      const projectCard = page.locator('.project-card').first()
+      await expect(projectCard).toBeVisible({ timeout: 10000 })
+
+      // hover 卡片
+      await projectCard.hover()
+
+      // 確認有 active 樣式（border-color 改變）
+      await expect(projectCard).toHaveClass(/project-card/)
+    })
+  })
+
+  // 地圖功能
+  test.describe('Map Features', () => {
+    test('should display Mapbox map', async ({ page }) => {
+      await page.goto('/')
+
+      // 等待地圖容器
+      const mapContainer = page.locator('#projectsMap')
+      await expect(mapContainer).toBeVisible({ timeout: 10000 })
+
+      // 等待 Mapbox canvas 載入
+      const mapCanvas = page.locator('#projectsMap canvas.mapboxgl-canvas')
+      await expect(mapCanvas).toBeVisible({ timeout: 15000 })
+    })
+
+    test('should display map navigation controls', async ({ page }) => {
+      await page.goto('/')
+
+      // 等待導航控制項載入
+      const navControl = page.locator('.mapboxgl-ctrl-group')
+      await expect(navControl.first()).toBeVisible({ timeout: 15000 })
     })
   })
 })

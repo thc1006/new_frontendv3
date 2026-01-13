@@ -42,8 +42,8 @@ test.describe('Login Page', () => {
     // 等待登入成功後跳轉（登入成功後會跳轉到首頁 /）
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 確認已離開登入頁且顯示歡迎訊息
-    await expect(page.locator('text=Welcome')).toBeVisible({ timeout: 5000 })
+    // 確認已離開登入頁且顯示專案頁面（新版設計為地圖 + 專案列表）
+    await expect(page.locator('.projects-page')).toBeVisible({ timeout: 5000 })
   })
 
   test('should verify API requests go to /api path', async ({ page }) => {
