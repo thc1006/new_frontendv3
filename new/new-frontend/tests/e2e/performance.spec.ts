@@ -110,4 +110,50 @@ test.describe('Performance Pages', () => {
     // 頁面應該還在
     await expect(page.locator('h2:has-text("Performance - NES")')).toBeVisible()
   })
+
+  // Phase 2.1: AI Model Performance 頁面測試
+  test('should display AI Model Performance page', async ({ page }) => {
+    await page.goto(`/projects/${projectId}/performance/ai-model`)
+
+    // 確認標題
+    await expect(page.locator('h2:has-text("Performance - AI Model")')).toBeVisible({ timeout: 10000 })
+
+    // 確認重新整理按鈕
+    await expect(page.locator('button:has-text("重新整理")')).toBeVisible()
+
+    // 確認頁面容器存在
+    await expect(page.locator('.performance-container')).toBeVisible()
+  })
+
+  test('should have iframe or placeholder on AI Model page', async ({ page }) => {
+    await page.goto(`/projects/${projectId}/performance/ai-model`)
+
+    await page.waitForSelector('.performance-container', { timeout: 10000 })
+
+    // 確認 iframe-wrapper 存在
+    await expect(page.locator('.iframe-wrapper')).toBeVisible()
+  })
+
+  // Phase 2.2: Ran Slice Performance 頁面測試
+  test('should display Ran Slice Performance page', async ({ page }) => {
+    await page.goto(`/projects/${projectId}/performance/ran-slice`)
+
+    // 確認標題
+    await expect(page.locator('h2:has-text("Performance - Ran Slice")')).toBeVisible({ timeout: 10000 })
+
+    // 確認重新整理按鈕
+    await expect(page.locator('button:has-text("重新整理")')).toBeVisible()
+
+    // 確認頁面容器存在
+    await expect(page.locator('.performance-container')).toBeVisible()
+  })
+
+  test('should have iframe or placeholder on Ran Slice page', async ({ page }) => {
+    await page.goto(`/projects/${projectId}/performance/ran-slice`)
+
+    await page.waitForSelector('.performance-container', { timeout: 10000 })
+
+    // 確認 iframe-wrapper 存在
+    await expect(page.locator('.iframe-wrapper')).toBeVisible()
+  })
 })

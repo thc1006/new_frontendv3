@@ -1,11 +1,30 @@
 <template>
   <div class="ai-list-container">
     <h2>Primitive AI 模型列表</h2>
-    <div class="ai-list-table">
+
+    <!-- 載入中狀態 -->
+    <div v-if="isLoading" class="loading-state">
+      <v-progress-circular indeterminate color="primary" />
+      <span>載入中...</span>
+    </div>
+
+    <!-- 錯誤狀態 -->
+    <div v-else-if="loadError" class="error-state">
+      <span>{{ loadError }}</span>
+      <v-btn color="primary" size="small" @click="fetchAIs">重試</v-btn>
+    </div>
+
+    <!-- 空狀態 -->
+    <div v-else-if="!aiList.length" class="empty-state">
+      <span>目前沒有模型資料</span>
+    </div>
+
+    <div v-else class="ai-list-table">
       <div class="ai-list-header">
         <div>模型名稱</div>
         <div>模型 ID</div>
         <div>指標數量</div>
+        <div>版本</div>
         <div>啟用</div>
         <div>操作</div>
       </div>
@@ -20,19 +39,34 @@
         <div>{{ ai.model_id }}</div>
         <div>{{ ai.ai_metrics?.length ?? 0 }}</div>
         <div @click.stop>
+          <v-select
+            v-model="selectedVersions[ai.model_id]"
+            :items="getVersionList(ai)"
+            class="version-select"
+            density="compact"
+            hide-details
+            variant="outlined"
+            @update:model-value="handleVersionChange(ai, $event)"
+          />
+        </div>
+        <div class="enable-switch-container" @click.stop>
           <v-switch
             :model-value="ai.enabled ?? false"
+            :disabled="btnLoading[ai.model_id]?.enable"
             hide-details
             density="compact"
             color="success"
             @update:model-value="handleToggleEnable(ai, $event)"
           />
+          <div v-if="btnLoading[ai.model_id]?.enable" class="switch-loading">
+            <v-progress-circular size="16" width="2" indeterminate />
+          </div>
         </div>
         <div class="action-btns" @click.stop>
           <v-btn color="primary" size="small" @click="showAIDetail(ai)">詳細</v-btn>
           <v-btn color="warning" size="small" @click="openEditDialog(ai)">編輯</v-btn>
-          <v-btn color="info" size="small" @click="handlePreview(ai)">預覽</v-btn>
-          <v-btn color="secondary" size="small" @click="handlePretrain(ai)">Pretrain</v-btn>
+          <v-btn color="info" size="small" :loading="btnLoading[ai.model_id]?.preview" @click="handlePreview(ai)">預覽</v-btn>
+          <v-btn color="secondary" size="small" :loading="btnLoading[ai.model_id]?.pretrain" @click="handlePretrain(ai)">Pretrain</v-btn>
           <v-btn color="purple" size="small" @click="openRetrainDialog(ai)">Retrain</v-btn>
           <v-btn color="error" size="small" @click="openDeleteDialog(ai)">刪除</v-btn>
         </div>
@@ -141,6 +175,108 @@
       </v-card>
     </v-dialog>
 
+    <!-- Pretrain Result Modal -->
+    <v-dialog v-model="pretrainResultDialog" max-width="900">
+      <v-card>
+        <v-card-title class="pretrain-result-header">Pre-train Result</v-card-title>
+        <v-card-subtitle v-if="pretrainResultTarget" class="pb-2">
+          {{ pretrainResultTarget.model_name }} (ID: {{ pretrainResultTarget.model_id }})
+        </v-card-subtitle>
+        <v-card-text>
+          <!-- 指標摘要區塊 -->
+          <div class="pretrain-metrics-summary">
+            <div class="metrics-row">
+              <div class="metric-card">
+                <div class="metric-label">Accuracy</div>
+                <div class="metric-value">92.5%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Loss</div>
+                <div class="metric-value">0.0831</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Epochs</div>
+                <div class="metric-value">50</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Training Time</div>
+                <div class="metric-value">12m 34s</div>
+              </div>
+            </div>
+            <div class="placeholder-notice">
+              <v-icon size="small">mdi-information-outline</v-icon>
+              <span>以上為 placeholder 資料，待接入後端 API</span>
+            </div>
+          </div>
+          <!-- 圖表區塊 (placeholder) -->
+          <div class="pretrain-chart-area">
+            <div class="chart-placeholder">
+              <v-icon size="64" color="grey-lighten-1">mdi-chart-line</v-icon>
+              <div class="chart-placeholder-text">Training Loss / Accuracy Chart</div>
+              <div class="chart-placeholder-subtext">
+                TODO: 待接入 GET /primitive_ai_models/{'{'}id{'}'}/pretrain/result
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="pretrainResultDialog = false">關閉</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Preview Modal -->
+    <v-dialog v-model="previewDialog" max-width="900">
+      <v-card>
+        <v-card-title class="preview-header">Preview</v-card-title>
+        <v-card-subtitle v-if="previewTarget" class="pb-2">
+          {{ previewTarget.model_name }} (ID: {{ previewTarget.model_id }})
+        </v-card-subtitle>
+        <v-card-text>
+          <!-- 模型資訊區塊 -->
+          <div class="preview-model-info">
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">模型名稱</span>
+                <span class="info-value">{{ previewTarget?.model_name || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">模型 ID</span>
+                <span class="info-value">{{ previewTarget?.model_id || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">指標數量</span>
+                <span class="info-value">{{ previewTarget?.ai_metrics?.length ?? 0 }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">當前版本</span>
+                <span class="info-value">{{ selectedVersions[previewTarget?.model_id] || 'v1' }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- 預覽內容區塊 (placeholder) -->
+          <div class="preview-content-area">
+            <div class="content-placeholder">
+              <v-icon size="64" color="grey-lighten-1">mdi-eye-outline</v-icon>
+              <div class="content-placeholder-text">模型預覽內容</div>
+              <div class="content-placeholder-subtext">
+                TODO: 待接入 GET /primitive_ai_models/{'{'}id{'}'}/preview
+              </div>
+            </div>
+          </div>
+          <div class="placeholder-notice">
+            <v-icon size="small">mdi-information-outline</v-icon>
+            <span>預覽功能尚未接上後端 API</span>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="previewDialog = false">關閉</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 新增模型按鈕 -->
     <div style="margin-top:32px; text-align:right;">
       <v-btn color="success" @click="addDialog = true">新增模型</v-btn>
@@ -209,15 +345,74 @@
   const retrainConfig = ref({ round: 10, epochs: 5 })
   const isRetraining = ref(false)
 
+  // Pretrain Result 相關狀態
+  const pretrainResultDialog = ref(false)
+  const pretrainResultTarget = ref(null)
+
+  // Preview 相關狀態
+  const previewDialog = ref(false)
+  const previewTarget = ref(null)
+
+  // 版本選擇器狀態
+  const selectedVersions = ref({})
+
+  // 頁面載入狀態
+  const isLoading = ref(true)
+  const loadError = ref(null)
+
+  // 各按鈕的 loading 狀態（per model）
+  const btnLoading = ref({})
+
   onMounted(async () => {
     await fetchAIs()
     await fetchAllMetrics()
   })
 
   async function fetchAIs () {
-    const res = await $apiClient.primitiveAiModel.primitiveAiModelsList()
-    // aiList.value = res.data
-    aiList.value = res.data.sort((a, b) => a.model_id - b.model_id)
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const res = await $apiClient.primitiveAiModel.primitiveAiModelsList()
+      aiList.value = res.data.sort((a, b) => a.model_id - b.model_id)
+      // 初始化各模型的版本選擇
+      aiList.value.forEach(ai => {
+        if (!selectedVersions.value[ai.model_id]) {
+          const versions = getVersionList(ai)
+          selectedVersions.value[ai.model_id] = versions[0] || 'v1'
+        }
+      })
+    } catch (e) {
+      loadError.value = '載入模型列表失敗'
+      snackbar.value = { show: true, text: '載入模型列表失敗', color: 'error' }
+      console.error('Failed to fetch AI models:', e)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 取得模型的可用版本清單
+  // TODO: 待後端提供版本 API 後，改為從 ai 物件讀取
+  function getVersionList(_ai) {
+    // 暫時用假資料，未來會從 _ai 物件讀取實際版本
+    const baseVersions = ['v1', 'v2', 'v3']
+    return baseVersions
+  }
+
+  // 版本切換處理 (placeholder)
+  function handleVersionChange(ai, newVersion) {
+    // TODO: 後端需新增 PATCH /primitive_ai_models/{id}/version
+    // 預期請求：{ version: string }
+    // 預期回應：{ model_id, current_version }
+    snackbar.value = {
+      show: true,
+      text: `版本切換功能尚未接上後端 (${ai.model_name} → ${newVersion})`,
+      color: 'warning'
+    }
+    console.warn('[TODO] Version switch API not implemented', {
+      modelId: ai.model_id,
+      modelName: ai.model_name,
+      selectedVersion: newVersion
+    })
   }
 
   // 只取 abstract metrics 的 display_name 與 id，並初始化一組 input 欄位
@@ -296,52 +491,70 @@
     }
   }
 
+  // 設定按鈕 loading 狀態的輔助函式
+  function setBtnLoading(modelId, btnType, value) {
+    if (!btnLoading.value[modelId]) {
+      btnLoading.value[modelId] = {}
+    }
+    btnLoading.value[modelId][btnType] = value
+  }
+
   // Enable/Disable 切換 (placeholder)
   function handleToggleEnable(ai, newState) {
     // TODO: 後端需新增 PATCH /primitive_ai_models/{id}/enable
     // 預期請求：{ enabled: boolean }
     // 預期回應：{ model_id, enabled }
-    snackbar.value = {
-      show: true,
-      text: '啟用/停用功能尚未接上後端',
-      color: 'warning'
-    }
-    console.warn('[TODO] Enable API not implemented', {
-      modelId: ai.model_id,
-      modelName: ai.model_name,
-      newState
-    })
+    setBtnLoading(ai.model_id, 'enable', true)
+    setTimeout(() => {
+      snackbar.value = {
+        show: true,
+        text: '啟用/停用功能尚未接上後端',
+        color: 'warning'
+      }
+      console.warn('[TODO] Enable API not implemented', {
+        modelId: ai.model_id,
+        modelName: ai.model_name,
+        newState
+      })
+      setBtnLoading(ai.model_id, 'enable', false)
+    }, 500)
   }
 
-  // Preview (placeholder)
+  // Preview (placeholder) - 顯示模型預覽對話框
   function handlePreview(ai) {
     // TODO: 後端需新增 GET /primitive_ai_models/{id}/preview
     // 預期回應：{ preview_data, metrics_summary }
-    snackbar.value = {
-      show: true,
-      text: 'Preview 功能尚未接上後端',
-      color: 'warning'
-    }
-    console.warn('[TODO] Preview API not implemented', {
-      modelId: ai.model_id,
-      modelName: ai.model_name
-    })
+    // TODO: 實際流程應該要呼叫 API 取得真正的預覽資料
+    setBtnLoading(ai.model_id, 'preview', true)
+    setTimeout(() => {
+      console.warn('[TODO] Preview API not implemented', {
+        modelId: ai.model_id,
+        modelName: ai.model_name
+      })
+      setBtnLoading(ai.model_id, 'preview', false)
+      // 開啟預覽對話框（顯示 placeholder 資料）
+      previewTarget.value = ai
+      previewDialog.value = true
+    }, 500)
   }
 
-  // Pretrain (placeholder)
+  // Pretrain (placeholder) - 顯示模擬結果對話框
   function handlePretrain(ai) {
     // TODO: 後端需新增 POST /primitive_ai_models/{id}/pretrain
     // 預期請求：{ config?: PretrainConfig }
     // 預期回應：{ job_id, status: 'queued' }
-    snackbar.value = {
-      show: true,
-      text: 'Pretrain 功能尚未接上後端',
-      color: 'warning'
-    }
-    console.warn('[TODO] Pretrain API not implemented', {
-      modelId: ai.model_id,
-      modelName: ai.model_name
-    })
+    // TODO: 實際流程應該要呼叫 API 取得真正的訓練結果
+    setBtnLoading(ai.model_id, 'pretrain', true)
+    setTimeout(() => {
+      console.warn('[TODO] Pretrain API not implemented', {
+        modelId: ai.model_id,
+        modelName: ai.model_name
+      })
+      setBtnLoading(ai.model_id, 'pretrain', false)
+      // 開啟結果對話框（顯示 placeholder 資料）
+      pretrainResultTarget.value = ai
+      pretrainResultDialog.value = true
+    }, 500)
   }
 
   // 開啟 Retrain 對話框
@@ -444,7 +657,7 @@ h2 {
 .ai-list-header,
 .ai-list-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 80px 3fr;
+  grid-template-columns: 2fr 1fr 1fr 120px 80px 3fr;
   align-items: center;
   gap: 12px;
   padding: 14px 20px;
@@ -498,6 +711,57 @@ h2 {
   transform: scale(0.9);
 }
 
+/* Enable/Disable switch 容器 */
+.enable-switch-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.switch-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 4px;
+}
+
+/* 版本選擇器樣式 */
+.version-select {
+  max-width: 100px;
+}
+
+.version-select :deep(.v-field) {
+  font-size: 13px;
+}
+
+.version-select :deep(.v-field__input) {
+  padding: 4px 8px;
+  min-height: 32px;
+}
+
+/* 載入/錯誤/空狀態 */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  margin-top: 16px;
+  color: #666;
+}
+
+.error-state {
+  color: #d32f2f;
+}
+
 /* 新增模型按鈕區塊 */
 .ai-list-container > div:last-of-type {
   margin-top: 24px;
@@ -530,5 +794,144 @@ h2 {
 
 .metric-fields :deep(.v-text-field) {
   margin-bottom: 0;
+}
+
+/* Pretrain Result 樣式 */
+.pretrain-result-header {
+  background: linear-gradient(135deg, #c7c7c7 0%, #e0e0e0 100%);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.pretrain-metrics-summary {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.metric-card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.placeholder-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #888;
+}
+
+.pretrain-chart-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-placeholder {
+  text-align: center;
+  color: #999;
+}
+
+.chart-placeholder-text {
+  font-size: 16px;
+  margin-top: 8px;
+  color: #666;
+}
+
+.chart-placeholder-subtext {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #aaa;
+}
+
+/* Preview 樣式 */
+.preview-header {
+  background: linear-gradient(135deg, #c7c7c7 0%, #e0e0e0 100%);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.preview-model-info {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #666;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.preview-content-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.content-placeholder {
+  text-align: center;
+  color: #999;
+}
+
+.content-placeholder-text {
+  font-size: 16px;
+  margin-top: 8px;
+  color: #666;
+}
+
+.content-placeholder-subtext {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #aaa;
 }
 </style>

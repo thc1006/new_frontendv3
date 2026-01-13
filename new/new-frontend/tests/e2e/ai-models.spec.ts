@@ -49,21 +49,23 @@ test.describe('AI Models Page', () => {
     }
   })
 
-  test('should show Preview placeholder warning when clicked', async ({ page }) => {
+  test('should open Preview dialog when clicked', async ({ page }) => {
     const firstRow = page.locator('.ai-list-row').first()
     if (await firstRow.isVisible()) {
       const previewBtn = firstRow.locator('button:has-text("預覽")')
       await previewBtn.click()
-      await expect(page.locator('.v-snackbar:has-text("Preview")')).toBeVisible({ timeout: 3000 })
+      // 現在 Preview 會開啟對話框
+      await expect(page.locator('.v-dialog:has-text("Preview")')).toBeVisible({ timeout: 3000 })
     }
   })
 
-  test('should show Pretrain placeholder warning when clicked', async ({ page }) => {
+  test('should open Pretrain Result dialog when clicked', async ({ page }) => {
     const firstRow = page.locator('.ai-list-row').first()
     if (await firstRow.isVisible()) {
       const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
       await pretrainBtn.click()
-      await expect(page.locator('.v-snackbar:has-text("Pretrain")')).toBeVisible({ timeout: 3000 })
+      // 現在 Pretrain 會開啟結果對話框而非只是 snackbar
+      await expect(page.locator('.v-dialog:has-text("Pre-train Result")')).toBeVisible({ timeout: 3000 })
     }
   })
 
@@ -147,6 +149,235 @@ test.describe('AI Models Page', () => {
       // 取消
       await editDialog.locator('button:has-text("取消")').click()
       await expect(editDialog).not.toBeVisible()
+    }
+  })
+
+  test('should have version selector in each row', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      // 確認版本選擇器存在
+      const versionSelect = firstRow.locator('.version-select')
+      await expect(versionSelect).toBeVisible()
+
+      // 點擊展開下拉選單
+      await versionSelect.click()
+
+      // 應該有選項出現
+      const menuItems = page.locator('.v-list-item')
+      await expect(menuItems.first()).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should be able to select different version', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const versionSelect = firstRow.locator('.version-select')
+      await versionSelect.click()
+
+      // 等待選單出現（使用 Playwright auto-waiting）
+      const v2Option = page.locator('.v-overlay--active .v-list-item:has-text("v2")')
+      await expect(v2Option).toBeVisible({ timeout: 3000 })
+      await v2Option.click()
+
+      // 確認選單關閉
+      await expect(page.locator('.v-overlay--active .v-list')).not.toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show placeholder warning when changing version', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const versionSelect = firstRow.locator('.version-select')
+      await versionSelect.click()
+
+      // 等待選單出現並選擇 v2（使用 Playwright auto-waiting）
+      const v2Option = page.locator('.v-overlay--active .v-list-item:has-text("v2")')
+      await expect(v2Option).toBeVisible({ timeout: 3000 })
+      await v2Option.click()
+
+      // 確認顯示 placeholder 警告
+      await expect(page.locator('.v-snackbar:has-text("版本切換功能尚未接上後端")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  // Phase 1.3: Pretrain Result 模態視窗測試
+  test('should open Pretrain Result dialog after Pretrain completes', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待 loading 結束後應顯示結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有標題
+      await expect(resultDialog.locator('.v-card-title')).toContainText('Pre-train Result')
+    }
+  })
+
+  test('should show placeholder metrics in Pretrain Result dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 placeholder 指標資訊區塊
+      await expect(resultDialog.locator('.pretrain-metrics-summary')).toBeVisible()
+    }
+  })
+
+  test('should show placeholder chart area in Pretrain Result dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 placeholder 圖表區塊
+      await expect(resultDialog.locator('.pretrain-chart-area')).toBeVisible()
+    }
+  })
+
+  test('should close Pretrain Result dialog with close button', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 點擊關閉
+      await resultDialog.locator('button:has-text("關閉")').click()
+      await expect(resultDialog).not.toBeVisible()
+    }
+  })
+
+  // Phase 1.4: Preview 模態視窗測試
+  test('should open Preview dialog after Preview button is clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 loading 結束後應顯示 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有標題
+      await expect(previewDialog.locator('.v-card-title')).toContainText('Preview')
+    }
+  })
+
+  test('should show model info in Preview dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有模型資訊區塊
+      await expect(previewDialog.locator('.preview-model-info')).toBeVisible()
+    }
+  })
+
+  test('should show placeholder content area in Preview dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 placeholder 內容區塊
+      await expect(previewDialog.locator('.preview-content-area')).toBeVisible()
+    }
+  })
+
+  test('should close Preview dialog with close button', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+      await previewBtn.click()
+
+      // 等待 Preview 對話框
+      const previewDialog = page.locator('.v-dialog:has-text("Preview")')
+      await expect(previewDialog).toBeVisible({ timeout: 3000 })
+
+      // 點擊關閉
+      await previewDialog.locator('button:has-text("關閉")').click()
+      await expect(previewDialog).not.toBeVisible()
+    }
+  })
+
+  // Phase 1.2: 按鈕狀態優化測試
+  test('should show loading state when Pretrain button is clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+
+      // 點擊前應該沒有 loading
+      await expect(pretrainBtn.locator('.v-progress-circular')).not.toBeVisible()
+
+      // 點擊按鈕
+      await pretrainBtn.click()
+
+      // 應該出現 loading 狀態 (v-btn 的 loading 屬性會顯示 v-progress-circular)
+      await expect(pretrainBtn.locator('.v-progress-circular')).toBeVisible({ timeout: 1000 })
+
+      // 等待 loading 結束後應顯示結果對話框
+      await expect(page.locator('.v-dialog:has-text("Pre-train Result")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show loading state when Preview button is clicked', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const previewBtn = firstRow.locator('button:has-text("預覽")')
+
+      // 點擊前應該沒有 loading
+      await expect(previewBtn.locator('.v-progress-circular')).not.toBeVisible()
+
+      // 點擊按鈕
+      await previewBtn.click()
+
+      // 應該出現 loading 狀態
+      await expect(previewBtn.locator('.v-progress-circular')).toBeVisible({ timeout: 1000 })
+
+      // 等待 loading 結束後應顯示 Preview 對話框
+      await expect(page.locator('.v-dialog:has-text("Preview")')).toBeVisible({ timeout: 3000 })
+    }
+  })
+
+  test('should show loading state when Enable/Disable switch is toggled', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      // 找到 switch 的容器（包含 loading overlay）
+      const switchContainer = firstRow.locator('.enable-switch-container')
+      const switchEl = switchContainer.locator('.v-switch')
+
+      // 點擊 switch
+      await switchEl.click()
+
+      // 應該出現 loading overlay
+      await expect(switchContainer.locator('.switch-loading')).toBeVisible({ timeout: 1000 })
+
+      // 等待 loading 結束後應顯示 snackbar
+      await expect(page.locator('.v-snackbar:has-text("啟用/停用")')).toBeVisible({ timeout: 3000 })
     }
   })
 })

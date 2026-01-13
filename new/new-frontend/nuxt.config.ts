@@ -20,7 +20,10 @@ export default defineNuxtConfig({
       offlineMapboxGLJSURL: process.env.NUXT_PUBLIC_OFFLINE_MAPBOX_GL_JS_URL || 'http://127.0.0.1/tiles/styles/basic-preview/style.json',
       // Grafana dashboard URLs
       grafanaNesUrl: process.env.NUXT_PUBLIC_GRAFANA_NES_URL || 'http://140.113.144.121:2982/d/adkys2aoyeqkgf/nes',
-      grafanaMroUrl: process.env.NUXT_PUBLIC_GRAFANA_MRO_URL || 'http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro'
+      grafanaMroUrl: process.env.NUXT_PUBLIC_GRAFANA_MRO_URL || 'http://140.113.144.121:2982/d/bdl9s0tm6mebkf/mro',
+      // TODO: 待後端提供實際 dashboard URL
+      grafanaAiModelUrl: process.env.NUXT_PUBLIC_GRAFANA_AI_MODEL_URL || '',
+      grafanaRanSliceUrl: process.env.NUXT_PUBLIC_GRAFANA_RAN_SLICE_URL || ''
     },
   }
 })
