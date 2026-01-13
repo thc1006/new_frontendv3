@@ -11,6 +11,18 @@ export default defineNuxtConfig({
   build: {
     transpile: ['vuetify'],
   },
+  // Vue Query 全域設定 - 減少不必要的重複請求
+  vueQuery: {
+    queryClientOptions: {
+      defaultOptions: {
+        queries: {
+          staleTime: 5 * 60 * 1000, // 資料新鮮度 5 分鐘
+          refetchOnWindowFocus: false, // 視窗聚焦時不自動重新請求
+          retry: 1, // 失敗只重試一次
+        },
+      },
+    },
+  },
   runtimeConfig: {
     public: {
       apiBase: '/api', // 使用相對路徑，讓 nginx 反向代理處理
