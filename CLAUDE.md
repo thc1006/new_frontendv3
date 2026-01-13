@@ -93,7 +93,7 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 
 ---
 
-# 當前實作狀態 (2026-01-14 更新)
+# 當前實作狀態 (2026-01-13 更新)
 
 ## 已完成功能
 
@@ -169,6 +169,18 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 - PR #3：已合併 (Phase 4 導航選單)
 - PR #5：已合併 (Phase 5 AI Model Evaluation)
 - PR #6：已合併 (Phase 6 Projects List + 地圖佈局)
+
+## 效能優化 (2026-01-13)
+
+| 優化項目 | 前 | 後 | 節省 |
+|---------|-----|-----|-----|
+| 圖片資源 (PNG→WebP) | 7.6 MB | 948 KB | 87.5% |
+| Vue Query staleTime | 0 ms | 5 min | 減少重複請求 |
+| console.log 清理 | 107 處 | 0 (生產環境) | 自動移除 |
+| TypeScript any (index.vue) | 9 處 | 0 處 | 完全類型安全 |
+
+新增 composable：
+- `composables/useMapbox.ts` - 可重用的地圖初始化邏輯
 
 ## 待後端實作的 API
 
@@ -249,6 +261,8 @@ new/new-frontend/
 │           └── evaluations.vue .... 評估設定
 ├── layouts/
 │   └── default.vue ................ 主佈局 (含導航選單)
+├── composables/
+│   └── useMapbox.ts ............... 可重用地圖初始化 (新增)
 ├── apis/
 │   └── Api.ts ..................... 自動生成的 API 客戶端
 ├── stores/
