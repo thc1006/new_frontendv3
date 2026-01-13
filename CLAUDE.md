@@ -139,10 +139,18 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 - E2E 測試：`new/new-frontend/tests/e2e/navigation.spec.ts` (9 個測試)
 - 設計規範：`new_design/wisdON-figma-node3-407-export/docs/navigation_spec.md`
 
+### 6. AI Model Evaluation 頁面 (100%)
+- 檔案：`new/new-frontend/pages/projects/[projectId]/ai-model-evaluation.vue`
+- 左側 Model list 面板：NES / Positioning 切換開關
+- 右側 Model Inference 面板：視覺化區域 (placeholder)
+- 切換開關觸發 placeholder handler (待後端 API)
+- E2E 測試：`new/new-frontend/tests/e2e/ai-model-evaluation.spec.ts` (11 個測試)
+
 ## PR 狀態
 - PR #1：已合併 (Phase 1 AI Models 增強)
 - PR #2：已合併 (Phase 3 Profile 頁面)
-- PR #3：待審核 (Phase 4 導航選單) - https://github.com/thc1006/new_frontendv3/pull/3
+- PR #3：已合併 (Phase 4 導航選單)
+- PR #4：待建立 (Phase 5 AI Model Evaluation)
 
 ## 待後端實作的 API
 
@@ -151,6 +159,7 @@ PATCH /primitive_ai_models/{id}/enable    → 啟用/停用模型
 GET   /primitive_ai_models/{id}/preview   → 預覽模型
 POST  /primitive_ai_models/{id}/pretrain  → 預訓練
 POST  /primitive_ai_models/{id}/retrain   → 重新訓練 (需 round, epochs 參數)
+GET   /projects/{projectId}/ai-model-evaluation/inference → AI 模型推斷 (Phase 5)
 ```
 
 ---
@@ -212,11 +221,12 @@ new/new-frontend/
 │   ├── profile.vue ................ 個人資料頁面
 │   ├── ai-models.vue .............. AI 模型管理
 │   └── projects/[projectId]/
+│       ├── ai-model-evaluation.vue  AI 模型評估 (Phase 5)
 │       ├── performance/
 │       │   ├── nes.vue ............ NES Grafana
 │       │   ├── mro.vue ............ MRO Grafana
 │       │   ├── ai-model.vue ....... AI 模型效能 Grafana
-│       │   └── ran-slice.vue ...... Ran Slice 效能 Grafana
+│       │   └── ran-slice.vue ...... RAN Slice 效能 Grafana
 │       └── config/
 │           └── evaluations.vue .... 評估設定
 ├── layouts/
@@ -230,7 +240,8 @@ new/new-frontend/
 │   ├── ai-models.spec.ts .......... AI 模型測試 (32)
 │   ├── performance.spec.ts ........ 效能頁面測試 (10)
 │   ├── profile.spec.ts ............ 個人資料測試 (9)
-│   └── navigation.spec.ts ......... 導航選單測試 (9)
+│   ├── navigation.spec.ts ......... 導航選單測試 (9)
+│   └── ai-model-evaluation.spec.ts  AI 模型評估測試 (11)
 ├── nuxt.config.ts ................. Nuxt 設定 (含環境變數)
 └── .env ........................... 環境變數
 ```
@@ -255,11 +266,11 @@ new_design/
 
 ---
 
-# 待規劃功能 (Phase 5+)
+# 待規劃功能 (Phase 6+)
 
-> 詳細規劃請參考 `.claude/handoff.md` 中的 Phase 5 和 Phase 6 章節。
+> 詳細規劃請參考 `.claude/handoff.md` 中的 Phase 6 章節。
 
 | Phase | 功能 | 優先級 | 狀態 |
 |-------|------|--------|------|
-| 5 | AI Model Evaluation 頁面 | P1 (高) | 待實作 - 全新功能 |
+| 5 | AI Model Evaluation 頁面 | P1 (高) | ✅ 已完成 |
 | 6 | Projects List 改進 | P2 (中) | 待實作 - INDOOR/OUTDOOR 分類 |
