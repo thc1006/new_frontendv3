@@ -70,7 +70,7 @@ test.describe('Navigation Menu', () => {
       await expect(aiModelLink).toBeVisible({ timeout: 3000 })
     })
 
-    test('should have Ran Slice Performance link in Performance submenu', async ({ page }) => {
+    test('should have RAN Slice Performance link in Performance submenu', async ({ page }) => {
       await page.goto(`/projects/${testProjectId}/overviews`)
 
       // 點開選單
@@ -80,8 +80,8 @@ test.describe('Navigation Menu', () => {
       // 展開 Performance 群組（點擊群組標題）
       await page.locator('.v-navigation-drawer .v-list-group__header:has-text("Performance")').click()
 
-      // 確認有 Ran Slice Performance 連結（精確匹配）
-      const ranSliceLink = page.locator('.v-navigation-drawer .v-list-item').filter({ hasText: /^Ran Slice Performance$/ })
+      // 確認有 RAN Slice Performance 連結（精確匹配）
+      const ranSliceLink = page.locator('.v-navigation-drawer .v-list-item').filter({ hasText: /^RAN Slice Performance$/ })
       await expect(ranSliceLink).toBeVisible({ timeout: 3000 })
     })
 
@@ -99,16 +99,16 @@ test.describe('Navigation Menu', () => {
       await expect(page).toHaveURL(`/projects/${testProjectId}/performance/ai-model`)
     })
 
-    test('should navigate to Ran Slice Performance page', async ({ page }) => {
+    test('should navigate to RAN Slice Performance page', async ({ page }) => {
       await page.goto(`/projects/${testProjectId}/overviews`)
 
       // 點開選單
       await page.locator('.v-app-bar-nav-icon').click()
       await page.waitForSelector('.v-navigation-drawer.v-navigation-drawer--active', { timeout: 5000 })
 
-      // 展開 Performance 群組並點擊 Ran Slice Performance
+      // 展開 Performance 群組並點擊 RAN Slice Performance
       await page.locator('.v-navigation-drawer .v-list-group__header:has-text("Performance")').click()
-      await page.locator('.v-navigation-drawer .v-list-item').filter({ hasText: /^Ran Slice Performance$/ }).click()
+      await page.locator('.v-navigation-drawer .v-list-item').filter({ hasText: /^RAN Slice Performance$/ }).click()
 
       await expect(page).toHaveURL(`/projects/${testProjectId}/performance/ran-slice`)
     })

@@ -133,44 +133,16 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 - 修改密碼功能：含驗證（密碼長度、密碼一致性）
 - E2E 測試：`new/new-frontend/tests/e2e/profile.spec.ts` (9 個測試)
 
-## 進行中功能
-
-### Phase 4: 導航選單對齊 (進行中)
+### 5. 導航選單對齊 (100%)
+- 檔案：`new/new-frontend/layouts/default.vue`
+- Performance 子選單新增：AI Model Performance、RAN Slice Performance
+- E2E 測試：`new/new-frontend/tests/e2e/navigation.spec.ts` (9 個測試)
 - 設計規範：`new_design/wisdON-figma-node3-407-export/docs/navigation_spec.md`
-- 目標：將側邊欄選單對齊設計規範
-
-#### 已完成
-- 分析導航設計規範
-- 撰寫 E2E 測試 (TDD Red)：`new/new-frontend/tests/e2e/navigation.spec.ts` (8 個測試)
-
-#### 待完成
-- 更新 `layouts/default.vue` 的 projectMenu
-- 在 Performance 子選單加入 AI Model Performance、Ran Slice Performance
-- 確認所有測試通過
-- 提交變更
-
-#### 設計規範摘要 (navigation_spec.md)
-專案選單應包含：
-```
-- Profile → /profile
-- Overview → /projects/:projectId/overview
-- Configuration
-  - AI model → /projects/:projectId/config/ai-model
-- Federal learning → /projects/:projectId/federated
-- gNB → /projects/:projectId/gnb
-- Evaluation → /projects/:projectId/evaluation
-- Simulation → /projects/:projectId/simulation
-- Performance
-  - Network Performance → /projects/:projectId/performance/network
-  - AI Model Performance → /projects/:projectId/performance/ai-model
-  - Ran Slice Performance → /projects/:projectId/performance/ran-slice
-- Projects List → /projects
-- Project Setting → /projects/:projectId/settings
-```
 
 ## PR 狀態
 - PR #1：已合併 (Phase 1 AI Models 增強)
-- PR #2：待審核 (Phase 3 Profile 頁面) - https://github.com/thc1006/new_frontendv3/pull/2
+- PR #2：已合併 (Phase 3 Profile 頁面)
+- PR #3：待審核 (Phase 4 導航選單) - https://github.com/thc1006/new_frontendv3/pull/3
 
 ## 待後端實作的 API
 
@@ -258,7 +230,7 @@ new/new-frontend/
 │   ├── ai-models.spec.ts .......... AI 模型測試 (32)
 │   ├── performance.spec.ts ........ 效能頁面測試 (10)
 │   ├── profile.spec.ts ............ 個人資料測試 (9)
-│   └── navigation.spec.ts ......... 導航選單測試 (8) [Phase 4 TDD]
+│   └── navigation.spec.ts ......... 導航選單測試 (9)
 ├── nuxt.config.ts ................. Nuxt 設定 (含環境變數)
 └── .env ........................... 環境變數
 ```
