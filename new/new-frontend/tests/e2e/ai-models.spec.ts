@@ -58,12 +58,13 @@ test.describe('AI Models Page', () => {
     }
   })
 
-  test('should show Pretrain placeholder warning when clicked', async ({ page }) => {
+  test('should open Pretrain Result dialog when clicked', async ({ page }) => {
     const firstRow = page.locator('.ai-list-row').first()
     if (await firstRow.isVisible()) {
       const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
       await pretrainBtn.click()
-      await expect(page.locator('.v-snackbar:has-text("Pretrain")')).toBeVisible({ timeout: 3000 })
+      // 現在 Pretrain 會開啟結果對話框而非只是 snackbar
+      await expect(page.locator('.v-dialog:has-text("Pre-train Result")')).toBeVisible({ timeout: 3000 })
     }
   })
 
@@ -198,6 +199,68 @@ test.describe('AI Models Page', () => {
     }
   })
 
+  // Phase 1.3: Pretrain Result 模態視窗測試
+  test('should open Pretrain Result dialog after Pretrain completes', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待 loading 結束後應顯示結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有標題
+      await expect(resultDialog.locator('.v-card-title')).toContainText('Pre-train Result')
+    }
+  })
+
+  test('should show placeholder metrics in Pretrain Result dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 placeholder 指標資訊區塊
+      await expect(resultDialog.locator('.pretrain-metrics-summary')).toBeVisible()
+    }
+  })
+
+  test('should show placeholder chart area in Pretrain Result dialog', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 確認有 placeholder 圖表區塊
+      await expect(resultDialog.locator('.pretrain-chart-area')).toBeVisible()
+    }
+  })
+
+  test('should close Pretrain Result dialog with close button', async ({ page }) => {
+    const firstRow = page.locator('.ai-list-row').first()
+    if (await firstRow.isVisible()) {
+      const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+      await pretrainBtn.click()
+
+      // 等待結果對話框
+      const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+      await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+      // 點擊關閉
+      await resultDialog.locator('button:has-text("關閉")').click()
+      await expect(resultDialog).not.toBeVisible()
+    }
+  })
+
   // Phase 1.2: 按鈕狀態優化測試
   test('should show loading state when Pretrain button is clicked', async ({ page }) => {
     const firstRow = page.locator('.ai-list-row').first()
@@ -213,8 +276,8 @@ test.describe('AI Models Page', () => {
       // 應該出現 loading 狀態 (v-btn 的 loading 屬性會顯示 v-progress-circular)
       await expect(pretrainBtn.locator('.v-progress-circular')).toBeVisible({ timeout: 1000 })
 
-      // 等待 loading 結束後應顯示 snackbar
-      await expect(page.locator('.v-snackbar:has-text("Pretrain")')).toBeVisible({ timeout: 3000 })
+      // 等待 loading 結束後應顯示結果對話框
+      await expect(page.locator('.v-dialog:has-text("Pre-train Result")')).toBeVisible({ timeout: 3000 })
     }
   })
 

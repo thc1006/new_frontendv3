@@ -175,6 +175,57 @@
       </v-card>
     </v-dialog>
 
+    <!-- Pretrain Result Modal -->
+    <v-dialog v-model="pretrainResultDialog" max-width="900">
+      <v-card>
+        <v-card-title class="pretrain-result-header">Pre-train Result</v-card-title>
+        <v-card-subtitle v-if="pretrainResultTarget" class="pb-2">
+          {{ pretrainResultTarget.model_name }} (ID: {{ pretrainResultTarget.model_id }})
+        </v-card-subtitle>
+        <v-card-text>
+          <!-- 指標摘要區塊 -->
+          <div class="pretrain-metrics-summary">
+            <div class="metrics-row">
+              <div class="metric-card">
+                <div class="metric-label">Accuracy</div>
+                <div class="metric-value">92.5%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Loss</div>
+                <div class="metric-value">0.0831</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Epochs</div>
+                <div class="metric-value">50</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Training Time</div>
+                <div class="metric-value">12m 34s</div>
+              </div>
+            </div>
+            <div class="placeholder-notice">
+              <v-icon size="small">mdi-information-outline</v-icon>
+              <span>以上為 placeholder 資料，待接入後端 API</span>
+            </div>
+          </div>
+          <!-- 圖表區塊 (placeholder) -->
+          <div class="pretrain-chart-area">
+            <div class="chart-placeholder">
+              <v-icon size="64" color="grey-lighten-1">mdi-chart-line</v-icon>
+              <div class="chart-placeholder-text">Training Loss / Accuracy Chart</div>
+              <div class="chart-placeholder-subtext">
+                TODO: 待接入 GET /primitive_ai_models/{'{'}id{'}'}/pretrain/result
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="pretrainResultDialog = false">關閉</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 新增模型按鈕 -->
     <div style="margin-top:32px; text-align:right;">
       <v-btn color="success" @click="addDialog = true">新增模型</v-btn>
@@ -242,6 +293,10 @@
   const retrainTarget = ref(null)
   const retrainConfig = ref({ round: 10, epochs: 5 })
   const isRetraining = ref(false)
+
+  // Pretrain Result 相關狀態
+  const pretrainResultDialog = ref(false)
+  const pretrainResultTarget = ref(null)
 
   // 版本選擇器狀態
   const selectedVersions = ref({})
@@ -429,23 +484,22 @@
     }, 500)
   }
 
-  // Pretrain (placeholder)
+  // Pretrain (placeholder) - 顯示模擬結果對話框
   function handlePretrain(ai) {
     // TODO: 後端需新增 POST /primitive_ai_models/{id}/pretrain
     // 預期請求：{ config?: PretrainConfig }
     // 預期回應：{ job_id, status: 'queued' }
+    // TODO: 實際流程應該要呼叫 API 取得真正的訓練結果
     setBtnLoading(ai.model_id, 'pretrain', true)
     setTimeout(() => {
-      snackbar.value = {
-        show: true,
-        text: 'Pretrain 功能尚未接上後端',
-        color: 'warning'
-      }
       console.warn('[TODO] Pretrain API not implemented', {
         modelId: ai.model_id,
         modelName: ai.model_name
       })
       setBtnLoading(ai.model_id, 'pretrain', false)
+      // 開啟結果對話框（顯示 placeholder 資料）
+      pretrainResultTarget.value = ai
+      pretrainResultDialog.value = true
     }, 500)
   }
 
@@ -686,5 +740,80 @@ h2 {
 
 .metric-fields :deep(.v-text-field) {
   margin-bottom: 0;
+}
+
+/* Pretrain Result 樣式 */
+.pretrain-result-header {
+  background: linear-gradient(135deg, #c7c7c7 0%, #e0e0e0 100%);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.pretrain-metrics-summary {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.metric-card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.placeholder-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #888;
+}
+
+.pretrain-chart-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-placeholder {
+  text-align: center;
+  color: #999;
+}
+
+.chart-placeholder-text {
+  font-size: 16px;
+  margin-top: 8px;
+  color: #666;
+}
+
+.chart-placeholder-subtext {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #aaa;
 }
 </style>
