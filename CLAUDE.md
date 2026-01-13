@@ -93,7 +93,7 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 
 ---
 
-# 當前實作狀態 (2026-01-13 更新)
+# 當前實作狀態 (2026-01-14 更新)
 
 ## 已完成功能
 
@@ -146,20 +146,29 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 - 切換開關觸發 placeholder handler (待後端 API)
 - E2E 測試：`new/new-frontend/tests/e2e/ai-model-evaluation.spec.ts` (11 個測試)
 
-### 7. Projects List 改進 (100%)
+### 7. Projects List 頁面 (100%) - 含地圖功能
 - 檔案：`new/new-frontend/pages/index.vue`
-- OUTDOOR/INDOOR 分類標籤：藥丸形狀深灰底白字
-- 專案卡片樣式升級：日期藍色藥丸、用戶灰色藥丸
-- View Project (藍字) / Delete Project (紅字) 連結
-- CREATE NEW PROJECT 按鈕 (藍底白字)
-- E2E 測試：`new/new-frontend/tests/e2e/projects-list.spec.ts` (12 個測試)
+- **新版佈局**：左側地圖 (55%) + 右側專案面板 (45%)
+- **地圖功能**：
+  - Mapbox GL 地圖，顯示專案位置的紅色 markers
+  - 依據專案 `lat`/`lon` 座標定位
+  - 點擊 marker 跳轉到專案詳情
+  - 自動調整視野包含所有 markers
+- **卡片互動**：
+  - Hover 卡片 → 放大對應 marker + 地圖移動到該位置
+  - Hover marker → 高亮對應卡片
+- **分類標籤**：OUTDOOR/INDOOR 藥丸形狀深灰底白字
+- **卡片樣式**：日期藍色藥丸、用戶灰色藥丸
+- **按鈕**：CREATE NEW PROJECT 在面板底部
+- **響應式**：小螢幕時變為上下佈局
+- E2E 測試：`new/new-frontend/tests/e2e/projects-list.spec.ts` (17 個測試)
 
 ## PR 狀態
 - PR #1：已合併 (Phase 1 AI Models 增強)
 - PR #2：已合併 (Phase 3 Profile 頁面)
 - PR #3：已合併 (Phase 4 導航選單)
 - PR #5：已合併 (Phase 5 AI Model Evaluation)
-- PR #6：待建立 (Phase 6 Projects List 改進)
+- PR #6：已合併 (Phase 6 Projects List + 地圖佈局)
 
 ## 待後端實作的 API
 
@@ -251,7 +260,7 @@ new/new-frontend/
 │   ├── profile.spec.ts ............ 個人資料測試 (9)
 │   ├── navigation.spec.ts ......... 導航選單測試 (9)
 │   ├── ai-model-evaluation.spec.ts  AI 模型評估測試 (11)
-│   └── projects-list.spec.ts ...... 專案列表測試 (12)
+│   └── projects-list.spec.ts ...... 專案列表測試 (17)
 ├── nuxt.config.ts ................. Nuxt 設定 (含環境變數)
 └── .env ........................... 環境變數
 ```
@@ -284,4 +293,17 @@ new_design/
 |-------|------|--------|------|
 | 5 | AI Model Evaluation 頁面 | P1 (高) | ✅ 已完成 |
 | 6 | Projects List 改進 | P2 (中) | ✅ 已完成 (INDOOR/OUTDOOR 分類) |
-| 6.3 | Projects List 地圖背景 | P3 (低) | 待實作 (可選) |
+| 6.3 | Projects List 地圖背景 | P3 (低) | ✅ 已完成 (Mapbox + markers + 互動) |
+
+## 測試統計
+
+| 測試檔案 | 測試數量 |
+|----------|----------|
+| login.spec.ts | 4 |
+| ai-models.spec.ts | 32 |
+| performance.spec.ts | 10 |
+| profile.spec.ts | 9 |
+| navigation.spec.ts | 9 |
+| ai-model-evaluation.spec.ts | 11 |
+| projects-list.spec.ts | 17 |
+| **總計** | **83** |
