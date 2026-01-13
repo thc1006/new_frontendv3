@@ -118,16 +118,26 @@ test.describe('Projects List Page', () => {
       await page.goto('/')
 
       // 等待專案卡片載入
-      const deleteLink = page.locator('.project-card .delete-project-link').first()
-      await expect(deleteLink).toBeVisible({ timeout: 10000 })
+      const deleteBtn = page.locator('.project-card .delete-project-link').first()
+      await expect(deleteBtn).toBeVisible({ timeout: 10000 })
 
-      // 設置 dialog handler
-      page.on('dialog', dialog => dialog.dismiss())
+      // 設置 dialog handler 並驗證對話框內容
+      let dialogTriggered = false
+      page.on('dialog', async dialog => {
+        dialogTriggered = true
+        expect(dialog.type()).toBe('confirm')
+        expect(dialog.message()).toContain('Are you sure')
+        await dialog.dismiss()
+      })
 
       // 點擊刪除
-      await deleteLink.click()
+      await deleteBtn.click()
 
-      // 確認對話框出現（由 page.on 處理）
+      // 等待一下確保 dialog 有時間觸發
+      await page.waitForTimeout(500)
+
+      // 驗證對話框確實被觸發
+      expect(dialogTriggered).toBe(true)
     })
   })
 })

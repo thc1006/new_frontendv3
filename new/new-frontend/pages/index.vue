@@ -53,8 +53,8 @@
 
     <!-- 專案列表 -->
     <div v-else class="projects-content">
-      <!-- OUTDOOR 區塊 -->
-      <div class="category-section">
+      <!-- OUTDOOR 區塊 (僅在有專案時顯示) -->
+      <div v-if="outdoorProjects.length > 0" class="category-section">
         <div class="category-label outdoor-label">OUTDOOR</div>
         <div class="category-projects">
           <div
@@ -71,14 +71,14 @@
               <v-icon size="14">mdi-account</v-icon>
               <span>{{ project.owner?.account }}</span>
             </div>
-            <a class="view-project-link" @click="viewProject(project)">View Project</a>
-            <a class="delete-project-link" @click="deleteProject(project)">Delete Project</a>
+            <button class="view-project-link" @click="viewProject(project)">View Project</button>
+            <button class="delete-project-link" @click="deleteProject(project)">Delete Project</button>
           </div>
         </div>
       </div>
 
-      <!-- INDOOR 區塊 -->
-      <div class="category-section">
+      <!-- INDOOR 區塊 (僅在有專案時顯示) -->
+      <div v-if="indoorProjects.length > 0" class="category-section">
         <div class="category-label indoor-label">INDOOR</div>
         <div class="category-projects">
           <div
@@ -95,8 +95,8 @@
               <v-icon size="14">mdi-account</v-icon>
               <span>{{ project.owner?.account }}</span>
             </div>
-            <a class="view-project-link" @click="viewProject(project)">View Project</a>
-            <a class="delete-project-link" @click="deleteProject(project)">Delete Project</a>
+            <button class="view-project-link" @click="viewProject(project)">View Project</button>
+            <button class="delete-project-link" @click="deleteProject(project)">Delete Project</button>
           </div>
         </div>
       </div>
@@ -152,16 +152,30 @@ const { data: projects, isPending, isError, error } = useQuery({
   enabled: !!userStore.user
 })
 
+// 安全取得專案 ID，處理 null/undefined 情況
+const getProjectId = (project: any): number => {
+  const rawId = project?.project_id
+  if (rawId == null) return 0
+  const numId = Number(rawId)
+  return Number.isFinite(numId) ? numId : 0
+}
+
 // TODO: 後端目前無 category 欄位，暫時使用 project_id 奇偶數模擬分類
 // 待後端擴充後改為：project.category === 'OUTDOOR'
 const outdoorProjects = computed(() => {
   if (!projects.value) return []
-  return projects.value.filter((p: any) => getProjectId(p) % 2 === 1)
+  return projects.value.filter((p: any) => {
+    const id = getProjectId(p)
+    return id > 0 && id % 2 === 1
+  })
 })
 
 const indoorProjects = computed(() => {
   if (!projects.value) return []
-  return projects.value.filter((p: any) => getProjectId(p) % 2 === 0)
+  return projects.value.filter((p: any) => {
+    const id = getProjectId(p)
+    return id > 0 && id % 2 === 0
+  })
 })
 
 // Function to create a new project
@@ -169,22 +183,26 @@ const navigateToCreate = () => {
   router.push('/projects/create')
 }
 
-// Utility function to format dates consistently
+// 格式化日期，處理空字串和無效值
 const formatDate = (dateString: string) => {
+  if (!dateString || dateString.trim() === '') {
+    return '-'
+  }
   try {
-    return new Date(dateString).toLocaleDateString('zh-TW', {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      return '-'
+    }
+    return date.toLocaleDateString('zh-TW', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     })
   } catch (e) {
     console.error('Date formatting error:', e)
-    return 'Invalid date'
+    return '-'
   }
 }
-
-// Helper to get project ID consistently
-const getProjectId = (project: any) => project.project_id
 
 // Function to view a project and check if it has RUs
 const viewProject = async (project: any) => {
@@ -331,7 +349,9 @@ const handleDialogClose = () => {
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   padding: 16px;
-  width: 240px;
+  min-width: 200px;
+  max-width: 280px;
+  flex: 1 1 240px;
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
 }
 
@@ -366,27 +386,29 @@ const handleDialogClose = () => {
   margin-bottom: 12px;
 }
 
-.view-project-link {
+.view-project-link,
+.delete-project-link {
   display: block;
-  color: #006ab5;
   font-size: 14px;
   cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+
+.view-project-link {
+  color: #006ab5;
   margin-bottom: 4px;
 }
 
-.view-project-link:hover {
+.view-project-link:hover,
+.delete-project-link:hover {
   text-decoration: underline;
 }
 
 .delete-project-link {
-  display: block;
   color: #b50003;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.delete-project-link:hover {
-  text-decoration: underline;
 }
 
 @media (max-width: 768px) {
@@ -397,7 +419,8 @@ const handleDialogClose = () => {
   }
 
   .project-card {
-    width: 100%;
+    flex: 1 1 100%;
+    max-width: 100%;
   }
 }
 </style>
