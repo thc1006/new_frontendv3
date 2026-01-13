@@ -1,7 +1,7 @@
 <template>
   <div class="performance-container">
     <div class="performance-header">
-      <h2>Performance - Ran Slice</h2>
+      <h2>Performance - RAN Slice</h2>
       <v-btn color="primary" size="small" @click="refreshIframe">
         <v-icon left>mdi-refresh</v-icon>
         重新整理
@@ -20,7 +20,7 @@
       />
       <div v-else class="placeholder-content">
         <v-icon size="64" color="grey-lighten-1">mdi-chart-timeline-variant</v-icon>
-        <div class="placeholder-text">Ran Slice Performance Dashboard</div>
+        <div class="placeholder-text">RAN Slice Performance Dashboard</div>
         <div class="placeholder-subtext">
           TODO: 待設定 NUXT_PUBLIC_GRAFANA_RAN_SLICE_URL 環境變數
         </div>

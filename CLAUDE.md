@@ -93,7 +93,7 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 
 ---
 
-# 當前實作狀態 (2026-01-06 更新)
+# 當前實作狀態 (2026-01-13 更新)
 
 ## 已完成功能
 
@@ -108,20 +108,41 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 
 | 按鈕 | 前端 UI | 後端 API | 狀態 |
 |------|---------|----------|------|
-| Pretrain | ✅ | ❌ | Placeholder (顯示「尚未接上後端」) |
-| Preview | ✅ | ❌ | Placeholder |
+| Pretrain | ✅ | ❌ | Placeholder (含結果模態視窗) |
+| Preview | ✅ | ❌ | Placeholder (含預覽模態視窗) |
 | Enable/Disable | ✅ | ❌ | Placeholder |
 | Retrain | ✅ | ❌ | Placeholder (有完整對話框) |
 | Update | ✅ | ✅ | 完成 |
 | Delete | ✅ | ✅ | 完成 (有二次確認) |
 
-- E2E 測試：`new/new-frontend/tests/e2e/ai-models.spec.ts` (11 個測試)
+- 版本選擇器：可選擇不同模型版本
+- 按鈕狀態優化：根據模型狀態動態顯示/禁用
+- E2E 測試：`new/new-frontend/tests/e2e/ai-models.spec.ts` (32 個測試)
 
 ### 3. Performance 頁面 (100%)
 - NES：`new/new-frontend/pages/projects/[projectId]/performance/nes.vue`
 - MRO：`new/new-frontend/pages/projects/[projectId]/performance/mro.vue`
+- AI Model：`new/new-frontend/pages/projects/[projectId]/performance/ai-model.vue`
+- Ran Slice：`new/new-frontend/pages/projects/[projectId]/performance/ran-slice.vue`
 - Grafana URL 已環境變數化
-- E2E 測試：`new/new-frontend/tests/e2e/performance.spec.ts` (6 個測試)
+- E2E 測試：`new/new-frontend/tests/e2e/performance.spec.ts` (10 個測試)
+
+### 4. Profile 頁面 (100%)
+- 檔案：`new/new-frontend/pages/profile.vue`
+- 顯示用戶資訊：帳號、電子郵件、角色、建立日期
+- 修改密碼功能：含驗證（密碼長度、密碼一致性）
+- E2E 測試：`new/new-frontend/tests/e2e/profile.spec.ts` (9 個測試)
+
+### 5. 導航選單對齊 (100%)
+- 檔案：`new/new-frontend/layouts/default.vue`
+- Performance 子選單新增：AI Model Performance、RAN Slice Performance
+- E2E 測試：`new/new-frontend/tests/e2e/navigation.spec.ts` (9 個測試)
+- 設計規範：`new_design/wisdON-figma-node3-407-export/docs/navigation_spec.md`
+
+## PR 狀態
+- PR #1：已合併 (Phase 1 AI Models 增強)
+- PR #2：已合併 (Phase 3 Profile 頁面)
+- PR #3：待審核 (Phase 4 導航選單) - https://github.com/thc1006/new_frontendv3/pull/3
 
 ## 待後端實作的 API
 
@@ -188,18 +209,44 @@ new/new-frontend/
 ├── pages/
 │   ├── login.vue .................. 登入頁面
 │   ├── index.vue .................. 首頁 (專案列表)
+│   ├── profile.vue ................ 個人資料頁面
 │   ├── ai-models.vue .............. AI 模型管理
 │   └── projects/[projectId]/
 │       ├── performance/
 │       │   ├── nes.vue ............ NES Grafana
-│       │   └── mro.vue ............ MRO Grafana
+│       │   ├── mro.vue ............ MRO Grafana
+│       │   ├── ai-model.vue ....... AI 模型效能 Grafana
+│       │   └── ran-slice.vue ...... Ran Slice 效能 Grafana
 │       └── config/
 │           └── evaluations.vue .... 評估設定
+├── layouts/
+│   └── default.vue ................ 主佈局 (含導航選單)
 ├── apis/
 │   └── Api.ts ..................... 自動生成的 API 客戶端
 ├── stores/
 │   └── user.ts .................... 使用者狀態管理
-├── tests/e2e/ ..................... E2E 測試 (Playwright)
+├── tests/e2e/
+│   ├── login.spec.ts .............. 登入測試 (4)
+│   ├── ai-models.spec.ts .......... AI 模型測試 (32)
+│   ├── performance.spec.ts ........ 效能頁面測試 (10)
+│   ├── profile.spec.ts ............ 個人資料測試 (9)
+│   └── navigation.spec.ts ......... 導航選單測試 (9)
 ├── nuxt.config.ts ................. Nuxt 設定 (含環境變數)
 └── .env ........................... 環境變數
+```
+
+# 設計規範文件
+
+```
+new_design/
+├── wisdON-figma-node3-407-export/
+│   └── docs/
+│       ├── navigation_spec.md ..... 導航/選單規範
+│       ├── workflow.md ............ 工作流程規範
+│       └── route_map.md ........... 路由對應
+└── wisdON-nuxt-admin-pages/
+    └── pages/admin/
+        ├── pretrain.vue ........... Pretrain 結果模態設計
+        ├── preview.vue ............ Preview 模態設計
+        └── menu-*.vue ............. 選單設計
 ```
