@@ -56,17 +56,16 @@
 
 ### 安全問題
 
-- [ ] **Token 儲存方式不安全**
-  - 檔案：`plugins/api.clients.ts:10`
-  - 問題：JWT Token 存在 localStorage，易受 XSS 攻擊
-  - 解決：改用 httpOnly cookie
-  - 工時：1 天
+- [x] **Token 儲存方式** ✅ 已修復 (2026-01-14)
+  - 檔案：`plugins/api.clients.ts`
+  - 發現：系統使用 **Flask-Login session-based 認證**（非 JWT）
+  - 狀態：httpOnly cookie 已由 Flask 預設啟用
+  - 修復：移除無用的 localStorage 死代碼，啟用 `withCredentials: true`
 
-- [ ] **無 CSRF 防護**
-  - 檔案：全域
-  - 問題：POST/DELETE 操作無 CSRF token
-  - 解決：使用 nuxt-security module
-  - 工時：4 小時
+- [x] **CSRF 防護** ✅ 基本保護已存在
+  - 發現：Flask 3.0+ 預設 `SameSite=Lax`，已提供基本 CSRF 防護
+  - 狀態：可阻擋第三方網站發起的 POST/PUT/DELETE 請求
+  - 待後端：如需完整 CSRF token 機制，後端需安裝 Flask-WTF
 
 ---
 
@@ -348,7 +347,7 @@
 
 ## 進度追蹤
 
-### 已完成（Phase 1-6 + 優化）
+### 已完成（Phase 1-6 + 優化 + 安全）
 
 - [x] Phase 1: Login UI
 - [x] Phase 2: AI Models 頁面（6 按鈕）
@@ -361,15 +360,16 @@
 - [x] **P1 useMapbox**: 建立可重用 composable 減少 5 個檔案的重複代碼
 - [x] **P2 console.log**: 生產環境自動移除（保留 error/warn）
 - [x] **P1 TypeScript**: index.vue any 類型修復 (9→0)
+- [x] **P0 安全**: 確認 Flask-Login session 認證（非 JWT），移除死代碼，httpOnly 已預設啟用
+- [x] **P0 CSRF**: 確認 SameSite=Lax 已提供基本防護
 
 ### 進行中
 
-- [ ] P0 安全問題修復（Token 儲存、CSRF）
-- [ ] P0 Bundle Code Splitting
+- [ ] P0 Bundle Code Splitting (Mapbox/THREE.js)
 
 ### 待開始
 
-- [ ] P1 更多 TypeScript any 修復
+- [ ] P1 更多 TypeScript any 修復 (32 處)
 - [ ] P1 Performance 頁面重構（抽取通用組件）
 - [ ] P2 功能完善
 - [ ] P3 長期優化

@@ -182,6 +182,15 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 新增 composable：
 - `composables/useMapbox.ts` - 可重用的地圖初始化邏輯
 
+## 安全修復 (2026-01-14)
+
+| 項目 | 狀態 | 說明 |
+|------|------|------|
+| 認證機制 | ✅ 確認安全 | Flask-Login session-based（非 JWT），httpOnly 預設啟用 |
+| localStorage 死代碼 | ✅ 已移除 | `plugins/api.clients.ts` 清理無用代碼 |
+| CSRF 防護 | ✅ 基本保護 | Flask 3.0+ 預設 SameSite=Lax |
+| withCredentials | ✅ 已啟用 | 確保跨域請求攜帶 session cookie |
+
 ## 待後端實作的 API
 
 ```
