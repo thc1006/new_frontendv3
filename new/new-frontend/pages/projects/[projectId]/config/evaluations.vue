@@ -98,6 +98,69 @@
       </v-card>
     </v-dialog>
 
+    <!-- Simulation Config Dialog -->
+    <v-dialog v-model="simConfigDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h5">Simulation Configuration</v-card-title>
+        <v-card-text>
+          <v-form>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="simConfig.duration"
+                  label="Duration"
+                  type="number"
+                  outlined
+                  hint="模擬持續時間（秒）"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="simConfig.interval"
+                  label="Interval"
+                  type="number"
+                  outlined
+                  hint="取樣間隔（秒）"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-select
+                  v-model="simConfig.mode"
+                  :items="[0, 1, 2]"
+                  label="Mode"
+                  outlined
+                  hint="模擬模式"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-switch
+                  v-model="simConfig.is_full"
+                  label="Full Mode"
+                  color="primary"
+                  hint="是否啟用完整模式"
+                />
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn color="secondary" @click="simConfigDialog = false">
+            取消
+          </v-btn>
+          <v-btn color="primary" @click="applySimConfig">
+            套用
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-row v-if="isLoadingProject">
       <v-col cols="12" class="text-center">
         <v-progress-circular indeterminate color="primary" />
@@ -112,22 +175,20 @@
             Evaluation for Project ID: {{ projectId }}
           </v-card-title>
           <v-card-text>
-            <!-- Add RU Button above the map -->
+            <!-- 頂部按鈕群組 -->
             <v-row class="mb-2">
               <v-col>
                 <v-btn color="primary" @click="handleAddRU">
                   Add RU
                 </v-btn>
                 <v-btn color="primary" class="ml-2" @click="addUE">
-                  Add UE
+                  UES SETTINGS
                 </v-btn>
-                <!-- Add RU Status button -->
+                <v-btn color="primary" class="ml-2" @click="openSimConfig">
+                  SIMULATION CONFIG
+                </v-btn>
                 <v-btn color="primary" class="ml-2" @click="fetchRuPosition">
                   RU Position
-                </v-btn>
-                <!-- Add Load RU Caches button -->
-                <v-btn color="primary" class="ml-2" @click="handleSaveRU">
-                  Save RU 
                 </v-btn>
               </v-col>
             </v-row>
@@ -143,31 +204,51 @@
             </div>
           </v-card-text>
           
+          <!-- 底部控制列：左（Evaluate, Apply Config）、中（Heatmap dropdown, Show heatmap toggle）、右（Edit Model toggle） -->
           <v-card-actions>
-            <v-btn color="primary" @click="evaluateData">
-              Evaluate
-            </v-btn>
-            <v-btn color="primary" @click="applyConfig">
-              Apply Config
-            </v-btn>
-            <!-- Add heatmap type selector and showHeatmap switch -->
-            <v-select
-              v-model="selectedHeatmapType"
-              :items="heatmapTypeOptions"
-              class="ml-4"
-              style="max-width: 200px; min-width: 160px;"
-              hide-details
-              dense
-              outlined
-            />
-            <v-switch
-              v-model="showHeatmap"
-              class="ml-4"
-              color="deep-purple"
-              label="Show Heatmap"
-              hide-details
-              style="margin-left: 24px; min-width: 180px;"
-            />
+            <v-row align="center" no-gutters>
+              <!-- 左側：Evaluate, Apply Config -->
+              <v-col cols="12" md="3">
+                <v-btn color="primary" @click="evaluateData">
+                  Evaluate
+                </v-btn>
+                <v-btn color="primary" class="ml-2" @click="applyConfig">
+                  Apply Config
+                </v-btn>
+              </v-col>
+
+              <!-- 中間：Heatmap dropdown, Show heatmap toggle -->
+              <v-col cols="12" md="6" class="d-flex align-center">
+                <v-select
+                  v-model="selectedHeatmapType"
+                  :items="heatmapTypeOptions"
+                  class="ml-4"
+                  style="max-width: 200px; min-width: 160px;"
+                  hide-details
+                  dense
+                  outlined
+                />
+                <v-switch
+                  v-model="showHeatmap"
+                  class="ml-4"
+                  color="deep-purple"
+                  label="Show Heatmap"
+                  hide-details
+                  style="margin-left: 24px; min-width: 180px;"
+                />
+              </v-col>
+
+              <!-- 右側：Edit Model toggle -->
+              <v-col cols="12" md="3" class="d-flex justify-end">
+                <v-switch
+                  v-model="modelEditEnabled"
+                  color="orange"
+                  label="Edit Model"
+                  hide-details
+                  style="min-width: 150px;"
+                />
+              </v-col>
+            </v-row>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -1951,6 +2032,28 @@
   // RU Position dialog state (was GNB Status)
   const ruPositionDialog = ref(false);
   const ruPositionMessage = ref('');
+
+  // Simulation Config dialog state
+  const simConfigDialog = ref(false);
+  const simConfig = reactive({
+    duration: 10,
+    interval: 1,
+    mode: 0,
+    is_full: false
+  });
+
+  // Open Simulation Config dialog
+  function openSimConfig() {
+    simConfigDialog.value = true;
+  }
+
+  // Apply Simulation Config (placeholder)
+  function applySimConfig() {
+    // TODO: 待後端實作 API
+    // PATCH /projects/{id}/simulation-config
+    console.log('Apply Simulation Config (placeholder):', simConfig);
+    simConfigDialog.value = false;
+  }
 
   // Fetch RU Position (was fetchGnbStatus)
   async function fetchRuPosition() {

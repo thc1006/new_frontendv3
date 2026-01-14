@@ -15,63 +15,61 @@
         </div>
       </div>
 
-      <!-- 登入區塊 -->
+      <!-- 登入區塊 - Figma Node 3:2113 -->
       <div class="login-block">
-        <v-card class="login-card" elevation="12">
-          <v-card-title class="card-title">
-            <v-icon class="title-icon">mdi-account-circle</v-icon>
-            系統登入
-          </v-card-title>
-          <v-card-text>
-            <v-form ref="loginForm" v-model="valid">
-              <v-text-field
+        <div class="login-box">
+          <v-form ref="loginForm" v-model="valid" class="login-form">
+            <!-- Account 欄位 -->
+            <div class="form-row">
+              <label for="account-input" class="field-label">Account</label>
+              <input
+                id="account-input"
                 v-model="account"
-                label="帳號"
-                placeholder="請輸入帳號"
-                :rules="[rules.required]"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-account"
-                class="mb-3"
+                type="text"
+                class="field-input"
+                required
+                aria-required="true"
               />
-              <v-text-field
-                v-model="password"
-                label="密碼"
-                placeholder="請輸入密碼"
-                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-                :type="showPassword ? 'text' : 'password'"
-                :rules="[rules.required]"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-lock"
-                @click:append-inner="showPassword = !showPassword"
-              />
-            </v-form>
-          </v-card-text>
-          <v-card-actions class="card-actions">
-            <v-btn
-              variant="text"
-              color="primary"
-              @click="handleRegister"
-            >
-              註冊帳號
-            </v-btn>
-            <v-spacer />
-            <v-btn
-              color="primary"
-              size="large"
-              :disabled="!valid"
-              :loading="loginMutation.isPending.value"
-              @click="submit"
-            >
-              <v-icon left>mdi-login</v-icon>
-              登入
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-        <div class="register-hint">
-          <span>New Friend? -> </span>
-          <a href="/register">Register Here</a>
+            </div>
+            <!-- Password 欄位 -->
+            <div class="form-row">
+              <label for="password-input" class="field-label">Password</label>
+              <div class="password-wrapper">
+                <input
+                  id="password-input"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  class="field-input"
+                  required
+                  aria-required="true"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  @click="showPassword = !showPassword"
+                >
+                  <v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                </button>
+              </div>
+            </div>
+            <!-- Login 按鈕 -->
+            <div class="form-actions">
+              <button
+                type="button"
+                class="login-btn"
+                :disabled="!account || !password || loginMutation.isPending.value"
+                @click="submit"
+              >
+                Login
+              </button>
+            </div>
+            <!-- No Account? Register -->
+            <div class="register-row">
+              <span class="no-account-text">No Account?</span>
+              <a href="/register" class="register-link">Register</a>
+            </div>
+          </v-form>
         </div>
       </div>
     </div>
@@ -124,8 +122,8 @@
   }
 
   async function submit() {
-    loginForm.value?.validate()
-    if (!valid.value) return
+    // 因為使用原生 input，直接檢查欄位值
+    if (!account.value || !password.value) return
 
     loginMutation.mutate(
       { account: account.value, password: password.value },
@@ -259,10 +257,10 @@
   }
 }
 
-// 登入區塊
+// 登入區塊 - Figma Node 3:2113
 .login-block {
   position: absolute;
-  bottom: 20%;
+  bottom: 15%;
   right: 5%;
   animation: riseIn 0.8s ease 0.3s both;
 
@@ -284,75 +282,149 @@
   }
 }
 
-.login-card {
-  min-width: 340px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  overflow: hidden;
+// Figma 登入框樣式
+.login-box {
+  min-width: 400px;
+  padding: 40px 24px 24px;
+  background: #c2c2c2; // Figma 規範灰色
+  border-radius: 17.69px; // Figma 規範圓角
+  box-shadow: 0px 3.5px 3.5px rgba(0, 0, 0, 0.25);
 
-  // 卡片頂部漸層裝飾
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #1976d2, #42a5f5, #1976d2);
+  @media (max-width: 768px) {
+    min-width: 320px;
+    padding: 30px 20px 20px;
   }
 }
 
-.card-title {
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.field-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: #000;
+  min-width: 160px;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+    min-width: 100px;
+  }
+}
+
+.field-input {
+  flex: 1;
+  height: 53px;
+  padding: 0 16px;
+  background: rgba(85, 85, 85, 0.6); // Figma 輸入框背景
+  border: none;
+  border-radius: 17.69px;
+  font-size: 18px;
+  color: #fff;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(0, 77, 255, 0.3);
+  }
+}
+
+// 密碼欄位容器 (含切換按鈕)
+.password-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .field-input {
+    padding-right: 48px; // 預留切換按鈕空間
+  }
+}
+
+// 密碼顯示/隱藏切換按鈕 - Figma Node 3:487 eye icon
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 20px 24px 12px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.2s;
 
-.title-icon {
-  font-size: 28px;
-  color: #1976d2;
-}
+  &:hover {
+    color: #fff;
+  }
 
-.card-actions {
-  padding: 8px 16px 20px;
-}
-
-// 輸入欄位優化
-:deep(.v-field) {
-  border-radius: 8px;
-  transition: box-shadow 0.2s ease;
-
-  &:focus-within {
-    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+  &:focus {
+    outline: 2px solid rgba(0, 77, 255, 0.5);
+    border-radius: 4px;
   }
 }
 
-:deep(.v-field__prepend-inner) {
-  color: #666;
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
 }
 
-.register-hint {
-  text-align: right;
-  margin-top: 1em;
-  color: #E7E3E3;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+.login-btn {
+  padding: 10px 32px;
+  background: #004dff; // Figma 按鈕藍色
+  border: none;
+  border-radius: 17.69px;
+  font-family: 'Inter', sans-serif;
+  font-size: 21px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
 
-  a {
-    color: #90caf9;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
+  &:hover:not(:disabled) {
+    background: #0040d6;
+  }
 
-    &:hover {
-      color: #bbdefb;
-      text-decoration: underline;
-    }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.register-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.no-account-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #000;
+}
+
+.register-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #000;
+  text-decoration: underline;
+
+  &:hover {
+    color: #004dff;
   }
 }
 </style>

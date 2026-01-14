@@ -14,9 +14,9 @@
 
 <template>
   <div class="container" @click="handleClick">
-    <img src="/Webpage-Maintening.png" alt="網頁維護中">
+    <img src="/Webpage-Maintening.webp" alt="網頁維護中">
     <transition name="fade">
-      <img v-if="showCapyengineer" src="/Alvin.png" alt="Capyengineer" class="capy-image">
+      <img v-if="showCapyengineer" src="/Alvin.webp" alt="Capyengineer" class="capy-image">
     </transition>
   </div>
 </template>

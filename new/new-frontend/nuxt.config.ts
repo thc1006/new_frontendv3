@@ -11,6 +11,40 @@ export default defineNuxtConfig({
   build: {
     transpile: ['vuetify'],
   },
+  vite: {
+    // 生產環境移除 console.log/debugger，保留 error/warn 用於錯誤追蹤
+    esbuild: {
+      drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+      pure: process.env.NODE_ENV === 'production' ? ['console.log'] : [],
+    },
+    // Code Splitting: 將大型依賴分離成獨立 chunk
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // 地圖相關 (~800KB)
+            'mapbox': ['mapbox-gl'],
+            // 3D 渲染相關 (~600KB)
+            'three': ['three'],
+            // Vuetify UI 組件 (~300KB)
+            'vuetify': ['vuetify'],
+          },
+        },
+      },
+    },
+  },
+  // Vue Query 全域設定 - 減少不必要的重複請求
+  vueQuery: {
+    queryClientOptions: {
+      defaultOptions: {
+        queries: {
+          staleTime: 5 * 60 * 1000, // 資料新鮮度 5 分鐘
+          refetchOnWindowFocus: false, // 視窗聚焦時不自動重新請求
+          retry: 1, // 失敗只重試一次
+        },
+      },
+    },
+  },
   runtimeConfig: {
     public: {
       apiBase: '/api', // 使用相對路徑，讓 nginx 反向代理處理

@@ -26,7 +26,7 @@
                   :active="id === activeChatId"
                   class="chat-item"
                 >
-                  <v-list-item-title class="chat-title" @click="switchChat(id)" >
+                  <v-list-item-title class="chat-title" @click="switchChat(id)">
                     <span v-if="!editingChatId || editingChatId !== id">{{ chat.title }}</span>
                     <v-text-field
                       v-else
@@ -72,7 +72,7 @@
               </div>
             </template>
             <template v-else>
-              <div ref="messagesContainer" class="chat-messages" >
+              <div ref="messagesContainer" class="chat-messages">
                 <div 
                   v-for="(message, index) in activeMessages.message" 
                   :key="index"
@@ -96,7 +96,7 @@
                   <template v-else>
                     <div class="message-bubble user-bubble">
                       <div>{{ message.content }}</div>
-                      <div class="message-time">{{  message.time }}</div>
+                      <div class="message-time">{{ message.time }}</div>
                     </div>
                     <v-avatar size="32" class="ml-2">
                       <v-icon>mdi-account</v-icon>
@@ -181,7 +181,7 @@
   // 快速問題建議
   const quickQuestions = [
     '最新的基站狀態如何？',
-    '今天有異常警嗎？',
+    '今天有異常警告嗎？',
     '網路效能如何？',
     '用戶連線數量？'
   ]
@@ -460,7 +460,7 @@
 .sticky-title {
   position: sticky;
   top: 0;
-  background-color: #1565c0; 
+  background-color: #006ab5;
   color: white;
   z-index: 10;
 }

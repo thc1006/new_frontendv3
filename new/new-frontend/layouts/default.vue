@@ -80,7 +80,7 @@
     <v-footer app padless>
       <v-col class="text-center" cols="12">
         <a
-          href="Crews.jpg"
+          href="Crews.webp"
           target="_blank"
           style="text-decoration: none; color: inherit; cursor: pointer;"
         >

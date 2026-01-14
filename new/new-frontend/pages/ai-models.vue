@@ -149,7 +149,7 @@
     <!-- Retrain Modal -->
     <v-dialog v-model="retrainDialog" max-width="500">
       <v-card>
-        <v-card-title>Retrain 模型</v-card-title>
+        <v-card-title class="retrain-header">Retrain 模型</v-card-title>
         <v-card-subtitle v-if="retrainTarget" class="pb-2">
           {{ retrainTarget.model_name }} (ID: {{ retrainTarget.model_id }})
         </v-card-subtitle>
@@ -183,6 +183,13 @@
           {{ pretrainResultTarget.model_name }} (ID: {{ pretrainResultTarget.model_id }})
         </v-card-subtitle>
         <v-card-text>
+          <!-- 訓練狀態與進度顯示 -->
+          <div class="training-status-bar">
+            <span class="status-label">Training Status:</span>
+            <span class="status-value">Completed</span>
+            <span class="epoch-label">Epoch:</span>
+            <span class="epoch-value">50/50</span>
+          </div>
           <!-- 指標摘要區塊 -->
           <div class="pretrain-metrics-summary">
             <div class="metrics-row">
@@ -796,11 +803,43 @@ h2 {
   margin-bottom: 0;
 }
 
-/* Pretrain Result 樣式 */
-.pretrain-result-header {
-  background: linear-gradient(135deg, #c7c7c7 0%, #e0e0e0 100%);
+/* Retrain Modal 樣式 */
+.retrain-header {
+  background: #c7c7c7;
   color: #1a1a1a;
   font-weight: 600;
+}
+
+/* Pretrain Result 樣式 */
+.pretrain-result-header {
+  background: #c7c7c7;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* 訓練狀態列樣式 */
+.training-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.training-status-bar .status-label,
+.training-status-bar .epoch-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+}
+
+.training-status-bar .status-value,
+.training-status-bar .epoch-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
 }
 
 .pretrain-metrics-summary {
@@ -873,7 +912,7 @@ h2 {
 
 /* Preview 樣式 */
 .preview-header {
-  background: linear-gradient(135deg, #c7c7c7 0%, #e0e0e0 100%);
+  background: #c7c7c7;
   color: #1a1a1a;
   font-weight: 600;
 }
