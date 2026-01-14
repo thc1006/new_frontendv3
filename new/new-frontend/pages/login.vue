@@ -21,23 +21,37 @@
           <v-form ref="loginForm" v-model="valid" class="login-form">
             <!-- Account 欄位 -->
             <div class="form-row">
-              <label class="field-label">Account</label>
+              <label for="account-input" class="field-label">Account</label>
               <input
+                id="account-input"
                 v-model="account"
                 type="text"
                 class="field-input"
-                placeholder=""
+                required
+                aria-required="true"
               />
             </div>
             <!-- Password 欄位 -->
             <div class="form-row">
-              <label class="field-label">Password</label>
-              <input
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                class="field-input"
-                placeholder=""
-              />
+              <label for="password-input" class="field-label">Password</label>
+              <div class="password-wrapper">
+                <input
+                  id="password-input"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  class="field-input"
+                  required
+                  aria-required="true"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                  @click="showPassword = !showPassword"
+                >
+                  <v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                </button>
+              </div>
             </div>
             <!-- Login 按鈕 -->
             <div class="form-actions">
@@ -324,6 +338,42 @@
 
   &:focus {
     box-shadow: 0 0 0 2px rgba(0, 77, 255, 0.3);
+  }
+}
+
+// 密碼欄位容器 (含切換按鈕)
+.password-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .field-input {
+    padding-right: 48px; // 預留切換按鈕空間
+  }
+}
+
+// 密碼顯示/隱藏切換按鈕 - Figma Node 3:487 eye icon
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.2s;
+
+  &:hover {
+    color: #fff;
+  }
+
+  &:focus {
+    outline: 2px solid rgba(0, 77, 255, 0.5);
+    border-radius: 4px;
   }
 }
 

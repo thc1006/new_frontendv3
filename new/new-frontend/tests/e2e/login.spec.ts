@@ -48,6 +48,43 @@ test.describe('Login Page', () => {
       // Figma: 應該顯示 "WiSDON LAB"
       await expect(page.getByText(/WiSDON LAB/i)).toBeVisible({ timeout: 10000 })
     })
+
+    // 無障礙屬性測試 (Copilot Review)
+    test('should have proper accessibility attributes on inputs', async ({ page }) => {
+      // 檢查 Account 輸入框的無障礙屬性
+      const accountInput = page.locator('#account-input')
+      await expect(accountInput).toBeVisible({ timeout: 10000 })
+      await expect(accountInput).toHaveAttribute('required', '')
+      await expect(accountInput).toHaveAttribute('aria-required', 'true')
+
+      // 檢查 label 與 input 的關聯
+      const accountLabel = page.locator('label[for="account-input"]')
+      await expect(accountLabel).toBeVisible()
+
+      // 檢查 Password 輸入框的無障礙屬性
+      const passwordInput = page.locator('#password-input')
+      await expect(passwordInput).toBeVisible()
+      await expect(passwordInput).toHaveAttribute('required', '')
+      await expect(passwordInput).toHaveAttribute('aria-required', 'true')
+    })
+
+    // 密碼顯示/隱藏切換按鈕測試 (Figma Node 3:487)
+    test('should have password toggle button with eye icon', async ({ page }) => {
+      const toggleBtn = page.locator('.password-toggle')
+      await expect(toggleBtn).toBeVisible({ timeout: 10000 })
+
+      // 預設應該是隱藏密碼狀態
+      const passwordInput = page.locator('#password-input')
+      await expect(passwordInput).toHaveAttribute('type', 'password')
+
+      // 點擊切換按鈕後應該變成 text 類型
+      await toggleBtn.click()
+      await expect(passwordInput).toHaveAttribute('type', 'text')
+
+      // 再次點擊應該切換回 password 類型
+      await toggleBtn.click()
+      await expect(passwordInput).toHaveAttribute('type', 'password')
+    })
   })
 
   test.beforeEach(async ({ page }) => {
