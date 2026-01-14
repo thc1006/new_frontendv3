@@ -1,73 +1,152 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="4">
-        <v-card>
-          <v-card-title class="headline">註冊</v-card-title>
-          <v-card-text>
-            <v-form ref="formRef" v-model="valid">
-              <!-- Account Field -->
-              <v-text-field
-                v-model="form.account"
-                label="帳號"
-                :rules="[rules.required, rules.accountCheck]"
-                :loading="accountCheckStatus === 'checking'"
-                :color="accountCheckStatus === 'available' ? 'success' : undefined"
-                required
-                @update:model-value="debouncedCheckAccount"
-              >
-                <template v-if="accountCheckStatus === 'available'" #append>
-                  <v-icon color="success">mdi-check-circle</v-icon>
-                </template>
-              </v-text-field>
-              <!-- Email Field -->
-              <v-text-field
-                v-model="form.email"
-                label="電子郵件"
-                :rules="[rules.required, rules.email, rules.emailCheck]"
-                :loading="emailCheckStatus === 'checking'"
-                :color="emailCheckStatus === 'available' ? 'success' : undefined"
-                required
-                @update:model-value="debouncedCheckEmail"
-              >
-                <template v-if="emailCheckStatus === 'available'" #append>
-                  <v-icon color="success">mdi-check-circle</v-icon>
-                </template>
-              </v-text-field>
-              <!-- Password Field -->
-              <v-text-field
-                v-model="form.password"
-                label="密碼"
-                :type="showPassword ? 'text' : 'password'"
-                :append-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-                :rules="[rules.required, rules.password]"
-                required
-                @click:append="showPassword = !showPassword"
-              />
-              <!-- Confirm Password Field -->
-              <v-text-field
-                v-model="confirmPassword"
-                label="確認密碼"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                :append-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
-                :rules="[rules.required, rules.confirm]"
-                required
-                @click:append="showConfirmPassword = !showConfirmPassword"
-              />
+  <div class="register-page">
+    <!-- 背景層 -->
+    <div class="bg-overlay" />
+
+    <!-- 前景內容 -->
+    <div class="foreground">
+      <!-- Banner 區塊 -->
+      <div class="banner">
+        <div class="small-text animate-text">
+          <b>Welcome to a 5G O-RAN project Management Website</b>
+        </div>
+        <div class="big-text animate-text">
+          <b>WiSDON LAB</b>
+        </div>
+      </div>
+
+      <!-- 註冊區塊 - Figma Node 3:1042 -->
+      <div class="register-block">
+        <div class="register-container">
+          <div class="register-card">
+            <!-- Logo -->
+            <div class="logo-container">
+              <img src="/wisdon.png" alt="WiSDON logo" class="logo" />
+            </div>
+
+            <!-- 標題 -->
+            <h2 class="page-title">Register</h2>
+
+            <v-form ref="formRef" v-model="valid" class="register-form">
+              <!-- Account 欄位 -->
+              <div class="form-row">
+                <label for="account-input" class="field-label">Account</label>
+                <input
+                  id="account-input"
+                  v-model="form.account"
+                  name="account"
+                  type="text"
+                  class="field-input"
+                  placeholder="Account"
+                  required
+                  aria-required="true"
+                  @input="debouncedCheckAccount(form.account)"
+                />
+              </div>
+
+              <!-- Email 欄位 -->
+              <div class="form-row">
+                <label for="email-input" class="field-label">Email</label>
+                <input
+                  id="email-input"
+                  v-model="form.email"
+                  name="email"
+                  type="email"
+                  class="field-input"
+                  placeholder="Email"
+                  required
+                  aria-required="true"
+                  @input="debouncedCheckEmail(form.email)"
+                />
+              </div>
+
+              <!-- Password 欄位 -->
+              <div class="form-row">
+                <label for="password-input" class="field-label">Password</label>
+                <div class="password-wrapper">
+                  <input
+                    id="password-input"
+                    v-model="form.password"
+                    name="password"
+                    :type="showPassword ? 'text' : 'password'"
+                    class="field-input"
+                    placeholder="Password"
+                    required
+                    aria-required="true"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                    @click="showPassword = !showPassword"
+                  >
+                    <v-icon>{{ showPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Confirm Password 欄位 -->
+              <div class="form-row">
+                <label for="confirm-password-input" class="field-label">Confirm</label>
+                <div class="password-wrapper">
+                  <input
+                    id="confirm-password-input"
+                    v-model="confirmPassword"
+                    name="confirmPassword"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    class="field-input"
+                    placeholder="Confirm Password"
+                    required
+                    aria-required="true"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    :aria-label="showConfirmPassword ? 'Hide password' : 'Show password'"
+                    @click="showConfirmPassword = !showConfirmPassword"
+                  >
+                    <v-icon>{{ showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 錯誤訊息 -->
+              <div v-if="errorMessage" class="error-message v-messages__message">
+                {{ errorMessage }}
+              </div>
+
+              <!-- 按鈕區 -->
+              <div class="form-actions">
+                <button
+                  type="button"
+                  class="back-btn"
+                  @click="goBack"
+                >
+                  BACK
+                </button>
+                <button
+                  type="button"
+                  class="register-btn"
+                  :disabled="isPending"
+                  @click="onSubmit"
+                >
+                  {{ isPending ? 'Processing...' : 'Register' }}
+                </button>
+              </div>
             </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer/>
-            <v-btn color="primary" @click="router.push('/login')">back</v-btn>
-            <v-btn :disabled="!valid || isPending" color="primary" @click="onSubmit">
-              <v-icon left>mdi-account-plus</v-icon>
-              註冊
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-    
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Snackbar 提示 -->
+    <v-snackbar v-model="showError" color="error" timeout="4000" location="top">
+      {{ popupMessage }}
+    </v-snackbar>
+    <v-snackbar v-model="showSuccess" color="success" timeout="4000" location="top">
+      {{ popupMessage }}
+    </v-snackbar>
+
     <!-- Success Dialog -->
     <v-dialog v-model="showSuccessDialog" max-width="400">
       <v-card>
@@ -78,132 +157,481 @@
           Please Login Again
         </v-card-text>
         <v-card-actions>
-          <v-spacer/>
+          <v-spacer />
           <v-btn color="primary" @click="navigateToLogin">OK</v-btn>
-          <v-spacer/>
+          <v-spacer />
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+  </div>
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { useMutation, useQueryClient } from '@tanstack/vue-query'
-  import type { RegisterRequest } from '~/apis/Api'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import type { RegisterRequest } from '~/apis/Api'
+import { navigateTo } from '#app'
 
-  // reactive form state
-  const form = ref<RegisterRequest>({ account: '', email: '', password: '' })
-  const confirmPassword = ref<string>('')  // confirm password field
-  const valid = ref(false)
-  const showPassword = ref(false)
-  const showConfirmPassword = ref(false)   // toggle for confirm password
-  const formRef = ref<any>(null)           // for v-form reference
-  const showSuccessDialog = ref(false)     // control for success dialog
+// 表單欄位
+const form = ref<RegisterRequest>({ account: '', email: '', password: '' })
+const confirmPassword = ref('')
+const valid = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const formRef = ref<any>(null)
+const showSuccessDialog = ref(false)
 
-  // 即時檢查狀態：'idle' | 'checking' | 'available' | 'taken'
-  const accountCheckStatus = ref<string>('idle')
-  const emailCheckStatus = ref<string>('idle')
+// 錯誤與提示
+const errorMessage = ref('')
+const showError = ref(false)
+const showSuccess = ref(false)
+const popupMessage = ref('')
 
-  // debounce timer
-  let accountCheckTimer: ReturnType<typeof setTimeout> | null = null
-  let emailCheckTimer: ReturnType<typeof setTimeout> | null = null
+// 即時檢查狀態
+const accountCheckStatus = ref<string>('idle')
+const emailCheckStatus = ref<string>('idle')
 
-  // 帳號存在性檢查 (placeholder)
-  async function checkAccountExists(account: string): Promise<boolean> {
-    // TODO: 後端需新增 GET /auth/check-account?account={account}
-    // 預期回應：{ exists: boolean }
-    console.warn('[TODO] Account check API not implemented', { account })
-    // 模擬延遲，假設帳號可用
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return false // 暫時假設都可用
+// debounce timer
+let accountCheckTimer: ReturnType<typeof setTimeout> | null = null
+let emailCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+// 帳號存在性檢查 (placeholder)
+async function checkAccountExists(account: string): Promise<boolean> {
+  // TODO: 後端需新增 GET /auth/check-account?account={account}
+  await new Promise(resolve => setTimeout(resolve, 300))
+  return false
+}
+
+// 信箱存在性檢查 (placeholder)
+async function checkEmailExists(email: string): Promise<boolean> {
+  // TODO: 後端需新增 GET /auth/check-email?email={email}
+  await new Promise(resolve => setTimeout(resolve, 300))
+  return false
+}
+
+// debounced 帳號檢查
+function debouncedCheckAccount(value: string) {
+  if (accountCheckTimer) clearTimeout(accountCheckTimer)
+  if (!value) {
+    accountCheckStatus.value = 'idle'
+    return
+  }
+  accountCheckStatus.value = 'checking'
+  accountCheckTimer = setTimeout(async () => {
+    const exists = await checkAccountExists(value)
+    accountCheckStatus.value = exists ? 'taken' : 'available'
+  }, 500)
+}
+
+// debounced 信箱檢查
+function debouncedCheckEmail(value: string) {
+  if (emailCheckTimer) clearTimeout(emailCheckTimer)
+  if (!value || !/.+@.+\..+/.test(value)) {
+    emailCheckStatus.value = 'idle'
+    return
+  }
+  emailCheckStatus.value = 'checking'
+  emailCheckTimer = setTimeout(async () => {
+    const exists = await checkEmailExists(value)
+    emailCheckStatus.value = exists ? 'taken' : 'available'
+  }, 500)
+}
+
+// 驗證 email 格式
+function isValidEmail(emailStr: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(emailStr)
+}
+
+// 返回登入頁
+function goBack() {
+  navigateTo('/login')
+}
+
+// 表單驗證
+function validateForm(): boolean {
+  errorMessage.value = ''
+
+  if (!form.value.account.trim()) {
+    errorMessage.value = 'Account is required'
+    return false
   }
 
-  // 信箱存在性檢查 (placeholder)
-  async function checkEmailExists(email: string): Promise<boolean> {
-    // TODO: 後端需新增 GET /auth/check-email?email={email}
-    // 預期回應：{ exists: boolean }
-    console.warn('[TODO] Email check API not implemented', { email })
-    // 模擬延遲，假設信箱可用
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return false // 暫時假設都可用
+  if (accountCheckStatus.value === 'taken') {
+    errorMessage.value = 'This account is already taken'
+    return false
   }
 
-  // debounced 帳號檢查
-  function debouncedCheckAccount(value: string) {
-    if (accountCheckTimer) clearTimeout(accountCheckTimer)
-    if (!value) {
-      accountCheckStatus.value = 'idle'
-      return
+  if (!form.value.email.trim()) {
+    errorMessage.value = 'Email is required'
+    return false
+  }
+
+  if (!isValidEmail(form.value.email)) {
+    errorMessage.value = 'Please enter a valid email address'
+    return false
+  }
+
+  if (emailCheckStatus.value === 'taken') {
+    errorMessage.value = 'This email is already registered'
+    return false
+  }
+
+  if (!form.value.password) {
+    errorMessage.value = 'Password is required'
+    return false
+  }
+
+  if (form.value.password.length < 6) {
+    errorMessage.value = 'Password must be at least 6 characters'
+    return false
+  }
+
+  if (!confirmPassword.value) {
+    errorMessage.value = 'Please confirm your password'
+    return false
+  }
+
+  if (form.value.password !== confirmPassword.value) {
+    errorMessage.value = 'Passwords do not match'
+    return false
+  }
+
+  return true
+}
+
+// Register mutation
+function useRegisterMutation() {
+  const { $apiClient } = useNuxtApp()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (requestParameters: RegisterRequest) =>
+      $apiClient.auth.registerCreate(requestParameters),
+    onSettled: () => {
+      queryClient.invalidateQueries()
+    },
+  })
+}
+
+const { mutateAsync, isPending } = useRegisterMutation()
+const router = useRouter()
+
+// 導航到登入頁
+function navigateToLogin() {
+  showSuccessDialog.value = false
+  router.push('/login')
+}
+
+// 提交註冊
+async function onSubmit() {
+  if (!validateForm()) {
+    return
+  }
+
+  errorMessage.value = ''
+
+  try {
+    await mutateAsync(form.value)
+    showSuccessDialog.value = true
+  } catch (err: any) {
+    const status = err?.response?.status
+    let message = '註冊失敗，請稍後再試'
+
+    if (status === 409) {
+      message = '帳號或 Email 已被註冊'
+    } else if (status === 400) {
+      message = '請檢查輸入資料格式'
     }
-    accountCheckStatus.value = 'checking'
-    accountCheckTimer = setTimeout(async () => {
-      const exists = await checkAccountExists(value)
-      accountCheckStatus.value = exists ? 'taken' : 'available'
-    }, 500)
+
+    popupMessage.value = message
+    showError.value = true
   }
-
-  // debounced 信箱檢查
-  function debouncedCheckEmail(value: string) {
-    if (emailCheckTimer) clearTimeout(emailCheckTimer)
-    if (!value || !/.+@.+\..+/.test(value)) {
-      emailCheckStatus.value = 'idle'
-      return
-    }
-    emailCheckStatus.value = 'checking'
-    emailCheckTimer = setTimeout(async () => {
-      const exists = await checkEmailExists(value)
-      emailCheckStatus.value = exists ? 'taken' : 'available'
-    }, 500)
-  }
-
-  // validation rules
-  const rules = {
-    required: (v: string) => !!v || '此欄位為必填',
-    email:    (v: string) => /.+@.+\..+/.test(v) || '電子郵件格式錯誤',
-    password: (v: string) =>
-      /^(?!.*(.)\1\1)(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$/.test(v)
-      || '密碼需 8-20 字元，含大小寫、數字、符號，且不可連續 3 個相同字元',
-    confirm:  (v: string) => v === form.value.password || '密碼與確認密碼不符',
-    accountCheck: () => accountCheckStatus.value !== 'taken' || '此帳號已被使用',
-    emailCheck: () => emailCheckStatus.value !== 'taken' || '此信箱已被使用',
-  }
-
-  // custom register mutation
-  function useRegisterMutation() {
-    const { $apiClient } = useNuxtApp()
-    const queryClient = useQueryClient()
-    return useMutation({
-      mutationFn: (requestParameters: RegisterRequest) =>
-        $apiClient.auth.registerCreate(requestParameters),
-      onSettled: () => {
-        queryClient.invalidateQueries()
-      },
-    })
-  }
-
-  const { mutateAsync, isPending } = useRegisterMutation()
-  const router = useRouter()
-
-  // navigation function
-  function navigateToLogin() {
-    showSuccessDialog.value = false
-    router.push('/login')
-  }
-
-  // submission handler
-  async function onSubmit() {
-    if (!(formRef.value as any).validate()) {
-      return
-    }
-
-    try {
-      await mutateAsync(form.value)
-      // Show success dialog instead of immediate redirect
-      showSuccessDialog.value = true
-    } catch (err: any) {
-      console.error('Registration failed:', err)
-    }
-  }
+}
 </script>
+
+<style lang="scss" scoped>
+@import url('https://fonts.cdnfonts.com/css/joti-one');
+
+.register-page {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+// 背景圖層
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/background.jpg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.foreground {
+  position: relative;
+  height: 100%;
+  z-index: 1;
+}
+
+// Banner 文字樣式
+.banner {
+  position: relative;
+
+  .big-text {
+    position: absolute;
+    top: 25vh;
+    left: 5%;
+    font-family: 'Joti One', sans-serif;
+    font-size: 90px;
+    color: #E7E3E3;
+    text-shadow: 3px 3px 4px rgba(202, 198, 198, 0.5);
+    -webkit-text-stroke: 1.5px rgba(41, 39, 39, 0.5);
+
+    @media (max-width: 768px) {
+      font-size: 48px;
+      top: 10vh;
+    }
+  }
+
+  .small-text {
+    position: absolute;
+    top: 17vh;
+    left: 5%;
+    font-family: 'Joti One', sans-serif;
+    font-size: 50px;
+    color: #E7E3E3;
+    text-shadow: 3px 3px 4px rgba(202, 198, 198, 0.5);
+    -webkit-text-stroke: 1.5px rgba(41, 39, 39, 0.5);
+
+    @media (max-width: 768px) {
+      font-size: 24px;
+      top: 5vh;
+    }
+  }
+}
+
+// 淡入動畫
+.animate-text {
+  opacity: 0;
+  animation: fadeSlideIn 4s ease 0.4s forwards;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// 註冊區塊 - Figma Node 3:1042
+.register-block {
+  position: absolute;
+  bottom: 8%;
+  right: 5%;
+  animation: riseIn 0.8s ease 0.3s both;
+
+  @media (max-width: 768px) {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: 3%;
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// Figma 註冊卡片樣式 - 白色背景 + 圓角 + 陰影
+.register-card {
+  min-width: 420px;
+  padding: 24px 32px 32px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+
+  @media (max-width: 768px) {
+    min-width: 320px;
+    padding: 20px 24px 28px;
+  }
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.logo {
+  height: 48px;
+  width: auto;
+}
+
+.page-title {
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.field-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  min-width: 80px;
+}
+
+.field-input {
+  flex: 1;
+  height: 44px;
+  padding: 0 14px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder {
+    color: #999;
+  }
+
+  &:focus {
+    border-color: #006ab5;
+    box-shadow: 0 0 0 2px rgba(0, 106, 181, 0.15);
+  }
+}
+
+// 密碼欄位容器
+.password-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .field-input {
+    padding-right: 44px;
+  }
+}
+
+// 密碼顯示/隱藏切換按鈕
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #333;
+  }
+
+  &:focus {
+    outline: 2px solid rgba(0, 106, 181, 0.4);
+    border-radius: 4px;
+  }
+}
+
+// 錯誤訊息
+.error-message {
+  color: #d32f2f;
+  font-size: 13px;
+  text-align: center;
+  padding: 4px 0;
+}
+
+// 按鈕區塊
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+// 返回按鈕 - Figma 藍色 #006ab5
+.back-btn {
+  padding: 10px 24px;
+  background: #006ab5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #005a9a;
+  }
+}
+
+// 註冊按鈕 - Figma 藍色 #006ab5
+.register-btn {
+  padding: 10px 24px;
+  background: #006ab5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #005a9a;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+</style>
