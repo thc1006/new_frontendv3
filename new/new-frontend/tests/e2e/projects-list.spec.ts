@@ -8,7 +8,7 @@ test.describe('Projects List Page', () => {
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
-    await page.locator('button:has-text("登入")').click()
+    await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
   })
 
@@ -197,6 +197,136 @@ test.describe('Projects List Page', () => {
       // 等待導航控制項載入
       const navControl = page.locator('.mapboxgl-ctrl-group')
       await expect(navControl.first()).toBeVisible({ timeout: 15000 })
+    })
+  })
+
+  // Figma 設計對齊測試
+  test.describe('Figma Design Alignment', () => {
+    test('category label should match Figma styling', async ({ page }) => {
+      await page.goto('/')
+
+      const categoryLabel = page.locator('.category-label').first()
+      await expect(categoryLabel).toBeVisible({ timeout: 10000 })
+
+      // 檢查背景色 rgba(55, 54, 72, 0.48)
+      const bgColor = await categoryLabel.evaluate((el) => {
+        return window.getComputedStyle(el).backgroundColor
+      })
+      expect(bgColor).toBe('rgba(55, 54, 72, 0.48)')
+
+      // 檢查字體大小 24px
+      const fontSize = await categoryLabel.evaluate((el) => {
+        return window.getComputedStyle(el).fontSize
+      })
+      expect(fontSize).toBe('24px')
+
+      // 檢查圓角 20px
+      const borderRadius = await categoryLabel.evaluate((el) => {
+        return window.getComputedStyle(el).borderRadius
+      })
+      expect(borderRadius).toBe('20px')
+    })
+
+    test('projects panel should have white background', async ({ page }) => {
+      await page.goto('/')
+
+      const projectsPanel = page.locator('.projects-panel')
+      await expect(projectsPanel).toBeVisible({ timeout: 10000 })
+
+      // 檢查背景色是白色
+      const bgColor = await projectsPanel.evaluate((el) => {
+        return window.getComputedStyle(el).backgroundColor
+      })
+      expect(bgColor).toBe('rgb(255, 255, 255)')
+    })
+
+    test('delete link should have correct red color', async ({ page }) => {
+      await page.goto('/')
+
+      const deleteLink = page.locator('.delete-project-link').first()
+      await expect(deleteLink).toBeVisible({ timeout: 10000 })
+
+      // 檢查顏色 #b50003
+      const color = await deleteLink.evaluate((el) => {
+        return window.getComputedStyle(el).color
+      })
+      expect(color).toBe('rgb(181, 0, 3)')
+    })
+
+    test('date badge should match Figma styling', async ({ page }) => {
+      await page.goto('/')
+
+      const dateBadge = page.locator('.date-badge').first()
+      await expect(dateBadge).toBeVisible({ timeout: 10000 })
+
+      // 檢查背景透明度 0.31
+      const bgColor = await dateBadge.evaluate((el) => {
+        return window.getComputedStyle(el).backgroundColor
+      })
+      expect(bgColor).toContain('0.31')
+
+      // 檢查圓角 20px
+      const borderRadius = await dateBadge.evaluate((el) => {
+        return window.getComputedStyle(el).borderRadius
+      })
+      expect(borderRadius).toBe('20px')
+    })
+
+    test('user badge should match Figma styling', async ({ page }) => {
+      await page.goto('/')
+
+      const userBadge = page.locator('.user-badge').first()
+      await expect(userBadge).toBeVisible({ timeout: 10000 })
+
+      // 檢查背景透明度 0.15
+      const bgColor = await userBadge.evaluate((el) => {
+        return window.getComputedStyle(el).backgroundColor
+      })
+      expect(bgColor).toContain('0.15')
+
+      // 檢查文字色 rgba(0,0,0,0.35)
+      const color = await userBadge.evaluate((el) => {
+        return window.getComputedStyle(el).color
+      })
+      expect(color).toContain('0.35')
+
+      // 檢查圓角 20px
+      const borderRadius = await userBadge.evaluate((el) => {
+        return window.getComputedStyle(el).borderRadius
+      })
+      expect(borderRadius).toBe('20px')
+    })
+
+    test('view and delete links should have correct font size', async ({ page }) => {
+      await page.goto('/')
+
+      const viewLink = page.locator('.view-project-link').first()
+      await expect(viewLink).toBeVisible({ timeout: 10000 })
+
+      // 檢查字體大小 15px
+      const fontSize = await viewLink.evaluate((el) => {
+        return window.getComputedStyle(el).fontSize
+      })
+      expect(fontSize).toBe('15px')
+    })
+
+    test('project card should match Figma styling', async ({ page }) => {
+      await page.goto('/')
+
+      const projectCard = page.locator('.project-card').first()
+      await expect(projectCard).toBeVisible({ timeout: 10000 })
+
+      // 檢查邊框色 rgba(0,0,0,0.1)
+      const borderColor = await projectCard.evaluate((el) => {
+        return window.getComputedStyle(el).borderColor
+      })
+      expect(borderColor).toContain('0.1')
+
+      // 檢查圓角 10px
+      const borderRadius = await projectCard.evaluate((el) => {
+        return window.getComputedStyle(el).borderRadius
+      })
+      expect(borderRadius).toBe('10px')
     })
   })
 })
