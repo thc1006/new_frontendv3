@@ -10,7 +10,7 @@ test.describe('Performance Pages', () => {
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
-    await page.locator('button:has-text("登入")').click()
+    await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
     // 取得第一個專案的 ID
