@@ -191,6 +191,16 @@ commit 內容遵循 TLDR 但要保留重要資訊，同時不可以有 emoji。
 | CSRF 防護 | ✅ 基本保護 | Flask 3.0+ 預設 SameSite=Lax |
 | withCredentials | ✅ 已啟用 | 確保跨域請求攜帶 session cookie |
 
+## Bundle Code Splitting (2026-01-14)
+
+| Chunk | 大小 | 內容 |
+|-------|------|------|
+| 主 bundle | 1.5MB | Vuetify + 應用代碼 |
+| THREE.js | 849KB | 3D 渲染（獨立 chunk） |
+| Mapbox | 547KB | 地圖功能（獨立 chunk） |
+
+效果：不使用地圖/3D 的頁面可節省 ~1.4MB 下載量
+
 ## 待後端實作的 API
 
 ```

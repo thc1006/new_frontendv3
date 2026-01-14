@@ -17,6 +17,21 @@ export default defineNuxtConfig({
       drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
       pure: process.env.NODE_ENV === 'production' ? ['console.log'] : [],
     },
+    // Code Splitting: 將大型依賴分離成獨立 chunk
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // 地圖相關 (~800KB)
+            'mapbox': ['mapbox-gl'],
+            // 3D 渲染相關 (~600KB)
+            'three': ['three'],
+            // Vuetify UI 組件 (~300KB)
+            'vuetify': ['vuetify'],
+          },
+        },
+      },
+    },
   },
   // Vue Query 全域設定 - 減少不必要的重複請求
   vueQuery: {

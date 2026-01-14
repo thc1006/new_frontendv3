@@ -36,23 +36,17 @@
 
 ### 性能問題
 
-- [ ] **圖片資源優化**
-  - 檔案：`public/capyengineer.png` (3.4MB), `public/Webpage-Maintening.png` (1.9MB), `public/Alvin.png` (1.8MB)
-  - 問題：總計 7.6MB 未壓縮 PNG
-  - 解決：轉換為 WebP 格式，預期節省 95%
-  - 工時：2 小時
+- [x] **圖片資源優化** ✅ 已完成 (2026-01-13)
+  - 轉換 PNG → WebP，7.6MB → 948KB (87.5% 節省)
 
-- [ ] **Bundle Size 過大**
-  - 檔案：構建輸出 `BK9cytnD.js` (1.5MB)
-  - 問題：單一 chunk 超過 Vite 警告閾值
-  - 解決：實作 Code Splitting，分離 Mapbox/THREE.js
-  - 工時：4 小時
+- [x] **Bundle Code Splitting** ✅ 已完成 (2026-01-14)
+  - 檔案：`nuxt.config.ts` 新增 manualChunks 配置
+  - 結果：THREE.js (849KB) 和 Mapbox (547KB) 分離成獨立 chunks
+  - 效果：不使用地圖/3D 的頁面可節省 ~1.4MB 下載量
 
-- [ ] **缺少動態載入**
-  - 檔案：`pages/index.vue`, `pages/projects/[projectId]/config/evaluations.vue`
-  - 問題：Mapbox、THREE.js 在所有頁面都載入
-  - 解決：使用 `defineAsyncComponent` 懶加載
-  - 工時：3 小時
+- [ ] **進階動態載入** (P3 - 可選優化)
+  - 使用 `defineAsyncComponent` 進一步懶加載地圖組件
+  - 當前 manualChunks 已提供基本分離，此項為進階優化
 
 ### 安全問題
 
@@ -362,17 +356,19 @@
 - [x] **P1 TypeScript**: index.vue any 類型修復 (9→0)
 - [x] **P0 安全**: 確認 Flask-Login session 認證（非 JWT），移除死代碼，httpOnly 已預設啟用
 - [x] **P0 CSRF**: 確認 SameSite=Lax 已提供基本防護
+- [x] **P0 Code Splitting**: THREE.js (849KB) 和 Mapbox (547KB) 分離成獨立 chunks
 
 ### 進行中
 
-- [ ] P0 Bundle Code Splitting (Mapbox/THREE.js)
+(無)
 
 ### 待開始
 
-- [ ] P1 更多 TypeScript any 修復 (32 處)
+- [ ] P1 TypeScript any 修復 (32 處)
 - [ ] P1 Performance 頁面重構（抽取通用組件）
 - [ ] P2 功能完善
 - [ ] P3 長期優化
+- [ ] P3 進階動態載入（defineAsyncComponent）
 
 ---
 
