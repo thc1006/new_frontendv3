@@ -118,7 +118,7 @@
   // 密碼不一致錯誤訊息
   const passwordMismatchError = computed(() => {
     if (passwordForm.value.confirmPassword &&
-        passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+      passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
       return '密碼不一致'
     }
     return ''

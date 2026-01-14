@@ -15,63 +15,47 @@
         </div>
       </div>
 
-      <!-- 登入區塊 -->
+      <!-- 登入區塊 - Figma Node 3:2113 -->
       <div class="login-block">
-        <v-card class="login-card" elevation="12">
-          <v-card-title class="card-title">
-            <v-icon class="title-icon">mdi-account-circle</v-icon>
-            系統登入
-          </v-card-title>
-          <v-card-text>
-            <v-form ref="loginForm" v-model="valid">
-              <v-text-field
+        <div class="login-box">
+          <v-form ref="loginForm" v-model="valid" class="login-form">
+            <!-- Account 欄位 -->
+            <div class="form-row">
+              <label class="field-label">Account</label>
+              <input
                 v-model="account"
-                label="帳號"
-                placeholder="請輸入帳號"
-                :rules="[rules.required]"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-account"
-                class="mb-3"
+                type="text"
+                class="field-input"
+                placeholder=""
               />
-              <v-text-field
+            </div>
+            <!-- Password 欄位 -->
+            <div class="form-row">
+              <label class="field-label">Password</label>
+              <input
                 v-model="password"
-                label="密碼"
-                placeholder="請輸入密碼"
-                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                 :type="showPassword ? 'text' : 'password'"
-                :rules="[rules.required]"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-lock"
-                @click:append-inner="showPassword = !showPassword"
+                class="field-input"
+                placeholder=""
               />
-            </v-form>
-          </v-card-text>
-          <v-card-actions class="card-actions">
-            <v-btn
-              variant="text"
-              color="primary"
-              @click="handleRegister"
-            >
-              註冊帳號
-            </v-btn>
-            <v-spacer />
-            <v-btn
-              color="primary"
-              size="large"
-              :disabled="!valid"
-              :loading="loginMutation.isPending.value"
-              @click="submit"
-            >
-              <v-icon left>mdi-login</v-icon>
-              登入
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-        <div class="register-hint">
-          <span>New Friend? -> </span>
-          <a href="/register">Register Here</a>
+            </div>
+            <!-- Login 按鈕 -->
+            <div class="form-actions">
+              <button
+                type="button"
+                class="login-btn"
+                :disabled="!account || !password || loginMutation.isPending.value"
+                @click="submit"
+              >
+                Login
+              </button>
+            </div>
+            <!-- No Account? Register -->
+            <div class="register-row">
+              <span class="no-account-text">No Account?</span>
+              <a href="/register" class="register-link">Register</a>
+            </div>
+          </v-form>
         </div>
       </div>
     </div>
@@ -124,8 +108,8 @@
   }
 
   async function submit() {
-    loginForm.value?.validate()
-    if (!valid.value) return
+    // 因為使用原生 input，直接檢查欄位值
+    if (!account.value || !password.value) return
 
     loginMutation.mutate(
       { account: account.value, password: password.value },
@@ -259,10 +243,10 @@
   }
 }
 
-// 登入區塊
+// 登入區塊 - Figma Node 3:2113
 .login-block {
   position: absolute;
-  bottom: 20%;
+  bottom: 15%;
   right: 5%;
   animation: riseIn 0.8s ease 0.3s both;
 
@@ -284,75 +268,113 @@
   }
 }
 
-.login-card {
-  min-width: 340px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  overflow: hidden;
+// Figma 登入框樣式
+.login-box {
+  min-width: 400px;
+  padding: 40px 24px 24px;
+  background: #c2c2c2; // Figma 規範灰色
+  border-radius: 17.69px; // Figma 規範圓角
+  box-shadow: 0px 3.5px 3.5px rgba(0, 0, 0, 0.25);
 
-  // 卡片頂部漸層裝飾
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #1976d2, #42a5f5, #1976d2);
+  @media (max-width: 768px) {
+    min-width: 320px;
+    padding: 30px 20px 20px;
   }
 }
 
-.card-title {
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px 24px 12px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
+  gap: 16px;
 }
 
-.title-icon {
-  font-size: 28px;
-  color: #1976d2;
-}
+.field-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: #000;
+  min-width: 160px;
 
-.card-actions {
-  padding: 8px 16px 20px;
-}
-
-// 輸入欄位優化
-:deep(.v-field) {
-  border-radius: 8px;
-  transition: box-shadow 0.2s ease;
-
-  &:focus-within {
-    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+  @media (max-width: 768px) {
+    font-size: 24px;
+    min-width: 100px;
   }
 }
 
-:deep(.v-field__prepend-inner) {
-  color: #666;
+.field-input {
+  flex: 1;
+  height: 53px;
+  padding: 0 16px;
+  background: rgba(85, 85, 85, 0.6); // Figma 輸入框背景
+  border: none;
+  border-radius: 17.69px;
+  font-size: 18px;
+  color: #fff;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(0, 77, 255, 0.3);
+  }
 }
 
-.register-hint {
-  text-align: right;
-  margin-top: 1em;
-  color: #E7E3E3;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
 
-  a {
-    color: #90caf9;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
+.login-btn {
+  padding: 10px 32px;
+  background: #004dff; // Figma 按鈕藍色
+  border: none;
+  border-radius: 17.69px;
+  font-family: 'Inter', sans-serif;
+  font-size: 21px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
 
-    &:hover {
-      color: #bbdefb;
-      text-decoration: underline;
-    }
+  &:hover:not(:disabled) {
+    background: #0040d6;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.register-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.no-account-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #000;
+}
+
+.register-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #000;
+  text-decoration: underline;
+
+  &:hover {
+    color: #004dff;
   }
 }
 </style>

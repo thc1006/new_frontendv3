@@ -2,6 +2,54 @@ import { test, expect } from '@playwright/test'
 
 // 登入功能的 E2E 測試
 test.describe('Login Page', () => {
+  // Figma 設計對齊測試 (Node 3:2113)
+  test.describe('Figma Design Alignment', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/login')
+    })
+
+    test('should display Account and Password labels', async ({ page }) => {
+      // Figma: 標籤文字應該是 "Account" 和 "Password"
+      await expect(page.getByText('Account', { exact: true })).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('Password', { exact: true })).toBeVisible()
+    })
+
+    test('should display Login button with correct text', async ({ page }) => {
+      // Figma: 按鈕文字應該是 "Login"（非 "登入"）
+      const loginBtn = page.locator('button:has-text("Login"), .login-btn')
+      await expect(loginBtn).toBeVisible({ timeout: 10000 })
+    })
+
+    test('should display No Account Register link', async ({ page }) => {
+      // Figma: 應該有 "No Account?" 和 "Register" 連結
+      await expect(page.getByText('No Account?')).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('Register').first()).toBeVisible()
+    })
+
+    test('should have login box with gray background', async ({ page }) => {
+      // Figma: 登入框背景為灰色 (#c2c2c2)
+      const loginBox = page.locator('.login-box, .login-card')
+      await expect(loginBox).toBeVisible({ timeout: 10000 })
+
+      // 檢查背景色（Figma 規範 #c2c2c2）
+      const bgColor = await loginBox.evaluate((el) => {
+        return window.getComputedStyle(el).backgroundColor
+      })
+      // rgb(194, 194, 194) = #c2c2c2
+      expect(bgColor).toMatch(/rgb\(194,\s*194,\s*194\)|rgba\(194,\s*194,\s*194/)
+    })
+
+    test('should have banner text Welcome to 5G O-RAN', async ({ page }) => {
+      // Figma: 應該顯示 "Welcome to a 5G O-RAN project Management Website"
+      await expect(page.getByText(/Welcome to a 5G O-RAN/i)).toBeVisible({ timeout: 10000 })
+    })
+
+    test('should have WiSDON LAB text', async ({ page }) => {
+      // Figma: 應該顯示 "WiSDON LAB"
+      await expect(page.getByText(/WiSDON LAB/i)).toBeVisible({ timeout: 10000 })
+    })
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
   })
