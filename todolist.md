@@ -1,23 +1,22 @@
 # WiSDON Frontend 待辦事項清單
 
-> 產出日期：2026-01-14
-> 分析範圍：new/new-frontend/, new_design/, legacy/
-> 當前測試數：83 個 E2E 測試通過
+> 產出日期：2026-01-14 (Figma Node 3:407 深度分析更新)
+> 分析範圍：new/new-frontend/, new_design/, Figma DunvlOkbkGlFFpWzZbtvuf
+> 當前測試數：114 個 E2E 測試通過
 
 ---
 
 ## 目錄
 
 1. [優先級說明](#優先級說明)
-2. [P0 - 緊急項目](#p0---緊急項目)
-3. [P1 - 高優先級](#p1---高優先級)
-4. [P2 - 中優先級](#p2---中優先級)
-5. [P3 - 低優先級](#p3---低優先級)
-6. [後端 API 待實作](#後端-api-待實作)
-7. [設計與實作差異](#設計與實作差異)
+2. [Figma 設計對齊狀態](#figma-設計對齊狀態)
+3. [P0 - 緊急項目](#p0---緊急項目)
+4. [P1 - 高優先級](#p1---高優先級)
+5. [P2 - 中優先級](#p2---中優先級)
+6. [P3 - 低優先級](#p3---低優先級)
+7. [後端 API 待實作](#後端-api-待實作)
 8. [技術債務](#技術債務)
-9. [性能優化](#性能優化)
-10. [測試覆蓋](#測試覆蓋)
+9. [測試覆蓋](#測試覆蓋)
 
 ---
 
@@ -32,173 +31,178 @@
 
 ---
 
+## Figma 設計對齊狀態
+
+> 根據 Figma Node 3:407 "Normal user" layer 分析
+
+### 已完成頁面 (100%)
+
+| Figma Node | 頁面名稱 | 實作檔案 | E2E 測試數 |
+|------------|----------|---------|-----------|
+| 3:477 | Login | `pages/login.vue` | 12 |
+| 3:491 | Profile | `pages/profile.vue` | 10 |
+| 3:713 | Projects List | `pages/index.vue` | 29 |
+| 3:420 | AI Model 配置 | `pages/ai-models.vue` | 32 |
+| 3:532 | Evaluation | `pages/projects/[projectId]/config/evaluations.vue` | 7 |
+| 3:505 | Overview | `pages/projects/[projectId]/overviews.vue` | - |
+| 3:626 | AI Model Evaluation | `pages/projects/[projectId]/ai-model-evaluation.vue` | 11 |
+| 3:692, 3:1063 | Network Performance | `pages/projects/[projectId]/performance/nes.vue` | 10 |
+| 3:1084 | AI Model Performance | `pages/projects/[projectId]/performance/ai-model.vue` | - |
+| 3:1138 | Ran Slice Performance | `pages/projects/[projectId]/performance/ran-slice.vue` | - |
+| 3:844 | Menu | `layouts/default.vue` | 9 |
+
+### 待實作頁面
+
+| Figma Node | 頁面名稱 | 優先級 | 備註 |
+|------------|----------|--------|------|
+| 3:1042 | **Register** | P1 | 缺少註冊頁面 |
+| 3:785, 3:814 | **Create Project** | P1 | indoor/outdoor toggle |
+| 3:755 | **Project Setting** | P1 | 專案設定與成員管理 |
+| 3:662 | Upload AI Model | P2 | 上傳 AI 模型 |
+| 3:596 | Federal Learning | P2 | 聯邦學習主頁 |
+| 3:604 | Federal Learning Model | P2 | 聯邦學習模型詳情 |
+| 3:616 | gNB | P2 | gNodeB 配置頁 |
+| 3:517 | Scenario | P2 | 場景驗測頁面 |
+| 3:570, 3:582 | Simulation | P2 | 模擬頁面 |
+| 3:1014 | AI Assistant (完整版) | P3 | 完整聊天室界面 |
+
+### 待實作對話框/模態視窗
+
+| Figma Node | 名稱 | 優先級 | 備註 |
+|------------|------|--------|------|
+| 3:996 | Change Password | ✅ 已完成 | Profile 頁面 |
+| 3:408 | Pretrain Modal | ✅ 已完成 | ai-models.vue |
+| 3:1126 | Retrain Modal | ✅ 已完成 | ai-models.vue |
+| 3:414 | Disable Confirm | ✅ 已完成 | ai-models.vue |
+| 3:1105 | Enable Confirm | ✅ 已完成 | ai-models.vue |
+| 3:1111 | Model Update | ✅ 已完成 | ai-models.vue |
+| 3:876 | Delete Project Warning | P1 | 刪除專案確認 |
+| 3:953 | Upload Model Warning | P2 | 上傳模型警告 |
+| 3:963 | Insufficient Data Warning | P2 | 資料不足警告 |
+| 3:929 | Choose Simulation Data | P2 | 選擇模擬資料 |
+| 3:1118 | CoTrain Confirm | P3 | 聯合訓練確認 |
+| 3:1132 | CoTrain Form | P3 | 聯合訓練表單 |
+
+---
+
 ## P0 - 緊急項目
 
-### 性能問題
+### 已完成
 
-- [x] **圖片資源優化** ✅ 已完成 (2026-01-13)
+- [x] **圖片資源優化** ✅ (2026-01-13)
   - 轉換 PNG → WebP，7.6MB → 948KB (87.5% 節省)
 
-- [x] **Bundle Code Splitting** ✅ 已完成 (2026-01-14)
-  - 檔案：`nuxt.config.ts` 新增 manualChunks 配置
-  - 結果：THREE.js (849KB) 和 Mapbox (547KB) 分離成獨立 chunks
-  - 效果：不使用地圖/3D 的頁面可節省 ~1.4MB 下載量
+- [x] **Bundle Code Splitting** ✅ (2026-01-14)
+  - THREE.js (849KB) 和 Mapbox (547KB) 分離成獨立 chunks
 
-- [ ] **進階動態載入** (P3 - 可選優化)
-  - 使用 `defineAsyncComponent` 進一步懶加載地圖組件
-  - 當前 manualChunks 已提供基本分離，此項為進階優化
+- [x] **安全性修復** ✅ (2026-01-14)
+  - Flask-Login session 認證確認安全
+  - localStorage 死代碼移除
+  - CSRF 防護 (SameSite=Lax)
 
-### 安全問題
-
-- [x] **Token 儲存方式** ✅ 已修復 (2026-01-14)
-  - 檔案：`plugins/api.clients.ts`
-  - 發現：系統使用 **Flask-Login session-based 認證**（非 JWT）
-  - 狀態：httpOnly cookie 已由 Flask 預設啟用
-  - 修復：移除無用的 localStorage 死代碼，啟用 `withCredentials: true`
-
-- [x] **CSRF 防護** ✅ 基本保護已存在
-  - 發現：Flask 3.0+ 預設 `SameSite=Lax`，已提供基本 CSRF 防護
-  - 狀態：可阻擋第三方網站發起的 POST/PUT/DELETE 請求
-  - 待後端：如需完整 CSRF token 機制，後端需安裝 Flask-WTF
+- [x] **測試環境修復** ✅ (2026-01-14)
+  - Playwright 設定改用 HTTP (nginx port 80)
+  - 登入按鈕選擇器統一為 "Login"
+  - 114/114 測試通過
 
 ---
 
 ## P1 - 高優先級
 
+### 缺少頁面實作
+
+- [ ] **Register 頁面** (Figma 3:1042)
+  - 位置：`pages/register.vue`
+  - 功能：帳號、Email、密碼、確認密碼
+  - 工時：3 小時
+
+- [ ] **Create Project 頁面** (Figma 3:785, 3:814)
+  - 位置：`pages/projects/create.vue`
+  - 功能：專案名稱、地址搜尋、地圖選點、indoor/outdoor toggle、成員邀請
+  - 工時：1 天
+
+- [ ] **Project Setting 頁面** (Figma 3:755)
+  - 位置：`pages/projects/[projectId]/setting.vue`
+  - 功能：專案名稱編輯、成員列表、邀請/移除成員、刪除專案
+  - 工時：1 天
+
 ### 代碼品質
 
 - [ ] **TypeScript 類型安全**
-  - 檔案：`pages/index.vue`, `stores/assistant.ts`
-  - 問題：44 處使用 `any` 類型
-  - 解決：定義明確的 interface（Project, User, AIModel）
+  - 檔案：`stores/assistant.ts`, `pages/*/overviews.vue`
+  - 問題：32 處使用 `any` 類型
   - 工時：1 天
 
-- [ ] **錯誤處理不完整**
-  - 檔案：`pages/ai-models.vue`
-  - 問題：Enable/Preview/Pretrain/Retrain 無實際錯誤處理
-  - 解決：為所有 placeholder 添加統一錯誤處理
-  - 工時：4 小時
-
-- [ ] **API 層缺少攔截器**
+- [ ] **API 層攔截器**
   - 檔案：`plugins/api.clients.ts`
   - 問題：無全局錯誤攔截（401/403/500）
-  - 解決：添加 Axios interceptors
   - 工時：3 小時
-
-### 重複代碼
-
-- [ ] **Performance 頁面重構**
-  - 檔案：`pages/projects/[projectId]/performance/` (4 個頁面)
-  - 問題：nes.vue, mro.vue, ai-model.vue, ran-slice.vue 有 90% 相似代碼
-  - 解決：抽取為 `GrafanaPerformance.vue` 通用組件
-  - 工時：3 小時
-
-- [ ] **地圖初始化邏輯重複**
-  - 檔案：`pages/index.vue`, `pages/projects/[projectId]/config/evaluations.vue`
-  - 問題：Mapbox 初始化代碼重複
-  - 解決：抽取為 `composables/useMapbox.ts`
-  - 工時：4 小時
-
-### Vue Query 配置
-
-- [ ] **全局 staleTime 配置**
-  - 檔案：需新建 `plugins/vue-query.ts`
-  - 問題：使用默認值（0），導致每次組件掛載都重新請求
-  - 解決：設定 5 分鐘 staleTime，關閉 refetchOnWindowFocus
-  - 工時：1 小時
 
 ---
 
 ## P2 - 中優先級
 
-### 功能完善
+### 缺少頁面實作
 
-- [ ] **AI Assistant 整合確認**
-  - 檔案：`components/ChatInterface.vue` vs 設計稿 `admin/ai-assistant.vue`
-  - 問題：需確認是否符合設計規格（聊天室列表、預設問題）
-  - 解決：比對設計稿，補齊缺失功能
+- [ ] **Upload AI Model 頁面** (Figma 3:662)
+  - 位置：`pages/ai-models/upload.vue`
+  - 功能：模型名稱、檔案上傳、配置、現有模型選擇
+  - 工時：4 小時
+
+- [ ] **gNB 頁面** (Figma 3:616)
+  - 位置：`pages/projects/[projectId]/gnb.vue`
+  - 功能：gNodeB 配置與管理
+  - 工時：4 小時
+
+- [ ] **Scenario 頁面** (Figma 3:517)
+  - 位置：`pages/projects/[projectId]/scenario.vue`
+  - 功能：場景驗測、地圖顯示、小人走動動畫
   - 工時：1 天
 
-- [ ] **Scenario Overview 頁面結構**
-  - 設計：`scenario-overview-outdoor.vue`, `scenario-overview-indoor.vue`
-  - 實作：僅有 `overviews.vue`
-  - 問題：設計有分頁，實作為單一頁面
-  - 解決：確認產品需求，決定是否拆分
-  - 工時：需產品確認
+- [ ] **Simulation 頁面** (Figma 3:570, 3:582)
+  - 位置：`pages/projects/[projectId]/simulation.vue`
+  - 功能：模擬設定、資料儲存、已儲存資料列表
+  - 工時：1 天
 
-- [ ] **選單項目對齊**
-  - 設計：`menu-outdoor.vue`, `menu-indoor.vue`
-  - 實作：Vuetify Navigation Drawer
-  - 問題：需確認所有選單項目已涵蓋
-  - 解決：比對設計，補齊缺失項目
-  - 工時：2 小時
+- [ ] **Federal Learning 頁面** (Figma 3:596, 3:604)
+  - 位置：`pages/federal-learning/index.vue`, `pages/federal-learning/[modelId].vue`
+  - 功能：聯邦學習模型列表與詳情
+  - 工時：1 天
 
-### 開發體驗
+### 功能增強
 
-- [ ] **移除 Console.log**
-  - 檔案：全域 107 處
-  - 問題：生產環境不應有 debug log
-  - 解決：設定 Vite build 移除 console，或使用 Logger 服務
-  - 工時：2 小時
-
-- [ ] **TODO 註解整理**
-  - 檔案：全域 45 處 TODO/PLACEHOLDER
-  - 問題：分散的待辦事項難以追蹤
-  - 解決：轉移至 issue tracking 系統
-  - 工時：2 小時
-
-### 性能優化
-
-- [ ] **Mapbox Marker 更新優化**
-  - 檔案：`pages/index.vue:223-277`
-  - 問題：每次更新都移除全部 markers 再重建
-  - 解決：差分更新，僅處理變化的 markers
-  - 工時：3 小時
-
-- [ ] **3D 模型緩存**
-  - 檔案：`pages/projects/[projectId]/config/evaluations.vue`
-  - 問題：每次進入頁面都重新下載 GLTF 模型
-  - 解決：實作模型緩存 composable
+- [ ] **AI Assistant 完整版** (Figma 3:1014)
+  - 當前：簡易聊天介面
+  - 目標：聊天室列表、新增聊天室、預設問題按鈕
   - 工時：4 小時
+
+- [ ] **Delete Project 確認對話框** (Figma 3:876)
+  - 功能：刪除專案二次確認、成功/失敗訊息
+  - 工時：2 小時
 
 ---
 
 ## P3 - 低優先級
 
+### 進階功能
+
+- [ ] **CoTrain (聯合訓練)** (Figma 3:1118, 3:1132)
+  - 功能：選擇多個專案進行聯合訓練
+  - 工時：1 天
+
+- [ ] **Simulation Data 列表** (Figma 3:1163)
+  - 功能：已儲存模擬資料列表與選擇
+  - 工時：3 小時
+
 ### 長期優化
 
 - [ ] **建立 Component Library**
-  - 問題：缺乏標準化的通用組件
-  - 解決：整理 Button、Form、Dialog 等組件，建立 Storybook
+  - 整理 Button、Form、Dialog 等組件
   - 工時：1 週
 
 - [ ] **Service Worker 實作**
-  - 問題：無離線支援，資源重複下載
-  - 解決：實作 PWA，緩存 Mapbox 樣式和 3D 模型
+  - 離線支援、資源緩存
   - 工時：3 天
-
-- [ ] **虛擬滾動**
-  - 檔案：`pages/ai-models.vue`
-  - 問題：當模型數量 > 100 時效能下降
-  - 解決：使用 vue-virtual-scroller
-  - 工時：3 小時
-
-- [ ] **Vuetify 樹搖優化**
-  - 問題：Bundle 包含未使用的 Vuetify 組件
-  - 解決：配置 Vuetify tree-shaking
-  - 工時：2 小時
-
-### 架構改進
-
-- [ ] **API 層重構**
-  - 問題：直接使用自動生成的 API 客戶端
-  - 解決：為每個模組建立 wrapper service
-  - 工時：1 週
-
-- [ ] **狀態管理整理**
-  - 問題：Pinia + Vue Query 混用邊界不清
-  - 解決：明確定義 client state vs server state 職責
-  - 工時：2 天
 
 ---
 
@@ -208,47 +212,21 @@
 
 | API | 方法 | 說明 | 前端檔案 |
 |-----|------|------|---------|
-| `/primitive_ai_models/{id}/enable` | PATCH | 啟用/停用模型 | ai-models.vue:502-530 |
-| `/primitive_ai_models/{id}/preview` | GET | 預覽模型資訊 | ai-models.vue:531-560 |
-| `/primitive_ai_models/{id}/pretrain` | POST | 執行預訓練 | ai-models.vue:561-587 |
-| `/primitive_ai_models/{id}/retrain` | POST | 重新訓練（round, epochs） | ai-models.vue:446-500 |
-| `/primitive_ai_models/{id}/version` | PATCH | 版本切換 | ai-models.vue:TBD |
+| `/primitive_ai_models/{id}/enable` | PATCH | 啟用/停用模型 | ai-models.vue |
+| `/primitive_ai_models/{id}/preview` | GET | 預覽模型資訊 | ai-models.vue |
+| `/primitive_ai_models/{id}/pretrain` | POST | 執行預訓練 | ai-models.vue |
+| `/primitive_ai_models/{id}/retrain` | POST | 重新訓練 | ai-models.vue |
 
-### AI Model Evaluation 相關
+### 新增需求
 
-| API | 方法 | 說明 | 前端檔案 |
-|-----|------|------|---------|
-| `/projects/{id}/ai-model-evaluation/inference` | GET | 模型推斷結果 | ai-model-evaluation.vue:74-90 |
-
-### Project 相關
-
-| 欄位/API | 說明 | 影響 |
-|----------|------|------|
-| `Project.category` | OUTDOOR/INDOOR 分類欄位 | index.vue 目前用奇偶數模擬 |
-
----
-
-## 設計與實作差異
-
-### 實作優於設計
-
-| 功能 | 設計 | 實作 | 差異 |
-|------|------|------|------|
-| Login | 基本表單 | 動畫 + 驗證 + 錯誤處理 | 實作更優 |
-| Projects List | 靜態圖片 | Mapbox 互動地圖 | 實作更優 |
-| AI Models | 3 按鈕 | 6 按鈕 + Modal | 功能更完整 |
-| Scenario Overview | Placeholder | 3D 地圖 + Heatmap | 實作遠超設計 |
-| Pretrain/Retrain/Preview | 全頁面 | Modal 對話框 | UX 更佳 |
-
-### 設計未實作
-
-| 設計檔案 | 狀態 | 行動 |
-|---------|------|------|
-| `ai-assistant.vue` | 需確認 | 比對 ChatInterface.vue |
-| `scenario-overview-outdoor.vue` | 可能整合 | 確認是否需要獨立頁面 |
-| `scenario-overview-indoor.vue` | 可能整合 | 確認是否需要獨立頁面 |
-| `menu-outdoor.vue` | 需確認 | 確認選單項目完整性 |
-| `menu-indoor.vue` | 需確認 | 確認選單項目完整性 |
+| API | 方法 | 說明 | 對應 Figma |
+|-----|------|------|-----------|
+| `/auth/register` | POST | 用戶註冊 | 3:1042 |
+| `/projects` | POST | 建立專案 | 3:785 |
+| `/projects/{id}/members` | GET/POST/DELETE | 專案成員管理 | 3:755 |
+| `/primitive_ai_models/upload` | POST | 上傳 AI 模型 | 3:662 |
+| `/projects/{id}/simulation` | GET/POST | 模擬資料 | 3:570 |
+| `/federal-learning/models` | GET | 聯邦學習模型列表 | 3:596 |
 
 ---
 
@@ -258,58 +236,16 @@
 
 | 項目 | 數量 | 位置 | 優先級 |
 |------|------|------|--------|
-| `any` 類型使用 | 44 處 | 全域 | P1 |
-| `as any` 強制轉型 | 12 處 | stores/assistant.ts | P1 |
-| Console.log | 107 處 | 全域 | P2 |
+| `any` 類型使用 | 32 處 | stores/, pages/ | P1 |
+| Console.log | 0 (生產) | 自動移除 | ✅ |
 | TODO 註解 | 45 處 | 全域 | P2 |
-| Magic Number | 20+ 處 | 地圖相關 | P3 |
 
 ### 重複代碼
 
-| 項目 | 影響檔案 | 解決方案 |
-|------|---------|---------|
-| Performance 頁面 | 4 個 | 抽取通用組件 |
-| 地圖初始化 | 3 個 | 抽取 composable |
-| fadeIn 動畫 | 5+ 個 | 移至全域樣式 |
-
-### 缺失項目
-
-| 項目 | 當前狀態 | 建議 |
-|------|---------|------|
-| 單元測試 | 無 | 為 stores/ 添加 Vitest |
-| API Mock | 無 | 建立 MSW mock 層 |
-| 錯誤邊界 | 部分 | 完善 ErrorBoundary |
-| Loading 狀態 | 部分 | 統一 Loading 組件 |
-
----
-
-## 性能優化
-
-### Bundle Size 優化
-
-| 項目 | 當前 | 目標 | 節省 |
-|------|------|------|------|
-| 主 Bundle | 1.5 MB | 500 KB | 67% |
-| 圖片資源 | 7.6 MB | 400 KB | 95% |
-| 總傳輸 | 8.5 MB | 1.2 MB | 86% |
-
-### Core Web Vitals 目標
-
-| 指標 | 當前（估計） | 目標 | 改善 |
-|------|-------------|------|------|
-| FCP | 2.5s | 0.9s | -64% |
-| LCP | 4.2s | 1.5s | -64% |
-| TTI | 5.8s | 2.0s | -66% |
-
-### 優化清單
-
-- [ ] 圖片轉 WebP
-- [ ] Code Splitting（Mapbox, THREE.js）
-- [ ] 動態載入地圖組件
-- [ ] Vue Query staleTime 配置
-- [ ] Marker 差分更新
-- [ ] 3D 模型緩存
-- [ ] Service Worker
+| 項目 | 影響檔案 | 解決方案 | 優先級 |
+|------|---------|---------|--------|
+| Performance 頁面 | 4 個 | 抽取通用組件 | P2 |
+| 地圖初始化 | 已解決 | useMapbox.ts | ✅ |
 
 ---
 
@@ -319,29 +255,30 @@
 
 | 檔案 | 測試數 | 覆蓋功能 |
 |------|--------|---------|
-| login.spec.ts | 4 | 登入流程 |
+| login.spec.ts | 12 | 登入流程、Figma 對齊 |
 | ai-models.spec.ts | 32 | AI 模型管理 |
-| performance.spec.ts | 10 | 效能頁面 |
-| profile.spec.ts | 9 | 個人資料 |
-| navigation.spec.ts | 9 | 導航選單 |
+| projects-list.spec.ts | 29 | 專案列表+地圖 |
 | ai-model-evaluation.spec.ts | 11 | 模型評估 |
-| projects-list.spec.ts | 17 | 專案列表+地圖 |
-| **總計** | **83** | - |
+| navigation.spec.ts | 9 | 導航選單 |
+| profile.spec.ts | 10 | 個人資料 |
+| performance.spec.ts | 10 | 效能頁面 |
+| evaluations.spec.ts | 7 | 評估設定 |
+| chat-interface.spec.ts | 4 | AI 助手 |
+| **總計** | **114** | - |
 
-### 測試缺口
+### 待新增測試
 
-| 項目 | 當前 | 需要 |
-|------|------|------|
-| 單元測試（stores/） | 0 | 至少 20 個 |
-| 單元測試（composables/） | 0 | 至少 10 個 |
-| API Mock 測試 | 0 | 按模組覆蓋 |
-| 視覺回歸測試 | 0 | 關鍵頁面 |
+| 功能 | 預估測試數 |
+|------|-----------|
+| Register 頁面 | 8 |
+| Create Project 頁面 | 12 |
+| Project Setting 頁面 | 10 |
 
 ---
 
 ## 進度追蹤
 
-### 已完成（Phase 1-6 + 優化 + 安全）
+### 已完成 (Phase 1-6 + 優化 + 安全 + Figma 對齊)
 
 - [x] Phase 1: Login UI
 - [x] Phase 2: AI Models 頁面（6 按鈕）
@@ -349,26 +286,27 @@
 - [x] Phase 4: 導航選單對齊
 - [x] Phase 5: AI Model Evaluation 頁面
 - [x] Phase 6: Projects List + 地圖佈局
-- [x] **P0 圖片優化**: PNG → WebP (7.6MB → 948KB, 87.5% 節省)
-- [x] **P1 Vue Query**: 全域 staleTime 5 分鐘，關閉 refetchOnWindowFocus
-- [x] **P1 useMapbox**: 建立可重用 composable 減少 5 個檔案的重複代碼
-- [x] **P2 console.log**: 生產環境自動移除（保留 error/warn）
-- [x] **P1 TypeScript**: index.vue any 類型修復 (9→0)
-- [x] **P0 安全**: 確認 Flask-Login session 認證（非 JWT），移除死代碼，httpOnly 已預設啟用
-- [x] **P0 CSRF**: 確認 SameSite=Lax 已提供基本防護
-- [x] **P0 Code Splitting**: THREE.js (849KB) 和 Mapbox (547KB) 分離成獨立 chunks
+- [x] P0 圖片優化: PNG → WebP (87.5% 節省)
+- [x] P0 Code Splitting: THREE.js / Mapbox 獨立 chunks
+- [x] P0 安全性: Flask-Login 確認、死代碼清理
+- [x] P0 測試環境: Playwright HTTP 設定修復
+- [x] P1 Vue Query: staleTime 5 分鐘
+- [x] P1 useMapbox: 可重用 composable
+- [x] Figma 對齊: Login Accessibility (Copilot Review)
 
 ### 進行中
 
 (無)
 
-### 待開始
+### 待開始 (Phase 7+)
 
-- [ ] P1 TypeScript any 修復 (32 處)
-- [ ] P1 Performance 頁面重構（抽取通用組件）
-- [ ] P2 功能完善
-- [ ] P3 長期優化
-- [ ] P3 進階動態載入（defineAsyncComponent）
+- [ ] **Phase 7: Register 頁面** (P1)
+- [ ] **Phase 8: Create Project 頁面** (P1)
+- [ ] **Phase 9: Project Setting 頁面** (P1)
+- [ ] Phase 10: Upload AI Model (P2)
+- [ ] Phase 11: gNB / Scenario / Simulation (P2)
+- [ ] Phase 12: Federal Learning (P2)
+- [ ] Phase 13: AI Assistant 完整版 (P3)
 
 ---
 
@@ -381,36 +319,32 @@ new/new-frontend/
 ├── pages/
 │   ├── index.vue .................. 專案列表+地圖
 │   ├── login.vue .................. 登入
+│   ├── register.vue ............... 註冊 (待實作)
 │   ├── ai-models.vue .............. AI 模型管理
 │   └── projects/[projectId]/
 │       ├── ai-model-evaluation.vue
-│       ├── overviews.vue .......... 3D 地圖總覽
-│       └── config/evaluations.vue . 評估設定
-├── stores/
-│   ├── user.ts
-│   └── assistant.ts
-├── plugins/
-│   └── api.clients.ts ............. API 客戶端
-└── tests/e2e/ ..................... E2E 測試
+│       ├── setting.vue ............ 專案設定 (待實作)
+│       ├── gnb.vue ................ gNB (待實作)
+│       ├── scenario.vue ........... 場景 (待實作)
+│       ├── simulation.vue ......... 模擬 (待實作)
+│       └── config/evaluations.vue
+├── tests/e2e/ ..................... E2E 測試 (114 個)
+└── playwright.config.ts ........... HTTP localhost 設定
 ```
 
-### 設計檔案路徑
+### Figma 參考
 
 ```
-new_design/
-├── wisdON-nuxt-admin-pages/pages/admin/
-│   ├── login.vue
-│   ├── projects-list.vue
-│   ├── ai-model-evaluation.vue
-│   ├── ai-assistant.vue
-│   ├── pretrain.vue / retrain.vue / preview.vue
-│   └── scenario-overview*.vue
-└── wisdON-figma-node3-407-export/docs/
-    ├── navigation_spec.md
-    ├── workflow.md
-    └── route_map.md
+Figma File: DunvlOkbkGlFFpWzZbtvuf
+Node 3:407 "Normal user" 包含所有一般用戶頁面設計
+關鍵子節點:
+- 3:477 Login
+- 3:1042 Register
+- 3:785/3:814 Create Project
+- 3:755 Project Setting
+- 3:662 Upload AI Model
 ```
 
 ---
 
-*此文件由深度分析 agents 自動產出，請定期更新進度狀態。*
+*此文件於 2026-01-14 根據 Figma Node 3:407 深度分析更新。*
