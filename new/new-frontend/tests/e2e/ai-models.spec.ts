@@ -8,7 +8,7 @@ test.describe('AI Models Page', () => {
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
-    await page.locator('button:has-text("登入")').click()
+    await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
     // 進入 AI Models 頁面
@@ -379,5 +379,87 @@ test.describe('AI Models Page', () => {
       // 等待 loading 結束後應顯示 snackbar
       await expect(page.locator('.v-snackbar:has-text("啟用/停用")')).toBeVisible({ timeout: 3000 })
     }
+  })
+
+  // Figma 對齊測試
+  test.describe('Pretrain/Retrain Modal Figma Alignment', () => {
+    test('Pretrain Result should show training status indicator', async ({ page }) => {
+      const firstRow = page.locator('.ai-list-row').first()
+      if (await firstRow.isVisible()) {
+        const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+        await pretrainBtn.click()
+
+        const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+        await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+        // 確認有 Training Status 顯示
+        const statusBar = resultDialog.locator('.training-status-bar')
+        await expect(statusBar).toBeVisible()
+        await expect(statusBar.locator('.status-label')).toContainText('Training Status')
+        await expect(statusBar.locator('.status-value')).toBeVisible()
+      }
+    })
+
+    test('Pretrain Result should show epoch progress', async ({ page }) => {
+      const firstRow = page.locator('.ai-list-row').first()
+      if (await firstRow.isVisible()) {
+        const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+        await pretrainBtn.click()
+
+        const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+        await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+        // 確認有 Epoch 進度顯示
+        const statusBar = resultDialog.locator('.training-status-bar')
+        await expect(statusBar.locator('.epoch-label')).toContainText('Epoch')
+        await expect(statusBar.locator('.epoch-value')).toBeVisible()
+
+        // 確認 epoch 格式為 "數字/數字"（如 "0/1000"）
+        const epochText = await statusBar.locator('.epoch-value').textContent()
+        expect(epochText).toMatch(/^\d+\/\d+$/)
+      }
+    })
+
+    test('Retrain Modal should have gray header background', async ({ page }) => {
+      const firstRow = page.locator('.ai-list-row').first()
+      if (await firstRow.isVisible()) {
+        const retrainBtn = firstRow.locator('button.bg-purple')
+        await retrainBtn.click()
+
+        const dialog = page.locator('.v-dialog:has-text("Retrain 模型")')
+        await expect(dialog).toBeVisible({ timeout: 3000 })
+
+        // 確認標題區有灰色背景
+        const cardTitle = dialog.locator('.v-card-title')
+        await expect(cardTitle).toBeVisible()
+
+        // 檢查背景色是否為灰色（#c7c7c7 或類似）
+        const bgColor = await cardTitle.evaluate((el) => {
+          return window.getComputedStyle(el).backgroundColor
+        })
+
+        // rgb(199, 199, 199) = #c7c7c7
+        expect(bgColor).toBe('rgb(199, 199, 199)')
+      }
+    })
+
+    test('Pretrain Result header should have solid gray background', async ({ page }) => {
+      const firstRow = page.locator('.ai-list-row').first()
+      if (await firstRow.isVisible()) {
+        const pretrainBtn = firstRow.locator('button:has-text("Pretrain")')
+        await pretrainBtn.click()
+
+        const resultDialog = page.locator('.v-dialog:has-text("Pre-train Result")')
+        await expect(resultDialog).toBeVisible({ timeout: 3000 })
+
+        const cardTitle = resultDialog.locator('.v-card-title')
+        const bgColor = await cardTitle.evaluate((el) => {
+          return window.getComputedStyle(el).backgroundColor
+        })
+
+        // 確認為純色灰色背景而非 gradient
+        expect(bgColor).toBe('rgb(199, 199, 199)')
+      }
+    })
   })
 })
