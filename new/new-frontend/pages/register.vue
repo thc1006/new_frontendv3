@@ -87,7 +87,7 @@
 
               <!-- Confirm Password 欄位 -->
               <div class="form-row">
-                <label for="confirm-password-input" class="field-label">Confirm</label>
+                <label for="confirm-password-input" class="field-label">Confirm Password</label>
                 <div class="password-wrapper">
                   <input
                     id="confirm-password-input"
