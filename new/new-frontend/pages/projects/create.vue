@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height" fluid>
+  <v-container class="fill-height create-project-container" fluid>
     <v-row justify="center" align="center">
       <v-col cols="12" sm="12" md="10" lg="8">
         <!-- page title -->
@@ -56,6 +56,16 @@
                   <div class="text-body-1">lng: {{ coordinates.x.toFixed(6) }} </div>
                   <div class="text-body-1">lat: {{ coordinates.y.toFixed(6) }}</div>
                   <div class="text-body-1">Scope: {{ visibleScope }} × {{ visibleScope }} m</div>
+                  <!-- Indoor/Outdoor toggle - Figma Node 3:785 -->
+                  <div class="mt-4 d-flex align-center">
+                    <v-switch
+                      v-model="isOutdoor"
+                      color="primary"
+                      hide-details
+                      density="compact"
+                    />
+                    <span class="ml-2">{{ isOutdoor ? 'outdoor' : 'indoor' }}</span>
+                  </div>
                 </div>
               </v-col>
             </v-row>
@@ -158,6 +168,7 @@
   
   const inviteEmail = ref('')
   const memberEmails = ref<string[]>([])
+  const isOutdoor = ref(true) // 預設 outdoor
 
   // Disable invite button
   const inviteDisabled = computed(() => {
