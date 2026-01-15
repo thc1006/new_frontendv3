@@ -32,11 +32,11 @@
         <v-form>
           <!-- Project Name -->
           <v-row class="align-center mb-4">
-            <v-col cols="1" class="d-flex align-center">
-              <label class="text-h6 font-weight-medium">Name:</label>
+            <v-col cols="3" class="d-flex align-center">
+              <label class="text-h6 font-weight-medium">Project Name</label>
             </v-col>
 
-            <v-col cols="7">
+            <v-col cols="5">
               <span
                 v-if="!isEditingName"
                 class="text-h6"
@@ -98,9 +98,9 @@
                   :rules="[rules.email]"
                 />
               </v-col>
-              <v-col cols="4">
+              <v-col cols="4" class="d-flex">
                 <v-btn
-                  class="btn-fixed-width"
+                  class="btn-fixed-width me-2"
                   color="primary"
                   style="text-transform: capitalize"
                   :disabled="inviteDisabled"
@@ -108,14 +108,32 @@
                 >
                   Invite
                 </v-btn>
+                <v-btn
+                  class="btn-fixed-width"
+                  variant="outlined"
+                  color="red"
+                  style="text-transform: capitalize"
+                  :disabled="removeDisabled"
+                  @click="removeMember"
+                >
+                  Remove
+                </v-btn>
               </v-col>
             </v-row>
 
             <!-- Displayed Members -->
             <v-row>
               <div class="mt-2">
-                <p v-for="(email, idx) in memberEmails" :key="email">
-                  {{ email }} <span v-if="idx === 0" class="text-grey">Owner</span>
+                <p
+                  v-for="(email, idx) in memberEmails"
+                  :key="email"
+                  :class="{ 'selected-member': selectedMemberIdx === idx }"
+                  style="cursor: pointer"
+                  @click="selectMember(idx)"
+                >
+                  {{ email }}
+                  <span v-if="idx === 0" class="text-grey">Owner</span>
+                  <span v-else class="text-grey">Participant</span>
                 </p>
               </div>
             </v-row>
@@ -143,6 +161,45 @@
         </v-form>
       </v-col>
     </v-row>
+
+    <!-- Delete Confirmation Dialog (Figma 3:876) -->
+    <v-dialog v-model="deleteConfirmDialog" max-width="400" persistent>
+      <v-card>
+        <v-card-title class="text-h5 d-flex align-center">
+          <v-icon color="warning" class="me-2">mdi-alert</v-icon>
+          Warning
+        </v-card-title>
+        <v-card-text>
+          This action will delete the whole project and cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            style="text-transform: capitalize"
+            @click="deleteConfirmDialog = false"
+          >
+            Back
+          </v-btn>
+          <v-btn
+            color="red"
+            style="text-transform: capitalize"
+            @click="confirmDelete"
+          >
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar for notifications -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="3000"
+    >
+      {{ snackbar.text }}
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -161,8 +218,8 @@
   const { $apiClient } = useNuxtApp()
 
   const rules = {
-    required: (v: string) => !!v || '此欄位為必填',
-    email:    (v: string) => /.+@.+\..+/.test(v) || '電子郵件格式錯誤',
+    required: (v: string) => !!v || 'This field is required',
+    email:    (v: string) => /.+@.+\..+/.test(v) || 'Invalid email format',
   }
   const projectName = ref<string | null>(null)
 
@@ -175,6 +232,13 @@
   
   const inviteEmail = ref('')
   const memberEmails = ref<string[]>([])
+  const selectedMemberIdx = ref<number | null>(null)
+  const deleteConfirmDialog = ref(false)
+  const snackbar = ref({
+    show: false,
+    text: '',
+    color: 'info'
+  })
 
   watchEffect(() => {
     if (route.params.projectId) {
@@ -207,9 +271,17 @@
         try {
           await $apiClient.project.projectsUpdate(validProjectId.value, data)
           projectName.value = editedProjectName.value
-          alert('Project name updated!')
+          snackbar.value = {
+            show: true,
+            text: 'Project name updated successfully',
+            color: 'success'
+          }
         } catch (err) {
-          alert('Update failed.')
+          snackbar.value = {
+            show: true,
+            text: 'Failed to update project name',
+            color: 'error'
+          }
           console.error(err)
         }
       }
@@ -231,6 +303,15 @@
         projectName.value = response.data.title ? String(response.data.title) : null
         coordinates.value = (response.data.lon && response.data.lat) ? { x: response.data.lon, y: response.data.lat } : { x: 0, y: 0}
         visibleScope.value = response.data.margin ? Number(response.data.margin*2) : 0
+        // Initialize member list (first one is Owner)
+        const ownerData = response.data.owner as { account?: string; email?: string } | undefined
+        const ownerEmail = ownerData?.email || ownerData?.account || 'owner@example.com'
+        if (memberEmails.value.length === 0) {
+          memberEmails.value = [ownerEmail]
+        } else {
+          // refetch 時確保 owner email 是最新的
+          memberEmails.value[0] = ownerEmail
+        }
         return response.data
       } catch (err: any) {
         if (err.response?.status === 404) {
@@ -328,6 +409,28 @@
     return !inviteEmail.value || rules.email(inviteEmail.value) !== true
   })
 
+  // Disable remove button - Owner (idx=0) cannot be removed
+  const removeDisabled = computed(() => {
+    return selectedMemberIdx.value === null || selectedMemberIdx.value === 0
+  })
+
+  function selectMember(idx: number) {
+    selectedMemberIdx.value = idx
+  }
+
+  function removeMember() {
+    if (selectedMemberIdx.value !== null && selectedMemberIdx.value > 0) {
+      // TODO: Backend API not yet implemented - DELETE /projects/{id}/members/{memberId}
+      const removed = memberEmails.value.splice(selectedMemberIdx.value, 1)
+      selectedMemberIdx.value = null
+      snackbar.value = {
+        show: true,
+        text: `Member ${removed[0]} removed (placeholder - not persisted)`,
+        color: 'warning'
+      }
+    }
+  }
+
   function invite() {
     if (
       inviteEmail.value &&
@@ -336,7 +439,11 @@
     ) {
       memberEmails.value.push(inviteEmail.value)
       inviteEmail.value = ''
-      alert('Invited!')
+      snackbar.value = {
+        show: true,
+        text: 'Member invited (placeholder - not persisted)',
+        color: 'warning'
+      }
     }
   }
 
@@ -344,21 +451,33 @@
     router.back()
   }
 
-  async function deleteProject() {
+  // Show confirmation dialog when Delete button is clicked
+  function deleteProject() {
+    deleteConfirmDialog.value = true
+  }
+
+  // Confirm delete project
+  async function confirmDelete() {
+    deleteConfirmDialog.value = false
     isLoading.value = true
-    if (
-      validProjectId.value !== null
-    ) {
+    if (validProjectId.value !== null) {
       try {
         await $apiClient.project.projectsDelete(validProjectId.value)
-
-        alert(`Project: ${projectName.value} deleted!`)
+        snackbar.value = {
+          show: true,
+          text: `Project "${projectName.value}" deleted successfully`,
+          color: 'success'
+        }
         navigateTo(`/`)
       } catch (e) {
-        alert('刪除失敗')
+        snackbar.value = {
+          show: true,
+          text: 'Failed to delete project',
+          color: 'error'
+        }
         console.error(e)
       } finally {
-        isLoading.value = false 
+        isLoading.value = false
       }
     }
   }
@@ -377,6 +496,12 @@
   height: 20px;
   border-radius: 50%;
   border: 2px solid white;
+}
+
+.selected-member {
+  background-color: #e3f2fd;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 </style>
