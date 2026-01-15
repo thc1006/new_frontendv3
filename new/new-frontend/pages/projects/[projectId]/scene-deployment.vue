@@ -64,11 +64,9 @@
               </v-btn>
             </div>
 
-            <!-- 地圖區域 placeholder -->
-            <div class="map-placeholder">
-              <v-icon size="64" color="grey">mdi-map-marker</v-icon>
-              <p>地圖載入中...</p>
-              <p class="text-caption text-grey">TODO: 整合 Mapbox + Threebox 3D 地圖</p>
+            <!-- 地圖區域 -->
+            <div class="map-container">
+              <div id="sceneMapContainer" class="map-view" />
             </div>
 
             <!-- RU 互動提示 -->
@@ -118,16 +116,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { navigateTo } from '#app'
 import { useUserStore } from '~/stores/user'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import 'threebox-plugin/dist/threebox.css'
+import * as Threebox from 'threebox-plugin'
+
+declare global {
+  interface Window {
+    tb: any
+  }
+}
 
 const route = useRoute()
 const router = useRouter()
 const { $apiClient } = useNuxtApp()
 const userStore = useUserStore()
+const config = useRuntimeConfig()
+const isOnline = config.public?.isOnline
 
 // 直接從 route 取得 projectId，確保響應式更新
 const projectId = computed(() => {
@@ -145,6 +155,25 @@ const projectName = ref('Loading...')
 const projectExists = ref(false)
 const errorDialog = ref(false)
 const errorMessage = ref('')
+
+// 地圖相關
+let map: mapboxgl.Map | null = null
+const mapAccessToken = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
+const onlineStyle = 'mapbox://styles/mapbox/streets-v12'
+const offlineStyle = config.public?.offlineMapboxGLJSURL
+
+// 專案座標 (從 API 取得)
+const projectLat = ref<number | null>(null)
+const projectLon = ref<number | null>(null)
+const projectMargin = ref<number | null>(null)
+
+const mapCenter = computed<[number, number]>(() => {
+  if (projectLon.value !== null && projectLat.value !== null) {
+    return [projectLon.value, projectLat.value]
+  }
+  // 預設座標 (台灣)
+  return [120.21676, 22.99414]
+})
 
 // TODO: 後端目前無 category 欄位，暫時使用 project_id 奇偶數模擬分類
 // 奇數 = OUTDOOR，偶數 = INDOOR
@@ -164,6 +193,10 @@ const { isLoading: isLoadingProject } = useQuery({
       const response = await $apiClient.project.projectsDetail(validProjectId.value)
       projectExists.value = true
       projectName.value = response.data.title || `Project ${projectId.value}`
+      // 取得專案座標
+      projectLat.value = response.data.lat ? Number(response.data.lat) : null
+      projectLon.value = response.data.lon ? Number(response.data.lon) : null
+      projectMargin.value = response.data.margin ? Number(response.data.margin) : null
       return response.data
     } catch (err: any) {
       if (err.response?.status === 404) {
@@ -258,6 +291,126 @@ function handleEvaluate() {
 function handleApplyConfig() {
   showPlaceholder('APPLY CONFIG')
 }
+
+// 等待 DOM 元素出現
+const waitForElement = (selector: string) => {
+  return new Promise(resolve => {
+    if (document.getElementById(selector)) {
+      return resolve(document.getElementById(selector))
+    }
+    const observer = new MutationObserver(() => {
+      if (document.getElementById(selector)) {
+        observer.disconnect()
+        resolve(document.getElementById(selector))
+      }
+    })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+  })
+}
+
+// 初始化地圖
+const initializeMap = async () => {
+  if (map) return
+  const mapContainer = document.getElementById('sceneMapContainer')
+  if (!mapContainer) {
+    console.error('Map container not found')
+    return
+  }
+  try {
+    mapboxgl.accessToken = mapAccessToken
+    const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
+
+    map = new mapboxgl.Map({
+      container: 'sceneMapContainer',
+      style: initialStyle,
+      projection: 'globe',
+      center: mapCenter.value,
+      zoom: 15,
+      pitch: 45  // 3D 傾斜角度
+    })
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }))
+    map.addControl(new mapboxgl.ScaleControl())
+
+    // 載入 3D 模型
+    map.on('style.load', () => {
+      load3DModel()
+    })
+  } catch (error) {
+    console.error('Error initializing map:', error)
+  }
+}
+
+// 載入 3D 模型
+const load3DModel = async () => {
+  if (!validProjectId.value || !map) return
+  try {
+    const response = await $apiClient.project.mapsFrontendList(validProjectId.value)
+    const gltfJson = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+    const blob = new Blob([JSON.stringify(gltfJson)], { type: 'application/json' })
+    const reader = new FileReader()
+    reader.readAsDataURL(blob)
+    reader.onloadend = () => {
+      const base64data = reader.result as string
+      const base64Content = base64data.split(',')[1]
+      map?.addLayer({
+        id: 'scene-threebox-model',
+        type: 'custom',
+        renderingMode: '3d',
+        onAdd: function (mapInstance, gl) {
+          const tb = (window.tb = new Threebox.Threebox(
+            mapInstance,
+            gl,
+            { defaultLights: true }
+          ))
+          const options = {
+            obj: 'data:text/plain;base64,' + base64Content,
+            type: 'gltf',
+            scale: { x: 1, y: 1, z: 1 },
+            units: 'meters',
+            rotation: { x: 0, y: 0, z: 180 },
+            anchor: 'center'
+          }
+          tb.loadObj(options, (model: any) => {
+            model.setCoords(mapCenter.value)
+            tb.add(model)
+          })
+        },
+        render: function () {
+          if (window.tb) {
+            window.tb.update()
+          }
+        }
+      })
+    }
+  } catch (error) {
+    // 沒有 3D 模型也沒關係，只顯示地圖
+    console.warn('No 3D model available for this project:', error)
+  }
+}
+
+// 當專案載入完成後初始化地圖
+watchEffect(() => {
+  if (!isLoadingProject.value && projectExists.value && hasProjectAccess.value) {
+    nextTick(async () => {
+      await waitForElement('sceneMapContainer')
+      initializeMap()
+    })
+  }
+})
+
+// 清理資源
+onUnmounted(() => {
+  if (map) {
+    map.remove()
+    map = null
+  }
+  if (window.tb) {
+    window.tb = null
+  }
+})
 </script>
 
 <style scoped>
@@ -300,16 +453,17 @@ function handleApplyConfig() {
   text-transform: none;
 }
 
-.map-placeholder {
-  background: #f5f5f5;
-  border: 2px dashed #ccc;
+.map-container {
+  position: relative;
   border-radius: 8px;
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
   margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-view {
+  width: 100%;
+  height: 450px;
 }
 
 .ru-tips {

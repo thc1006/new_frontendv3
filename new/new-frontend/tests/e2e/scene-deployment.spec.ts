@@ -162,9 +162,21 @@ test.describe('Scene Deployment Page', () => {
       await page.goto('/projects/3/scene-deployment')
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
-      // 檢查地圖容器存在（目前是 placeholder 或實際地圖）
-      const mapContainer = page.locator('.map-container, .map-placeholder')
+      // 檢查地圖容器存在
+      const mapContainer = page.locator('.map-container')
       await expect(mapContainer).toBeVisible()
+    })
+
+    test('should display mapbox map element', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      // 等待 Mapbox 地圖載入
+      const mapView = page.locator('#sceneMapContainer')
+      await expect(mapView).toBeVisible({ timeout: 10000 })
+
+      // 確認 Mapbox canvas 已經載入
+      await expect(page.locator('#sceneMapContainer canvas')).toBeVisible({ timeout: 15000 })
     })
   })
 
