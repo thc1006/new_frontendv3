@@ -32,11 +32,11 @@
         <v-form>
           <!-- Project Name -->
           <v-row class="align-center mb-4">
-            <v-col cols="1" class="d-flex align-center">
-              <label class="text-h6 font-weight-medium">Name:</label>
+            <v-col cols="3" class="d-flex align-center">
+              <label class="text-h6 font-weight-medium">Project Name</label>
             </v-col>
 
-            <v-col cols="7">
+            <v-col cols="5">
               <span
                 v-if="!isEditingName"
                 class="text-h6"
@@ -98,9 +98,9 @@
                   :rules="[rules.email]"
                 />
               </v-col>
-              <v-col cols="4">
+              <v-col cols="4" class="d-flex">
                 <v-btn
-                  class="btn-fixed-width"
+                  class="btn-fixed-width me-2"
                   color="primary"
                   style="text-transform: capitalize"
                   :disabled="inviteDisabled"
@@ -108,14 +108,32 @@
                 >
                   Invite
                 </v-btn>
+                <v-btn
+                  class="btn-fixed-width"
+                  variant="outlined"
+                  color="red"
+                  style="text-transform: capitalize"
+                  :disabled="removeDisabled"
+                  @click="removeMember"
+                >
+                  Remove
+                </v-btn>
               </v-col>
             </v-row>
 
             <!-- Displayed Members -->
             <v-row>
               <div class="mt-2">
-                <p v-for="(email, idx) in memberEmails" :key="email">
-                  {{ email }} <span v-if="idx === 0" class="text-grey">Owner</span>
+                <p
+                  v-for="(email, idx) in memberEmails"
+                  :key="email"
+                  :class="{ 'selected-member': selectedMemberIdx === idx }"
+                  style="cursor: pointer"
+                  @click="selectMember(idx)"
+                >
+                  {{ email }}
+                  <span v-if="idx === 0" class="text-grey">Owner</span>
+                  <span v-else class="text-grey">participant</span>
                 </p>
               </div>
             </v-row>
@@ -143,6 +161,36 @@
         </v-form>
       </v-col>
     </v-row>
+
+    <!-- Delete Confirmation Dialog (Figma 3:876) -->
+    <v-dialog v-model="deleteConfirmDialog" max-width="400" persistent>
+      <v-card>
+        <v-card-title class="text-h5 d-flex align-center">
+          <v-icon color="warning" class="me-2">mdi-alert</v-icon>
+          Warning
+        </v-card-title>
+        <v-card-text>
+          This action will delete the whole project and cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="grey"
+            style="text-transform: capitalize"
+            @click="deleteConfirmDialog = false"
+          >
+            Back
+          </v-btn>
+          <v-btn
+            color="red"
+            style="text-transform: capitalize"
+            @click="confirmDelete"
+          >
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -175,6 +223,8 @@
   
   const inviteEmail = ref('')
   const memberEmails = ref<string[]>([])
+  const selectedMemberIdx = ref<number | null>(null)
+  const deleteConfirmDialog = ref(false)
 
   watchEffect(() => {
     if (route.params.projectId) {
@@ -231,6 +281,12 @@
         projectName.value = response.data.title ? String(response.data.title) : null
         coordinates.value = (response.data.lon && response.data.lat) ? { x: response.data.lon, y: response.data.lat } : { x: 0, y: 0}
         visibleScope.value = response.data.margin ? Number(response.data.margin*2) : 0
+        // 初始化成員列表 (第一筆是 Owner)
+        const ownerData = response.data.owner as { account?: string; email?: string } | undefined
+        const ownerEmail = ownerData?.email || ownerData?.account || 'owner@example.com'
+        if (memberEmails.value.length === 0) {
+          memberEmails.value = [ownerEmail]
+        }
         return response.data
       } catch (err: any) {
         if (err.response?.status === 404) {
@@ -328,6 +384,24 @@
     return !inviteEmail.value || rules.email(inviteEmail.value) !== true
   })
 
+  // Disable remove button - Owner (idx=0) 不能被移除
+  const removeDisabled = computed(() => {
+    return selectedMemberIdx.value === null || selectedMemberIdx.value === 0
+  })
+
+  function selectMember(idx: number) {
+    selectedMemberIdx.value = idx
+  }
+
+  function removeMember() {
+    if (selectedMemberIdx.value !== null && selectedMemberIdx.value > 0) {
+      // TODO: 待後端 API 實作 - DELETE /projects/{id}/members/{memberId}
+      const removed = memberEmails.value.splice(selectedMemberIdx.value, 1)
+      selectedMemberIdx.value = null
+      alert(`Member ${removed[0]} removed! (placeholder)`)
+    }
+  }
+
   function invite() {
     if (
       inviteEmail.value &&
@@ -344,21 +418,25 @@
     router.back()
   }
 
-  async function deleteProject() {
+  // 點擊 Delete 按鈕時顯示確認對話框
+  function deleteProject() {
+    deleteConfirmDialog.value = true
+  }
+
+  // 確認刪除專案
+  async function confirmDelete() {
+    deleteConfirmDialog.value = false
     isLoading.value = true
-    if (
-      validProjectId.value !== null
-    ) {
+    if (validProjectId.value !== null) {
       try {
         await $apiClient.project.projectsDelete(validProjectId.value)
-
         alert(`Project: ${projectName.value} deleted!`)
         navigateTo(`/`)
       } catch (e) {
-        alert('刪除失敗')
+        alert('Delete failed')
         console.error(e)
       } finally {
-        isLoading.value = false 
+        isLoading.value = false
       }
     }
   }
@@ -377,6 +455,12 @@
   height: 20px;
   border-radius: 50%;
   border: 2px solid white;
+}
+
+.selected-member {
+  background-color: #e3f2fd;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 </style>
