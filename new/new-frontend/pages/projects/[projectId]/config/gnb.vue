@@ -1,6 +1,8 @@
 <template>
   <div class="ru-selector-container">
-    <h2>RU 管理系統</h2>
+    <!-- Figma 3:616 頁面標題 -->
+    <h2 class="text-h4 font-weight-bold mb-2">gNodeB</h2>
+    <h3 class="text-h6 mb-4">RU 管理系統</h3>
     
     <!-- RU 下拉式選單 -->
     <div class="selector-section">

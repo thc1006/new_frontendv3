@@ -146,7 +146,7 @@
       title: 'Configuration',
       children: [
         //{ title: 'AI model', to: `/projects/${projectId.value}/config/ai` },
-        //{ title: 'gNB', to: `/projects/${projectId.value}/config/gnb` },
+        { title: 'gNB', to: `/projects/${projectId.value}/config/gnb` },
         { title: 'Evaluation', to: `/projects/${projectId.value}/config/evaluations` }
       ]
     },
