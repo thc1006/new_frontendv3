@@ -127,6 +127,52 @@ test.describe('Scene Deployment Page', () => {
       await expect(page.locator('.v-list-item:has-text("RSRP (success)")')).toBeVisible({ timeout: 3000 })
       await expect(page.locator('.v-list-item:has-text("Throughput (waiting)")')).toBeVisible()
     })
+
+    test('should hide color bar when heatmap is disabled', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      // 色標預設應該隱藏
+      await expect(page.locator('.color-bar-container')).toBeHidden()
+    })
+
+    test('should show color bar when heatmap is enabled', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      // 點擊 switch 啟用 heatmap
+      await page.locator('.heatmap-switch input').click()
+
+      // 色標應該顯示
+      await expect(page.locator('.color-bar-container')).toBeVisible()
+      await expect(page.locator('.color-bar')).toBeVisible()
+    })
+
+    test('should display RSRP units for RSRP heatmap type', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      // 啟用 heatmap
+      await page.locator('.heatmap-switch input').click()
+
+      // 預設為 RSRP，應顯示 dBm 單位
+      await expect(page.locator('.color-bar-labels')).toContainText('dBm')
+    })
+
+    test('should display Throughput units when type changed', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      // 啟用 heatmap
+      await page.locator('.heatmap-switch input').click()
+
+      // 切換到 Throughput
+      await page.locator('.heatmap-select').click()
+      await page.locator('.v-list-item:has-text("Throughput (waiting)")').click()
+
+      // 應顯示 Mbps 單位
+      await expect(page.locator('.color-bar-labels')).toContainText('Mbps')
+    })
   })
 
   // RU 互動提示測試

@@ -101,7 +101,17 @@
                 density="compact"
                 hide-details
                 class="heatmap-switch"
+                @change="onHeatmapToggle"
               />
+            </div>
+
+            <!-- 色標 (Heatmap 啟用時顯示) -->
+            <div v-show="showHeatmap" class="color-bar-container">
+              <div class="color-bar" />
+              <div class="color-bar-labels">
+                <span class="color-bar-label top">{{ colorBarMax }}</span>
+                <span class="color-bar-label bottom">{{ colorBarMin }}</span>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -116,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watchEffect, watch, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { navigateTo } from '#app'
@@ -249,13 +259,36 @@ function handleDialogClose() {
 
 // Heatmap 控制
 const showHeatmap = ref(false)
-const selectedHeatmapType = ref('RSRP')
+const selectedHeatmapType = ref('RSRP (success)')
 const heatmapTypes = [
   'RSRP (success)',
   'RSRP DT (success)',
   'Throughput (waiting)',
   'Throughput DT (waiting)'
 ]
+
+// 色標值 (根據 heatmap 類型顯示不同單位)
+const colorBarMax = ref('-55 dBm')
+const colorBarMin = ref('-140 dBm')
+
+// 監聽 heatmap 類型變化，更新色標
+watch(selectedHeatmapType, (newType) => {
+  if (newType.includes('RSRP')) {
+    colorBarMax.value = '-55 dBm'
+    colorBarMin.value = '-140 dBm'
+  } else {
+    colorBarMax.value = 'max Mbps'
+    colorBarMin.value = '0 Mbps'
+  }
+})
+
+// 切換 heatmap 圖層顯示
+function onHeatmapToggle() {
+  if (map && map.getLayer('sceneHeatmapLayer')) {
+    map.setLayoutProperty('sceneHeatmapLayer', 'visibility', showHeatmap.value ? 'visible' : 'none')
+  }
+  // TODO: 整合實際 heatmap 資料 API
+}
 
 const snackbar = ref({ show: false, text: '', color: 'info' })
 
@@ -508,5 +541,39 @@ onUnmounted(() => {
 
 .heatmap-switch {
   margin-left: auto;
+}
+
+/* 色標 */
+.color-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.color-bar {
+  width: 200px;
+  height: 16px;
+  background: linear-gradient(to right, blue, cyan, green, yellow, orange, red);
+  border-radius: 2px;
+}
+
+.color-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+  font-size: 12px;
+  color: #666;
+}
+
+.color-bar-label.top {
+  font-weight: 500;
+}
+
+.color-bar-label.bottom {
+  font-weight: 500;
 }
 </style>
