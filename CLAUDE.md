@@ -320,23 +320,48 @@ new_design/
 
 # 待規劃功能 (Phase 7+)
 
-> 詳細規劃請參考 `.claude/handoff.md`。
+> 詳細規劃請參考 `todolist.md` 和 Figma Node 3:407。
 
 | Phase | 功能 | 優先級 | 狀態 |
 |-------|------|--------|------|
 | 5 | AI Model Evaluation 頁面 | P1 (高) | ✅ 已完成 |
 | 6 | Projects List 改進 | P2 (中) | ✅ 已完成 (INDOOR/OUTDOOR 分類) |
 | 6.3 | Projects List 地圖背景 | P3 (低) | ✅ 已完成 (Mapbox + markers + 互動) |
+| 7 | Register 頁面 | P1 (高) | 待實作 (Figma 3:1042) |
+| 8 | Create Project 頁面 | P1 (高) | 待實作 (Figma 3:785) |
+| 9 | Project Setting 頁面 | P1 (高) | 待實作 (Figma 3:755) |
+| 10 | Upload AI Model | P2 (中) | 待實作 (Figma 3:662) |
+| 11 | gNB/Scenario/Simulation | P2 (中) | 待實作 |
+| 12 | Federal Learning | P2 (中) | 待實作 |
 
 ## 測試統計
 
 | 測試檔案 | 測試數量 |
 |----------|----------|
-| login.spec.ts | 4 |
+| login.spec.ts | 12 |
 | ai-models.spec.ts | 32 |
+| projects-list.spec.ts | 29 |
 | performance.spec.ts | 10 |
-| profile.spec.ts | 9 |
+| profile.spec.ts | 10 |
 | navigation.spec.ts | 9 |
 | ai-model-evaluation.spec.ts | 11 |
-| projects-list.spec.ts | 17 |
-| **總計** | **83** |
+| evaluations.spec.ts | 7 |
+| chat-interface.spec.ts | 4 |
+| **總計** | **114** |
+
+## Figma 設計參考
+
+```
+Figma File: DunvlOkbkGlFFpWzZbtvuf
+Node 3:407 "Normal user" - 包含所有一般用戶頁面
+
+關鍵子節點:
+- 3:477 Login (✅ 已完成)
+- 3:491 Profile (✅ 已完成)
+- 3:713 Projects List (✅ 已完成)
+- 3:420 AI Model 配置 (✅ 已完成)
+- 3:1042 Register (待實作)
+- 3:785 Create Project outdoor (待實作)
+- 3:814 Create Project indoor (待實作)
+- 3:755 Project Setting (待實作)
+```
