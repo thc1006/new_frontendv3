@@ -366,6 +366,7 @@
       lat: coordinates.value.y,
       lon: coordinates.value.x,
       margin: apiScope.value,
+      is_outdoor: isOutdoor.value, // indoor/outdoor 專案類型
     }
     try {
       const response = await $apiClient.project.projectsCreate(data)

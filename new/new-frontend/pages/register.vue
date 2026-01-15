@@ -336,12 +336,12 @@ async function onSubmit() {
     showSuccessDialog.value = true
   } catch (err: any) {
     const status = err?.response?.status
-    let message = '註冊失敗，請稍後再試'
+    let message = 'Registration failed. Please try again later.'
 
     if (status === 409) {
-      message = '帳號或 Email 已被註冊'
+      message = 'Account or email has already been registered.'
     } else if (status === 400) {
-      message = '請檢查輸入資料格式'
+      message = 'Please check the input data format.'
     }
 
     popupMessage.value = message

@@ -22,7 +22,7 @@ test.describe('Create Project Page', () => {
     })
 
     test('should display page title New Project', async ({ page }) => {
-      await expect(page.locator('h1, h2, .page-title')).toContainText(/New Project|新專案/i)
+      await expect(page.locator('h1, h2, .page-title')).toContainText(/New Project/i)
     })
   })
 
