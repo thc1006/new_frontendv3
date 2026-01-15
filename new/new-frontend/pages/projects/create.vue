@@ -19,29 +19,58 @@
           <!-- Position Selects -->
           <div class="mt-4">
             <v-row dense>
-              <!-- Choose Position -->
-              <v-col cols="8">
-                <label class="text-h6 font-weight-medium">Search Address (OpenStreetMap)</label>
-                <v-text-field
-                  v-model="searchAddress"
-                  placeholder="請輸入地址，例如 高雄市前鎮區凱旋四路 119號"
-                  density="comfortable"
-                  outlined
-                  hint="門牌號前請加空格，並以阿拉伯數字表示"
-                  persistent-hint
-                />
-              </v-col>
-              <v-col cols="2" class="d-flex align-center justify-center">
-                <v-btn
-                  color="primary"
-                  class="btn-fixed-width"
-                  :disabled="searchDisabled"
-                  style="text-transform: capitalize"
-                  @click="geocodeAddress"
-                >
-                  Search
-                </v-btn>
-              </v-col>
+              <!-- Outdoor: Search Address (Figma 3:785) -->
+              <template v-if="isOutdoor">
+                <v-col cols="8">
+                  <label class="text-h6 font-weight-medium">Search Address (OpenStreetMap)</label>
+                  <v-text-field
+                    v-model="searchAddress"
+                    placeholder="請輸入地址，例如 高雄市前鎮區凱旋四路 119號"
+                    density="comfortable"
+                    outlined
+                    hint="門牌號前請加空格，並以阿拉伯數字表示"
+                    persistent-hint
+                  />
+                </v-col>
+                <v-col cols="2" class="d-flex align-center justify-center">
+                  <v-btn
+                    color="primary"
+                    class="btn-fixed-width"
+                    :disabled="searchDisabled"
+                    style="text-transform: capitalize"
+                    @click="geocodeAddress"
+                  >
+                    Search
+                  </v-btn>
+                </v-col>
+              </template>
+              <!-- Indoor: Upload map file (Figma 3:814) -->
+              <template v-else>
+                <v-col cols="8">
+                  <label class="text-h6 font-weight-medium">Upload your map file</label>
+                  <v-file-input
+                    v-model="mapFile"
+                    placeholder="選擇地圖檔案"
+                    density="comfortable"
+                    prepend-icon=""
+                    prepend-inner-icon="mdi-upload"
+                    accept=".gltf,.glb,.json"
+                    hint="支援 GLTF, GLB, JSON 格式"
+                    persistent-hint
+                  />
+                </v-col>
+                <v-col cols="2" class="d-flex align-center justify-center">
+                  <v-btn
+                    color="primary"
+                    class="btn-fixed-width"
+                    :disabled="uploadDisabled"
+                    style="text-transform: capitalize"
+                    @click="uploadMapFile"
+                  >
+                    Upload
+                  </v-btn>
+                </v-col>
+              </template>
             </v-row>
             <!-- Map preview -->
             <v-row>
@@ -169,6 +198,7 @@
   const inviteEmail = ref('')
   const memberEmails = ref<string[]>([])
   const isOutdoor = ref(true) // 預設 outdoor
+  const mapFile = ref<File[]>([]) // Indoor 模式用的地圖檔案
 
   // Disable invite button
   const inviteDisabled = computed(() => {
@@ -180,6 +210,11 @@
     return (
       !searchAddress.value
     )
+  })
+
+  // Disable upload button (Indoor mode)
+  const uploadDisabled = computed(() => {
+    return !mapFile.value || mapFile.value.length === 0
   })
 
   // Disable create button 
@@ -309,6 +344,18 @@
       console.error(error)
       alert('查詢地址時發生錯誤')
     }
+  }
+
+  // Indoor 模式：上傳地圖檔案
+  // TODO: 待後端 API 實作 - POST /projects/upload-map
+  function uploadMapFile() {
+    if (!mapFile.value || mapFile.value.length === 0) {
+      alert('請選擇地圖檔案')
+      return
+    }
+    // placeholder: 後端 API 尚未實作
+    alert('上傳功能尚未接上後端 API')
+    console.log('TODO: 上傳地圖檔案', mapFile.value[0]?.name)
   }
 
   async function create() {

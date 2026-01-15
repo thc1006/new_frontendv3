@@ -80,6 +80,49 @@ test.describe('Create Project Page', () => {
     test('should display outdoor/indoor label', async ({ page }) => {
       await expect(page.locator('text=/outdoor|indoor/i').first()).toBeVisible()
     })
+
+    test('should default to outdoor mode', async ({ page }) => {
+      // 預設應該顯示 outdoor
+      await expect(page.locator('text=outdoor')).toBeVisible()
+      // 應該顯示 Search Address
+      await expect(page.locator('text=Search Address')).toBeVisible()
+    })
+
+    test('should switch to indoor mode and show upload field', async ({ page }) => {
+      // 點擊 toggle 切換到 indoor
+      const toggle = page.locator('.v-switch input[type="checkbox"]')
+      await toggle.click()
+
+      // 應該顯示 indoor
+      await expect(page.locator('span:has-text("indoor")')).toBeVisible()
+      // 應該顯示 Upload your map file
+      await expect(page.locator('text=Upload your map file')).toBeVisible()
+      // 應該顯示 Upload 按鈕
+      await expect(page.locator('button:has-text("Upload")')).toBeVisible()
+    })
+
+    test('should hide search field in indoor mode', async ({ page }) => {
+      // 切換到 indoor
+      const toggle = page.locator('.v-switch input[type="checkbox"]')
+      await toggle.click()
+
+      // Search Address 應該隱藏
+      await expect(page.locator('text=Search Address')).not.toBeVisible()
+      // Search 按鈕應該隱藏
+      await expect(page.locator('button:has-text("Search")')).not.toBeVisible()
+    })
+
+    test('should toggle back to outdoor mode', async ({ page }) => {
+      // 切換到 indoor
+      const toggle = page.locator('.v-switch input[type="checkbox"]')
+      await toggle.click()
+      await expect(page.locator('text=Upload your map file')).toBeVisible()
+
+      // 切換回 outdoor
+      await toggle.click()
+      await expect(page.locator('text=Search Address')).toBeVisible()
+      await expect(page.locator('button:has-text("Search")')).toBeVisible()
+    })
   })
 
   // Task 8.6: 成員邀請測試
