@@ -19,8 +19,13 @@
         @click="gotoTFN"
       />
       <v-spacer/>
-      <v-btn v-if="isLoggedIn && isInProjectContext" color="primary" @click="openAssistant">
-        小幫手
+      <v-btn
+        v-if="isLoggedIn && isInProjectContext"
+        variant="text"
+        class="wisdon-chat-btn"
+        @click="openAssistant"
+      >
+        WiSDON Chat
       </v-btn>
       <v-spacer/>
       <v-btn icon @click="logout">
@@ -139,13 +144,14 @@
     mainMenu.filter(item => !item.requiredRole || userRole.value === item.requiredRole)
   )
 
+  // 專案選單結構 (根據 Figma 3:2027, 17:429)
   const projectMenu = computed(() => [
-    //{ title: 'Profile', to: '/profile' },
     { title: 'Overview', to: `/projects/${projectId.value}/overviews` },
+    { title: 'Scene Deployment', to: `/projects/${projectId.value}/scene-deployment` },
+    { title: 'AI Application Simulator', to: `/projects/${projectId.value}/ai-simulator` },
     {
       title: 'Configuration',
       children: [
-        //{ title: 'AI model', to: `/projects/${projectId.value}/config/ai` },
         { title: 'gNB', to: `/projects/${projectId.value}/config/gnb` },
         { title: 'Evaluation', to: `/projects/${projectId.value}/config/evaluations` }
       ]
@@ -160,8 +166,8 @@
       ]
     },
     { title: 'AI Model Evaluation', to: `/projects/${projectId.value}/ai-model-evaluation` },
-    { title: 'Projects List', to: '/' },
-    { title: 'Project Setting', to: `/projects/${projectId.value}/setting` }
+    { title: 'Project Setting', to: `/projects/${projectId.value}/setting` },
+    { title: 'Projects List', to: '/' }
   ])
 
   router.afterEach((to) => {
@@ -223,3 +229,14 @@
     navigateTo(to)
   }
 </script>
+
+<style scoped>
+/* WiSDON Chat button - Figma Node 17:154 */
+.wisdon-chat-btn {
+  color: #006ab5 !important;
+  font-size: 18px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+</style>
