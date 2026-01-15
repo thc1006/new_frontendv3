@@ -189,8 +189,8 @@
 
 <style scoped>
 .profile-container {
-  padding: 24px 32px;
-  max-width: 800px;
+  padding: 32px 40px;
+  max-width: 900px;
   margin: 0 auto;
   animation: fadeIn 0.4s ease;
 }
@@ -201,8 +201,8 @@
 }
 
 .profile-header {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -238,13 +238,18 @@
 .user-info-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
 }
 
 .info-card,
 .security-card {
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.info-card :deep(.v-card-text),
+.security-card :deep(.v-card-text) {
+  padding: 24px;
 }
 
 .info-card-title {
@@ -257,13 +262,13 @@
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 28px 32px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .info-label {
@@ -282,7 +287,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 12px 0;
 }
 
 .security-label {
