@@ -5,14 +5,14 @@
         <!-- page title (Figma 3:517) -->
         <h2 class="text-h4 font-weight-bold mb-6">Scenario</h2>
 
-        <!-- 地圖與控制面板 -->
+        <!-- Map and control panel -->
         <div class="scenario-wrapper">
-          <!-- 左側控制面板 -->
+          <!-- Left: Control panel -->
           <div class="control-panel">
             <v-select
               v-model="selectedScenario"
               :items="scenarioOptions"
-              label="選擇情境"
+              label="Select scenario"
               density="comfortable"
               variant="outlined"
               class="mb-4"
@@ -30,12 +30,12 @@
             </v-btn>
           </div>
 
-          <!-- 右側地圖區域 -->
+          <!-- Right: Map area -->
           <div class="map-area">
             <div id="scenarioMap" ref="mapContainer" class="map-container" />
             <div class="map-overlay">
-              <span class="overlay-text">小人走動</span>
-              <span class="overlay-subtext">(固定map)</span>
+              <span class="overlay-text">People walking</span>
+              <span class="overlay-subtext">(fixed map)</span>
             </div>
           </div>
         </div>
@@ -63,14 +63,14 @@
   const { initMap } = useMapbox()
   const mapContainer = ref<HTMLDivElement | null>(null)
 
-  // 情境選項 (Figma 3:517)
+  // Scenario options (Figma 3:517)
   const scenarioOptions = [
     { title: 'None', value: 'none' },
-    { title: '上班', value: 'work_start' },
-    { title: '下班', value: 'work_end' },
-    { title: '上課1/隨機', value: 'class1_random' },
-    { title: '上課2/同步', value: 'class2_sync' },
-    { title: '上課3/不同步', value: 'class3_async' },
+    { title: 'Work start', value: 'work_start' },
+    { title: 'Work end', value: 'work_end' },
+    { title: 'Class 1 / Random', value: 'class1_random' },
+    { title: 'Class 2 / Sync', value: 'class2_sync' },
+    { title: 'Class 3 / Async', value: 'class3_async' },
     { title: 'LiveDemo', value: 'live_demo' }
   ]
 
@@ -82,24 +82,24 @@
     color: 'info'
   })
 
-  // 初始化地圖
+  // Initialize map
   onMounted(() => {
     if (mapContainer.value) {
       initMap({
         container: mapContainer.value,
-        center: [120.9738, 24.7892], // 新竹市中心
+        center: [120.9738, 24.7892], // Hsinchu city center
         zoom: 15,
         pitch: 0
       })
     }
   })
 
-  // 套用情境
+  // Apply scenario
   async function applyScenario() {
     if (!selectedScenario.value || selectedScenario.value === 'none') {
       snackbar.value = {
         show: true,
-        text: '請選擇一個情境',
+        text: 'Please select a scenario',
         color: 'warning'
       }
       return
@@ -107,12 +107,12 @@
 
     isLoading.value = true
     try {
-      // TODO: 後端 API 尚未實作
-      // 預期端點：POST /scenario/apply
-      // 預期請求體：{ scenario: string }
-      // 預期回應：{ success: boolean, message: string }
+      // TODO: Backend API not yet implemented
+      // Expected endpoint: POST /scenario/apply
+      // Expected request body: { scenario: string }
+      // Expected response: { success: boolean, message: string }
 
-      // Placeholder: 模擬 API 延遲
+      // Placeholder: Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500))
 
       console.warn('[TODO] Scenario API not implemented', {
@@ -121,13 +121,13 @@
 
       snackbar.value = {
         show: true,
-        text: `情境「${getScenarioLabel(selectedScenario.value)}」已套用 (Placeholder)`,
+        text: `Scenario "${getScenarioLabel(selectedScenario.value)}" applied (Placeholder)`,
         color: 'warning'
       }
     } catch (err) {
       snackbar.value = {
         show: true,
-        text: '套用情境失敗，請稍後重試',
+        text: 'Failed to apply scenario, please try again later',
         color: 'error'
       }
       console.error('Apply scenario failed:', err)
@@ -136,7 +136,7 @@
     }
   }
 
-  // 取得情境中文名稱
+  // Get scenario display name
   function getScenarioLabel(value: string): string {
     const option = scenarioOptions.find(o => o.value === value)
     return option?.title || value
@@ -201,7 +201,7 @@
   text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
-/* 響應式調整 */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .scenario-wrapper {
     flex-direction: column;

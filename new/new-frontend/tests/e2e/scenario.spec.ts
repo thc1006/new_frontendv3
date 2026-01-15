@@ -1,17 +1,17 @@
 import { test, expect } from '@playwright/test'
 
-// Scenario 頁面的 E2E 測試
-// 對應 Figma Node 3:517
+// E2E tests for Scenario page
+// Corresponds to Figma Node 3:517
 test.describe('Scenario Page', () => {
   test.beforeEach(async ({ page }) => {
-    // 先登入
+    // Login first
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 導航到 Scenario 頁面
+    // Navigate to Scenario page
     await page.goto('/scenario')
   })
 
@@ -40,8 +40,8 @@ test.describe('Scenario Page', () => {
       await expect(page.locator('.v-select')).toBeVisible({ timeout: 10000 })
     })
 
-    test('should have selector label 選擇情境', async ({ page }) => {
-      await expect(page.locator('text=選擇情境').first()).toBeVisible()
+    test('should have selector label Select scenario', async ({ page }) => {
+      await expect(page.locator('text=Select scenario').first()).toBeVisible()
     })
 
     test('should open dropdown when clicked', async ({ page }) => {
@@ -55,10 +55,10 @@ test.describe('Scenario Page', () => {
       await page.locator('.v-select').click()
       await page.waitForTimeout(500)
 
-      // 檢查各選項存在
+      // Check each option exists
       await expect(page.locator('text=None')).toBeVisible()
-      await expect(page.locator('text=上班')).toBeVisible()
-      await expect(page.locator('text=下班')).toBeVisible()
+      await expect(page.locator('text=Work start')).toBeVisible()
+      await expect(page.locator('text=Work end')).toBeVisible()
     })
   })
 
@@ -68,12 +68,12 @@ test.describe('Scenario Page', () => {
       await expect(page.locator('#scenarioMap')).toBeVisible({ timeout: 10000 })
     })
 
-    test('should display overlay text 小人走動', async ({ page }) => {
-      await expect(page.locator('.overlay-text')).toContainText('小人走動')
+    test('should display overlay text People walking', async ({ page }) => {
+      await expect(page.locator('.overlay-text')).toContainText('People walking')
     })
 
-    test('should display overlay subtext (固定map)', async ({ page }) => {
-      await expect(page.locator('.overlay-subtext')).toContainText('固定map')
+    test('should display overlay subtext (fixed map)', async ({ page }) => {
+      await expect(page.locator('.overlay-subtext')).toContainText('fixed map')
     })
   })
 
@@ -90,11 +90,11 @@ test.describe('Scenario Page', () => {
     })
 
     test('should enable set button when scenario selected', async ({ page }) => {
-      // 選取一個情境
+      // Select a scenario
       await page.locator('.v-select').click()
       await page.waitForTimeout(500)
       await page.keyboard.press('ArrowDown')
-      await page.keyboard.press('ArrowDown') // 選取「上班」
+      await page.keyboard.press('ArrowDown') // Select 'Work start'
       await page.keyboard.press('Enter')
       await page.waitForTimeout(500)
 
@@ -125,14 +125,14 @@ test.describe('Scenario Page', () => {
   // Task 12.6: Snackbar 測試
   test.describe('Snackbar Notifications', () => {
     test('should show snackbar when no scenario selected and set clicked', async ({ page }) => {
-      // 先選取 None 使按鈕啟用但情境無效
+      // Select None to enable button but scenario is invalid
       await page.locator('.v-select').click()
       await page.waitForTimeout(500)
-      await page.keyboard.press('ArrowDown') // 選取 None
+      await page.keyboard.press('ArrowDown') // Select None
       await page.keyboard.press('Enter')
       await page.waitForTimeout(500)
 
-      // 點擊 set 按鈕
+      // Click set button
       await page.locator('button:has-text("set")').click()
       await page.waitForTimeout(500)
 

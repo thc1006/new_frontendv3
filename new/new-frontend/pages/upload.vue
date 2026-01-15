@@ -8,7 +8,7 @@
         <!-- form start -->
         <v-form ref="uploadForm">
           <v-row>
-            <!-- 左側：表單欄位 -->
+            <!-- Left: Form fields -->
             <v-col cols="12" md="6">
               <!-- Model Name (Figma 3:674) -->
               <div class="mb-4">
@@ -59,7 +59,7 @@
               </div>
             </v-col>
 
-            <!-- 右側：Existing Model 選擇 (Figma 3:673) -->
+            <!-- Right: Existing Model selection (Figma 3:673) -->
             <v-col cols="12" md="6">
               <div class="existing-model-section">
                 <label class="text-h6 font-weight-medium">Existing Model</label>
@@ -86,7 +86,7 @@
                   />
                 </div>
 
-                <!-- 模型版本選擇 (選擇後顯示) -->
+                <!-- Model version selection (shown after checkbox selected) -->
                 <div v-if="nesSelected || mroSelected" class="mt-4">
                   <label class="text-body-1 font-weight-medium">Select Base Model Version</label>
                   <v-select
@@ -94,7 +94,7 @@
                     :items="availableModels"
                     item-title="display_name"
                     item-value="id"
-                    placeholder="選擇基底模型"
+                    placeholder="Select base model"
                     density="comfortable"
                     variant="outlined"
                     class="mt-2"
@@ -196,7 +196,7 @@
   const { $apiClient } = useNuxtApp()
   const router = useRouter()
 
-  // 表單欄位
+  // Form fields
   const modelName = ref('')
   const modelFile = ref<File[]>([])
   const modelConfig = ref('')
@@ -204,7 +204,7 @@
   const mroSelected = ref(false)
   const selectedBaseModel = ref<number | null>(null)
 
-  // UI 狀態
+  // UI state
   const isLoading = ref(false)
   const showSuccessDialog = ref(false)
   const showErrorDialog = ref(false)
@@ -215,21 +215,21 @@
     color: 'info'
   })
 
-  // 可選的基底模型 (從 API 取得)
+  // Available base models (fetched from API)
   const availableModels = ref<{ id: number; display_name: string }[]>([])
 
-  // 驗證規則
+  // Validation rules
   const rules = {
-    required: (v: string) => !!v || '此欄位為必填',
-    fileRequired: (v: File[]) => (v && v.length > 0) || '請選擇模型檔案',
+    required: (v: string) => !!v || 'This field is required',
+    fileRequired: (v: File[]) => (v && v.length > 0) || 'Please select a model file',
   }
 
-  // 按鈕禁用狀態
+  // Button disabled state
   const uploadDisabled = computed(() => {
     return !modelName.value || !modelFile.value || modelFile.value.length === 0 || isLoading.value
   })
 
-  // 取得可用的基底模型
+  // Fetch available base models
   onMounted(async () => {
     try {
       const response = await $apiClient.primitiveAiModel.primitiveAiModelsList()
@@ -243,16 +243,16 @@
     }
   })
 
-  // 上傳模型
+  // Upload model
   async function uploadModel() {
     if (uploadDisabled.value) return
 
     isLoading.value = true
     try {
-      // TODO: 後端 API 尚未實作
-      // 預期端點：POST /primitive_ai_models/upload
-      // 預期請求體：FormData { model_name, file, model_type, config, base_model_id }
-      // 預期回應：{ model_id, version, upload_status }
+      // TODO: Backend API not yet implemented
+      // Expected endpoint: POST /primitive_ai_models/upload
+      // Expected request body: FormData { model_name, file, model_type, config, base_model_id }
+      // Expected response: { model_id, version, upload_status }
 
       const formData = new FormData()
       formData.append('model_name', modelName.value)
@@ -271,13 +271,13 @@
         formData.append('base_model_id', String(selectedBaseModel.value))
       }
 
-      // Placeholder: 模擬上傳延遲
+      // Placeholder: Simulate upload delay
       await new Promise(resolve => setTimeout(resolve, 1500))
 
-      // 顯示 placeholder 警告
+      // Show placeholder warning
       snackbar.value = {
         show: true,
-        text: '模型上傳功能尚未接上後端 (Placeholder)',
+        text: 'Model upload feature not yet connected to backend (Placeholder)',
         color: 'warning'
       }
 
@@ -290,7 +290,7 @@
 
       showSuccessDialog.value = true
     } catch (err) {
-      errorMessage.value = '上傳失敗，請稍後重試'
+      errorMessage.value = 'Upload failed, please try again later'
       showErrorDialog.value = true
       console.error('Upload failed:', err)
     } finally {
@@ -298,14 +298,14 @@
     }
   }
 
-  // 上傳成功後關閉對話框
+  // Close dialog after successful upload
   function handleSuccessClose() {
     showSuccessDialog.value = false
-    // 可選：導航到 AI Models 列表
+    // Optional: navigate to AI Models list
     // router.push('/ai-models')
   }
 
-  // 返回上一頁
+  // Go back to previous page
   function back() {
     router.back()
   }

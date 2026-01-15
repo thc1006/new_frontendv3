@@ -1,30 +1,30 @@
 import { test, expect } from '@playwright/test'
 
-// Project Setting 頁面的 E2E 測試
-// 對應 Figma Node 3:755, 3:876
+// E2E tests for Project Setting page
+// Corresponds to Figma Node 3:755, 3:876
 test.describe('Project Setting Page', () => {
   let projectId: string
 
   test.beforeEach(async ({ page }) => {
-    // 先登入
+    // Login first
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 取得第一個專案的 ID - 透過點擊 View Project 後從 URL 擷取
+    // Get the first project's ID by clicking View Project and extracting from URL
     await page.waitForSelector('.view-project-link', { timeout: 10000 })
     const viewBtn = page.locator('.view-project-link').first()
     await viewBtn.click()
 
-    // 等待導航完成
+    // Wait for navigation to complete
     await page.waitForURL(/\/projects\/\d+\//, { timeout: 10000 })
     const url = page.url()
     const match = url.match(/\/projects\/(\d+)\//)
     projectId = match ? match[1] : '1'
 
-    // 導航到專案設定頁面
+    // Navigate to project setting page
     await page.goto(`/projects/${projectId}/setting`)
   })
 

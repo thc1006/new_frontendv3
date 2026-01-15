@@ -1,19 +1,19 @@
 import { test, expect } from '@playwright/test'
 
-// gNB (gNodeB) 頁面的 E2E 測試
-// 對應 Figma Node 3:616
+// E2E tests for gNB (gNodeB) page
+// Corresponds to Figma Node 3:616
 test.describe('gNB (gNodeB) Page', () => {
   let projectId: string
 
   test.beforeEach(async ({ page }) => {
-    // 先登入
+    // Login first
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 取得第一個專案的 ID
+    // Get the first project's ID
     await page.waitForSelector('.view-project-link', { timeout: 10000 })
     const viewBtn = page.locator('.view-project-link').first()
     await viewBtn.click()
@@ -22,7 +22,7 @@ test.describe('gNB (gNodeB) Page', () => {
     const match = url.match(/\/projects\/(\d+)\//)
     projectId = match ? match[1] : '1'
 
-    // 導航到 gNB 頁面
+    // Navigate to gNB page
     await page.goto(`/projects/${projectId}/config/gnb`)
   })
 

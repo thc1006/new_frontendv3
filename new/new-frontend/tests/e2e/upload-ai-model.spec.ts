@@ -1,18 +1,17 @@
 import { test, expect } from '@playwright/test'
-import * as path from 'path'
 
-// Upload AI Model 頁面的 E2E 測試
-// 對應 Figma Node 3:662
+// E2E tests for Upload AI Model page
+// Corresponds to Figma Node 3:662
 test.describe('Upload AI Model Page', () => {
   test.beforeEach(async ({ page }) => {
-    // 先登入
+    // Login first
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 導航到 Upload 頁面
+    // Navigate to Upload page
     await page.goto('/upload')
   })
 

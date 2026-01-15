@@ -191,6 +191,15 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Snackbar for notifications -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="3000"
+    >
+      {{ snackbar.text }}
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -209,8 +218,8 @@
   const { $apiClient } = useNuxtApp()
 
   const rules = {
-    required: (v: string) => !!v || '此欄位為必填',
-    email:    (v: string) => /.+@.+\..+/.test(v) || '電子郵件格式錯誤',
+    required: (v: string) => !!v || 'This field is required',
+    email:    (v: string) => /.+@.+\..+/.test(v) || 'Invalid email format',
   }
   const projectName = ref<string | null>(null)
 
@@ -225,6 +234,11 @@
   const memberEmails = ref<string[]>([])
   const selectedMemberIdx = ref<number | null>(null)
   const deleteConfirmDialog = ref(false)
+  const snackbar = ref({
+    show: false,
+    text: '',
+    color: 'info'
+  })
 
   watchEffect(() => {
     if (route.params.projectId) {
@@ -257,9 +271,17 @@
         try {
           await $apiClient.project.projectsUpdate(validProjectId.value, data)
           projectName.value = editedProjectName.value
-          alert('Project name updated!')
+          snackbar.value = {
+            show: true,
+            text: 'Project name updated successfully',
+            color: 'success'
+          }
         } catch (err) {
-          alert('Update failed.')
+          snackbar.value = {
+            show: true,
+            text: 'Failed to update project name',
+            color: 'error'
+          }
           console.error(err)
         }
       }
@@ -281,7 +303,7 @@
         projectName.value = response.data.title ? String(response.data.title) : null
         coordinates.value = (response.data.lon && response.data.lat) ? { x: response.data.lon, y: response.data.lat } : { x: 0, y: 0}
         visibleScope.value = response.data.margin ? Number(response.data.margin*2) : 0
-        // 初始化成員列表 (第一筆是 Owner)
+        // Initialize member list (first one is Owner)
         const ownerData = response.data.owner as { account?: string; email?: string } | undefined
         const ownerEmail = ownerData?.email || ownerData?.account || 'owner@example.com'
         if (memberEmails.value.length === 0) {
@@ -387,7 +409,7 @@
     return !inviteEmail.value || rules.email(inviteEmail.value) !== true
   })
 
-  // Disable remove button - Owner (idx=0) 不能被移除
+  // Disable remove button - Owner (idx=0) cannot be removed
   const removeDisabled = computed(() => {
     return selectedMemberIdx.value === null || selectedMemberIdx.value === 0
   })
@@ -398,10 +420,14 @@
 
   function removeMember() {
     if (selectedMemberIdx.value !== null && selectedMemberIdx.value > 0) {
-      // TODO: 待後端 API 實作 - DELETE /projects/{id}/members/{memberId}
+      // TODO: Backend API not yet implemented - DELETE /projects/{id}/members/{memberId}
       const removed = memberEmails.value.splice(selectedMemberIdx.value, 1)
       selectedMemberIdx.value = null
-      alert(`Member ${removed[0]} removed! (placeholder)`)
+      snackbar.value = {
+        show: true,
+        text: `Member ${removed[0]} removed (placeholder - not persisted)`,
+        color: 'warning'
+      }
     }
   }
 
@@ -413,7 +439,11 @@
     ) {
       memberEmails.value.push(inviteEmail.value)
       inviteEmail.value = ''
-      alert('Invited!')
+      snackbar.value = {
+        show: true,
+        text: 'Member invited (placeholder - not persisted)',
+        color: 'warning'
+      }
     }
   }
 
@@ -421,22 +451,30 @@
     router.back()
   }
 
-  // 點擊 Delete 按鈕時顯示確認對話框
+  // Show confirmation dialog when Delete button is clicked
   function deleteProject() {
     deleteConfirmDialog.value = true
   }
 
-  // 確認刪除專案
+  // Confirm delete project
   async function confirmDelete() {
     deleteConfirmDialog.value = false
     isLoading.value = true
     if (validProjectId.value !== null) {
       try {
         await $apiClient.project.projectsDelete(validProjectId.value)
-        alert(`Project: ${projectName.value} deleted!`)
+        snackbar.value = {
+          show: true,
+          text: `Project "${projectName.value}" deleted successfully`,
+          color: 'success'
+        }
         navigateTo(`/`)
       } catch (e) {
-        alert('Delete failed')
+        snackbar.value = {
+          show: true,
+          text: 'Failed to delete project',
+          color: 'error'
+        }
         console.error(e)
       } finally {
         isLoading.value = false
