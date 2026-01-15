@@ -133,7 +133,7 @@
                 >
                   {{ email }}
                   <span v-if="idx === 0" class="text-grey">Owner</span>
-                  <span v-else class="text-grey">participant</span>
+                  <span v-else class="text-grey">Participant</span>
                 </p>
               </div>
             </v-row>
@@ -286,6 +286,9 @@
         const ownerEmail = ownerData?.email || ownerData?.account || 'owner@example.com'
         if (memberEmails.value.length === 0) {
           memberEmails.value = [ownerEmail]
+        } else {
+          // refetch 時確保 owner email 是最新的
+          memberEmails.value[0] = ownerEmail
         }
         return response.data
       } catch (err: any) {
