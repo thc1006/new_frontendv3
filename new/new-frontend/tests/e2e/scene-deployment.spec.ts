@@ -2,8 +2,9 @@ import { test, expect } from '@playwright/test'
 
 // Scene Deployment 頁面 E2E 測試 (Figma Node 17:156, 17:370)
 // 測試 OUTDOOR/INDOOR Scene Deployment 頁面結構與功能
-// 注意：目前使用 project_id 奇偶數模擬分類（奇數=OUTDOOR，偶數=INDOOR）
 test.describe('Scene Deployment Page', () => {
+  let projectId: string
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')
@@ -11,22 +12,33 @@ test.describe('Scene Deployment Page', () => {
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+
+    // 等待首頁載入並獲取第一個專案的 ID
+    await page.waitForSelector('.project-card', { timeout: 15000 })
+    const viewProjectBtn = page.locator('button:has-text("View Project")').first()
+    await viewProjectBtn.click()
+    await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+
+    // 從 URL 提取專案 ID
+    const url = page.url()
+    const match = url.match(/\/projects\/(\d+)/)
+    projectId = match ? match[1] : '3'
   })
 
   // 頁面結構測試 (使用 OUTDOOR project ID 3)
   test.describe('Page Structure', () => {
     test('should display Scene Deployment page', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
     })
 
     test('should display page title "Scene Deployment"', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.page-title')).toContainText('Scene Deployment', { timeout: 15000 })
     })
 
     test('should display project title', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.v-card-title')).toContainText('Project ID', { timeout: 15000 })
     })
   })
@@ -34,25 +46,25 @@ test.describe('Scene Deployment Page', () => {
   // OUTDOOR 頂部按鈕測試 (使用 project ID 3 = 奇數 = OUTDOOR)
   test.describe('OUTDOOR Top Buttons', () => {
     test('should display ADD RU button', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("ADD RU")')).toBeVisible()
     })
 
     test('should display UES SETTINGS button for OUTDOOR', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("UES SETTINGS")')).toBeVisible()
     })
 
     test('should display SIMULATION CONFIG button for OUTDOOR', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("SIMULATION CONFIG")')).toBeVisible()
     })
 
     test('should display RU POSITION button for OUTDOOR', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("RU POSITION")')).toBeVisible()
     })
@@ -93,31 +105,31 @@ test.describe('Scene Deployment Page', () => {
   // 底部控制列測試
   test.describe('Bottom Control Row', () => {
     test('should display EVALUATE button', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("EVALUATE")')).toBeVisible()
     })
 
     test('should display APPLY CONFIG button', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("APPLY CONFIG")')).toBeVisible()
     })
 
     test('should display RSRP heatmap type selector', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.heatmap-select')).toBeVisible()
     })
 
     test('should display Show heatmap switch', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.heatmap-switch')).toBeVisible()
     })
 
     test('should have correct heatmap type options', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 點擊下拉選單
@@ -129,38 +141,38 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should hide color bar when heatmap is disabled', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 色標預設應該隱藏
-      await expect(page.locator('.color-bar-container')).toBeHidden()
+      await expect(page.locator('.color-bar-vertical')).toBeHidden()
     })
 
     test('should show color bar when heatmap is enabled', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 點擊 switch 啟用 heatmap
       await page.locator('.heatmap-switch input').click()
 
       // 色標應該顯示
-      await expect(page.locator('.color-bar-container')).toBeVisible()
-      await expect(page.locator('.color-bar')).toBeVisible()
+      await expect(page.locator('.color-bar-vertical')).toBeVisible()
+      await expect(page.locator('.color-bar-gradient')).toBeVisible()
     })
 
     test('should display RSRP units for RSRP heatmap type', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 啟用 heatmap
       await page.locator('.heatmap-switch input').click()
 
       // 預設為 RSRP，應顯示 dBm 單位
-      await expect(page.locator('.color-bar-labels')).toContainText('dBm')
+      await expect(page.locator('.color-bar-labels-vertical')).toContainText('dBm')
     })
 
     test('should display Throughput units when type changed', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 啟用 heatmap
@@ -171,32 +183,32 @@ test.describe('Scene Deployment Page', () => {
       await page.locator('.v-list-item:has-text("Throughput (waiting)")').click()
 
       // 應顯示 Mbps 單位
-      await expect(page.locator('.color-bar-labels')).toContainText('Mbps')
+      await expect(page.locator('.color-bar-labels-vertical')).toContainText('Mbps')
     })
   })
 
   // RU 互動提示測試
   test.describe('RU Interaction Tips', () => {
     test('should display RU Interaction Tips section', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.ru-tips')).toBeVisible()
     })
 
     test('should display single click tip', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.ru-tips')).toContainText('Single click RU: Select RU')
     })
 
     test('should display double click tip', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.ru-tips')).toContainText('Double click RU: Open RU configuration dialog')
     })
 
     test('should display keyboard shortcut tip', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.ru-tips')).toContainText('Keyboard Q/W: Rotate RU')
     })
@@ -205,7 +217,7 @@ test.describe('Scene Deployment Page', () => {
   // 地圖區域測試
   test.describe('Map Area', () => {
     test('should display map container', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 檢查地圖容器存在
@@ -214,7 +226,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should display mapbox map element', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       // 等待 Mapbox 地圖載入
@@ -229,7 +241,7 @@ test.describe('Scene Deployment Page', () => {
   // RU Configuration 對話框測試
   test.describe('RU Configuration Dialog', () => {
     test('should open RU config dialog when clicking ADD RU', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -240,7 +252,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should display location settings in dialog', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -252,7 +264,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should display technical specs in dialog', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -266,7 +278,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should close dialog when clicking cancel', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -280,7 +292,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should show placeholder message when clicking save', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -295,7 +307,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should close dialog with X button', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -312,7 +324,7 @@ test.describe('Scene Deployment Page', () => {
   // 按鈕互動測試
   test.describe('Button Interactions', () => {
     test('should open dialog when clicking ADD RU', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
@@ -322,7 +334,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should show feedback when clicking EVALUATE', async ({ page }) => {
-      await page.goto('/projects/3/scene-deployment')
+      await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("EVALUATE")').click()

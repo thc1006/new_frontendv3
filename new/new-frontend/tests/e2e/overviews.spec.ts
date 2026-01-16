@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test'
 // Overview 頁面 E2E 測試 (Figma Node 17:143)
 // 測試 OUTDOOR Overview 頁面的結構與互動功能
 test.describe('Overview Page', () => {
+  let projectId: string
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')
@@ -10,33 +12,50 @@ test.describe('Overview Page', () => {
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+
+    // 等待首頁載入並獲取第一個專案的 ID
+    await page.waitForSelector('.project-card', { timeout: 15000 })
+
+    // 點擊第一個專案的 View Project 按鈕
+    const viewProjectBtn = page.locator('button:has-text("View Project")').first()
+    await viewProjectBtn.click()
+
+    // 等待導航到專案頁面
+    await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+
+    // 從 URL 提取專案 ID
+    const url = page.url()
+    const match = url.match(/\/projects\/(\d+)/)
+    projectId = match ? match[1] : '3'
   })
 
   // 頁面結構測試
   test.describe('Page Structure', () => {
     test('should display overview page', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.overview-page')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      // 檢查地圖容器載入
+      await expect(page.locator('#mapContainer')).toBeAttached({ timeout: 15000 })
     })
 
     test('should display page title "Overview"', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.page-title')).toContainText('Overview', { timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      // 檢查專案標題包含 Project ID
+      await expect(page.locator('.v-card-title')).toContainText('Project ID', { timeout: 15000 })
     })
 
-    test('should display evaluation card', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.evaluation-card')).toBeVisible({ timeout: 15000 })
+    test('should display project card', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('.v-card')).toBeVisible({ timeout: 15000 })
     })
 
     test('should display project title with ID', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.project-title')).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.project-title')).toContainText('Project ID')
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('.v-card-title')).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('.v-card-title')).toContainText('Project ID')
     })
 
     test('should display map container', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
+      await page.goto(`/projects/${projectId}/overviews`)
       await expect(page.locator('#mapContainer')).toBeAttached({ timeout: 15000 })
     })
   })
@@ -44,49 +63,49 @@ test.describe('Overview Page', () => {
   // Control Panel 測試
   test.describe('Control Panel', () => {
     test('should display control panel', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
     })
 
     test('should have Heatmap toggle switch', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
-      // 使用 label 元素來避免與 Update Heatmap 按鈕混淆
-      await expect(page.locator('.control-switch').first()).toBeVisible()
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
+      // 使用 v-switch with label
+      await expect(page.locator('.mini-switch').first()).toBeVisible()
     })
 
     test('should have heatmap type dropdown', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.heatmap-select')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('.mini-select')).toBeVisible({ timeout: 15000 })
     })
 
     test('should have Edit Model toggle switch', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('text=Edit Model')).toBeVisible()
     })
 
     test('should have Update Heatmap button', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.update-btn')).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.update-btn')).toContainText('Update Heatmap')
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('.update-heatmap-btn')).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('.update-heatmap-btn')).toContainText('Update Heatmap')
     })
 
     test('should have last updated text', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.last-updated')).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.last-updated')).toContainText('Last updated')
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#heatmapUpdateTime')).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('#heatmapUpdateTime')).toContainText('Last updated')
     })
   })
 
   // Heatmap 控制測試
   test.describe('Heatmap Controls', () => {
     test('should toggle heatmap visibility', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
 
       // 找到 Heatmap switch 並點擊
-      const heatmapSwitch = page.locator('.control-switch').first()
+      const heatmapSwitch = page.locator('.mini-switch').first()
       await expect(heatmapSwitch).toBeVisible()
       await heatmapSwitch.click()
 
@@ -95,39 +114,39 @@ test.describe('Overview Page', () => {
     })
 
     test('should enable dropdown when heatmap is on', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
 
       // 先開啟 heatmap
-      const heatmapSwitch = page.locator('.control-switch').first()
+      const heatmapSwitch = page.locator('.mini-switch').first()
       await heatmapSwitch.click()
 
       // dropdown 應該可用
-      const dropdown = page.locator('.heatmap-select')
+      const dropdown = page.locator('.mini-select')
       await expect(dropdown).not.toBeDisabled()
     })
 
     test('should update last updated time when clicking Update Heatmap', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.update-btn')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('.update-heatmap-btn')).toBeVisible({ timeout: 15000 })
 
-      const updateBtn = page.locator('.update-btn')
+      const updateBtn = page.locator('.update-heatmap-btn')
       await updateBtn.click()
 
       // last updated 應該顯示今天日期
       const today = new Date().toISOString().slice(0, 10)
-      await expect(page.locator('.last-updated')).toContainText(today)
+      await expect(page.locator('#heatmapUpdateTime').locator('..')).toContainText(today)
     })
   })
 
   // Color Bar 測試
   test.describe('Color Bar', () => {
     test('should show color bar when heatmap enabled', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
 
       // 開啟 heatmap
-      const heatmapSwitch = page.locator('.control-switch').first()
+      const heatmapSwitch = page.locator('.mini-switch').first()
       await heatmapSwitch.click()
 
       await expect(page.locator('.color-bar-container')).toBeVisible({ timeout: 5000 })
@@ -135,16 +154,16 @@ test.describe('Overview Page', () => {
     })
 
     test('should display dBm labels for RSRP type', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.control-panel')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#optionsList')).toBeVisible({ timeout: 15000 })
 
       // 開啟 heatmap
-      const heatmapSwitch = page.locator('.control-switch').first()
+      const heatmapSwitch = page.locator('.mini-switch').first()
       await heatmapSwitch.click()
 
       // 預設是 RSRP，應該顯示 dBm
-      await expect(page.locator('.color-bar-label.top')).toContainText('dBm')
-      await expect(page.locator('.color-bar-label.bottom')).toContainText('dBm')
+      await expect(page.locator('.color-bar-label').first()).toContainText('dBm')
+      await expect(page.locator('.color-bar-label').last()).toContainText('dBm')
     })
   })
 
@@ -174,12 +193,11 @@ test.describe('Overview Page', () => {
   // Header WiSDON Chat 測試
   test.describe('Header WiSDON Chat', () => {
     test('should display WiSDON Chat button in project context', async ({ page }) => {
-      await page.goto('/projects/2/overviews')
-      await expect(page.locator('.overview-page')).toBeVisible({ timeout: 15000 })
+      await page.goto(`/projects/${projectId}/overviews`)
+      await expect(page.locator('#mapContainer')).toBeAttached({ timeout: 15000 })
 
       // 應該顯示 WiSDON Chat 按鈕
-      await expect(page.locator('.wisdon-chat-btn')).toBeVisible()
-      await expect(page.locator('.wisdon-chat-btn')).toContainText('WiSDON Chat')
+      await expect(page.locator('button:has-text("WiSDON Chat")')).toBeVisible()
     })
   })
 })

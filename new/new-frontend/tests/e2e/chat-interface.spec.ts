@@ -1,22 +1,35 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('ChatInterface Figma Alignment', () => {
+  let projectId: string
+
   test.beforeEach(async ({ page }) => {
     // 需要先登入並進入專案頁面才能看到小幫手
-    await page.goto('http://localhost/login')
+    await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 進入專案內容頁面
-    await page.goto('http://localhost/projects/1/overviews')
+    // 等待首頁載入並獲取第一個專案的 ID
+    await page.waitForSelector('.project-card', { timeout: 15000 })
+    const viewProjectBtn = page.locator('button:has-text("View Project")').first()
+    await viewProjectBtn.click()
+    await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+
+    // 從 URL 提取專案 ID
+    const url = page.url()
+    const match = url.match(/\/projects\/(\d+)/)
+    projectId = match ? match[1] : '3'
+
+    // 進入專案 Overview 頁面
+    await page.goto(`/projects/${projectId}/overviews`)
     await page.waitForLoadState('networkidle')
 
-    // 點擊小幫手按鈕開啟對話框
-    const assistantButton = page.locator('button', { hasText: '小幫手' })
-    await assistantButton.waitFor({ state: 'visible', timeout: 10000 })
-    await assistantButton.click()
+    // 點擊 WiSDON Chat 按鈕開啟對話框
+    const chatButton = page.locator('button:has-text("WiSDON Chat")')
+    await chatButton.waitFor({ state: 'visible', timeout: 10000 })
+    await chatButton.click()
 
     // 等待對話框出現
     await page.waitForSelector('.chat-container', { timeout: 10000 })

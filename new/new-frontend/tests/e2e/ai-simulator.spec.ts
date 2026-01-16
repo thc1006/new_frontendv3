@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test'
 // AI Application Simulator 頁面 E2E 測試 (Figma Node 277:952)
 // 測試 Model List、NES Model 控制面板、訓練流程
 test.describe('AI Application Simulator Page', () => {
+  let projectId: string
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')
@@ -10,22 +12,33 @@ test.describe('AI Application Simulator Page', () => {
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+
+    // 等待首頁載入並獲取第一個專案的 ID
+    await page.waitForSelector('.project-card', { timeout: 15000 })
+    const viewProjectBtn = page.locator('button:has-text("View Project")').first()
+    await viewProjectBtn.click()
+    await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+
+    // 從 URL 提取專案 ID
+    const url = page.url()
+    const match = url.match(/\/projects\/(\d+)/)
+    projectId = match ? match[1] : '3'
   })
 
   // 頁面結構測試
   test.describe('Page Structure', () => {
     test('should display AI Application Simulator page', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
     })
 
     test('should display page title', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.page-title')).toContainText('AI Application Simulator', { timeout: 15000 })
     })
 
     test('should display warning banner', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.warning-banner')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.warning-banner')).toContainText('Note')
     })
@@ -34,12 +47,12 @@ test.describe('AI Application Simulator Page', () => {
   // Model List 測試
   test.describe('Model List', () => {
     test('should display Model list panel header', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.left-panel .panel-header')).toContainText('Model list', { timeout: 15000 })
     })
 
     test('should display 6 model buttons', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       // 檢查 6 個模型按鈕
@@ -52,7 +65,7 @@ test.describe('AI Application Simulator Page', () => {
     })
 
     test('should navigate to NES model when clicking NES button', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('.model-btn:has-text("NES")').click()
@@ -65,7 +78,7 @@ test.describe('AI Application Simulator Page', () => {
   // NES Model 控制面板測試
   test.describe('NES Model Controls', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
       await page.locator('.model-btn:has-text("NES")').click()
       await expect(page.locator('.left-panel .panel-header')).toContainText('NES')
@@ -79,8 +92,8 @@ test.describe('AI Application Simulator Page', () => {
       await expect(page.locator('.control-btn:has-text("Pre-train")')).toBeVisible()
     })
 
-    test('should display Preview button', async ({ page }) => {
-      await expect(page.locator('.control-btn:has-text("Preview")')).toBeVisible()
+    test('should display Review button', async ({ page }) => {
+      await expect(page.locator('.control-btn:has-text("Review")')).toBeVisible()
     })
 
     test('should display BACK button', async ({ page }) => {
@@ -117,7 +130,7 @@ test.describe('AI Application Simulator Page', () => {
   // 訓練流程測試
   test.describe('Training Process', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
       await page.locator('.model-btn:has-text("NES")').click()
       await page.locator('.model-select').click()
@@ -222,7 +235,7 @@ test.describe('AI Application Simulator Page', () => {
   // Scene 視圖測試
   test.describe('Scene View', () => {
     test('should display Scene panel header', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       // 右側面板應該顯示 Scene
@@ -230,7 +243,7 @@ test.describe('AI Application Simulator Page', () => {
     })
 
     test('should display map container', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       await expect(page.locator('.map-container')).toBeVisible()
@@ -238,7 +251,7 @@ test.describe('AI Application Simulator Page', () => {
     })
 
     test('should display heatmap control', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       await expect(page.locator('.heatmap-control')).toBeVisible()
@@ -246,20 +259,24 @@ test.describe('AI Application Simulator Page', () => {
     })
   })
 
-  // 其他模型 placeholder 測試
-  test.describe('Other Models Placeholder', () => {
-    test('should show placeholder for Positioning model', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+  // Positioning Model 控制測試
+  test.describe('Positioning Model Controls', () => {
+    test('should display Positioning control panel', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('.model-btn:has-text("Positioning")').click()
 
-      await expect(page.locator('.left-panel .panel-header')).toContainText('POSITIONING')
-      await expect(page.locator('.placeholder-content')).toBeVisible()
+      // Positioning has a full control panel (not placeholder)
+      await expect(page.locator('.left-panel .panel-header')).toContainText('Positioning')
+      await expect(page.locator('.positioning-controls')).toBeVisible()
     })
+  })
 
+  // 其他模型 placeholder 測試
+  test.describe('Other Models Placeholder', () => {
     test('should show placeholder for IM model', async ({ page }) => {
-      await page.goto('/projects/3/ai-simulator')
+      await page.goto(`/projects/${projectId}/ai-simulator`)
       await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('.model-btn:has-text("IM")').click()
