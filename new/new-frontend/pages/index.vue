@@ -282,12 +282,11 @@
     const projectId = getProjectId(project)
     hoveredProjectId.value = projectId
 
-    // 放大對應的 marker
+    // 放大對應的 marker（使用 CSS class 避免覆蓋 mapbox transform）
     const marker = markers.value.get(projectId)
     if (marker) {
       const el = marker.getElement()
-      el.style.transform = 'scale(1.3)'
-      el.style.zIndex = '100'
+      el.classList.add('marker-hovered')
     }
 
     // 地圖移動到該專案
@@ -303,8 +302,7 @@
       const marker = markers.value.get(hoveredProjectId.value)
       if (marker) {
         const el = marker.getElement()
-        el.style.transform = 'scale(1)'
-        el.style.zIndex = ''
+        el.classList.remove('marker-hovered')
       }
     }
     hoveredProjectId.value = null
@@ -586,10 +584,13 @@
 :global(.custom-marker) {
   cursor: pointer;
   transition: transform 0.2s ease;
+  transform-origin: bottom center;
 }
 
-:global(.custom-marker:hover) {
+:global(.custom-marker:hover),
+:global(.custom-marker.marker-hovered) {
   transform: scale(1.2);
+  z-index: 100;
 }
 
 /* RWD 響應式 */
