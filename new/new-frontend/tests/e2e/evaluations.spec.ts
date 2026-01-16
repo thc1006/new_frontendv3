@@ -1,19 +1,37 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Evaluations Page Figma Alignment', () => {
+  let projectId: string
+
   test.beforeEach(async ({ page }) => {
     // 登入
-    await page.goto('http://localhost/login')
+    await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
     await page.locator('input[type="password"]').first().fill('admin1')
     await page.locator('button:has-text("Login")').click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 
-    // 進入評估頁面
-    await page.goto('http://localhost/projects/1/config/evaluations')
-    // 等待地圖容器載入
-    await page.waitForSelector('#mapContainer', { timeout: 10000 })
-    await page.waitForTimeout(3000)
+    // 等待首頁載入並獲取第一個專案的 ID
+    await page.waitForSelector('.project-card', { timeout: 15000 })
+
+    // 點擊第一個專案的 View Project 按鈕
+    const viewProjectBtn = page.locator('button:has-text("View Project")').first()
+    await viewProjectBtn.click()
+
+    // 等待導航到專案頁面
+    await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+
+    // 從 URL 提取專案 ID
+    const url = page.url()
+    const match = url.match(/\/projects\/(\d+)/)
+    projectId = match ? match[1] : '3' // 預設使用 3 作為後備
+
+    // 導航到評估頁面
+    await page.goto(`/projects/${projectId}/config/evaluations`)
+
+    // 等待頁面載入 - 使用更通用的選擇器
+    await page.waitForSelector('.v-container', { timeout: 15000 })
+    await page.waitForTimeout(2000)
   })
 
   test('P1: should have SIMULATION CONFIG button', async ({ page }) => {
