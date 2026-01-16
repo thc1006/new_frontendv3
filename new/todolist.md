@@ -34,6 +34,7 @@
 | Positioning Upload Dialog | `ai-simulator.vue` (showPosUploadDialog=true) | 277:1070 | ✅ 完全符合 |
 | AI-RAN Applications | `pages/projects/[projectId]/ai-ran.vue` | 277:1256 | ✅ 完全符合 |
 | AI-RAN NES Finetune | `ai-ran.vue` (selectedModel=nes) | 277:1486, 277:1597 | ✅ 完全符合 |
+| AI-RAN POS Finetune | `ai-ran.vue` (selectedModel=positioning) | 277:993, 277:1032 | ✅ 完全符合 |
 
 ---
 
@@ -114,3 +115,4 @@ POST /ai-simulator/pos/inference
 | 2026-01-16 | 實作 Positioning Upload 對話框 (showPosUploadDialog), POS Model 系列標記為已完成 |
 | 2026-01-16 | 實作 NES Dashboard 模式 (nesDashboardMode), AI-RAN Model 系列部分標記為已完成 |
 | 2026-01-16 | 新增 AI-RAN Applications 獨立頁面 (ai-ran.vue)，包含 Model List、NES Finetune、Training Charts |
+| 2026-01-16 | 實作 POS RAN Model (AI-RAN Positioning)，MSE Loss 雙線圖表 (training/validation) |

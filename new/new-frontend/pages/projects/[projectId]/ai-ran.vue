@@ -106,7 +106,7 @@
           </div>
         </template>
 
-        <!-- Positioning Model 控制面板 -->
+        <!-- Positioning Model 控制面板 (Figma 277:993, 277:1032) -->
         <template v-else-if="selectedModel === 'positioning'">
           <div class="panel-header">Positioning</div>
           <div class="positioning-controls">
@@ -119,18 +119,67 @@
               class="model-select"
               hide-details
             />
-            <v-btn color="success" variant="elevated" class="control-btn">
+            <!-- Finetune 按鈕 -->
+            <v-btn
+              :color="posFinetuneStatus !== 'idle' ? 'success' : 'success'"
+              :disabled="posFinetuneStatus === 'running' || !posModelSelect"
+              variant="elevated"
+              class="control-btn"
+              @click="startPosFinetune"
+            >
               Finetune
             </v-btn>
-            <v-btn color="default" variant="elevated" class="control-btn">
+            <!-- Enable 按鈕 -->
+            <v-btn
+              :color="posEnableMode ? 'warning' : 'default'"
+              :disabled="posFinetuneStatus !== 'finish'"
+              variant="elevated"
+              class="control-btn"
+              @click="enablePosModel"
+            >
               Enable
+            </v-btn>
+            <!-- Re-train 按鈕 -->
+            <v-btn
+              color="default"
+              :disabled="!posEnableMode"
+              variant="elevated"
+              class="control-btn retrain-btn"
+              @click="startPosRetrain"
+            >
+              Re-train
             </v-btn>
           </div>
           <div class="panel-actions">
             <v-btn color="primary" variant="outlined" class="action-btn" @click="goBack">
               BACK
             </v-btn>
-            <v-btn color="primary" variant="elevated" class="action-btn start-btn">
+            <v-btn
+              v-if="posFinetuneStatus === 'running'"
+              color="error"
+              variant="elevated"
+              class="action-btn stop-btn"
+              @click="stopPosFinetune"
+            >
+              STOP
+            </v-btn>
+            <v-btn
+              v-else-if="posFinetuneStatus === 'finish'"
+              color="warning"
+              variant="elevated"
+              class="action-btn"
+              @click="updatePosFinetuneModel"
+            >
+              Update
+            </v-btn>
+            <v-btn
+              v-else
+              color="primary"
+              variant="elevated"
+              class="action-btn start-btn"
+              :disabled="!posModelSelect"
+              @click="startPosFinetune"
+            >
               <v-icon left>mdi-play</v-icon>
               START
             </v-btn>
@@ -153,8 +202,8 @@
 
       <!-- 右側面板：Project (AI-RAN 用 Project，非 Scene) -->
       <div class="right-panel">
-        <!-- 訓練中顯示 Training Process -->
-        <template v-if="nesFinetuneStatus === 'running' || nesFinetuneStatus === 'finish'">
+        <!-- NES 訓練中顯示 Training Process -->
+        <template v-if="selectedModel === 'nes' && (nesFinetuneStatus === 'running' || nesFinetuneStatus === 'finish')">
           <div class="panel-header">Training Process</div>
           <div class="training-status" :class="nesFinetuneStatus">
             Training Status : {{ nesFinetuneStatus === 'running' ? 'Running' : 'Finish' }}
@@ -196,6 +245,39 @@
               </div>
               <div class="chart-wrapper small">
                 <canvas ref="actorLossChartRef" />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Positioning 訓練中顯示 Training Process (Figma 277:993, 277:1032) -->
+        <template v-else-if="selectedModel === 'positioning' && (posFinetuneStatus === 'running' || posFinetuneStatus === 'finish')">
+          <div class="panel-header">Training Process</div>
+          <div class="training-status" :class="posFinetuneStatus">
+            Training Status : {{ posFinetuneStatus === 'running' ? 'running' : 'Finish' }}
+          </div>
+          <div class="training-content pos-training">
+            <div class="info-row highlight mse-label">
+              <span class="label">Loss Function :</span>
+              <span class="value mse">MSE</span>
+            </div>
+            <div class="pos-chart-container">
+              <div class="chart-wrapper large">
+                <canvas ref="posLossChartRef" />
+              </div>
+              <div class="pos-training-info">
+                <div class="info-row">
+                  <span class="label">Epoch:</span>
+                  <span class="value">{{ posCurrentEpoch }}/{{ posTotalEpochs }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Training Loss :</span>
+                  <span class="value">{{ posTrainingResults.trainingLoss.toFixed(2) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Validation Loss :</span>
+                  <span class="value">{{ posTrainingResults.validationLoss.toFixed(2) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -277,11 +359,13 @@ const nesModelOptions = ['Model 1', 'Model 2', 'Model 3', 'Model 4']
 const nesFinetuneStatus = ref<'idle' | 'running' | 'finish'>('idle')
 const nesEnableMode = ref(false)
 
-// Positioning Model 狀態
+// Positioning Model 狀態 (Figma 277:993, 277:1032)
 const posModelSelect = ref<string | null>(null)
 const posModelOptions = ['Model 1', 'Model 2', 'Model 3', 'Model 4']
+const posFinetuneStatus = ref<'idle' | 'running' | 'finish'>('idle')
+const posEnableMode = ref(false)
 
-// 訓練相關
+// NES 訓練相關
 const currentEpoch = ref(0)
 const totalEpochs = ref(1000)
 const trainingResults = ref({
@@ -290,7 +374,15 @@ const trainingResults = ref({
   criticLoss: 0.002
 })
 
-// Chart refs
+// Positioning 訓練相關 (MSE Loss)
+const posCurrentEpoch = ref(0)
+const posTotalEpochs = ref(500)
+const posTrainingResults = ref({
+  trainingLoss: 0.09,
+  validationLoss: 0.09
+})
+
+// NES Chart refs
 const rewardChartRef = ref<HTMLCanvasElement | null>(null)
 const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
 const actorLossChartRef = ref<HTMLCanvasElement | null>(null)
@@ -298,12 +390,17 @@ let rewardChart: Chart | null = null
 let criticLossChart: Chart | null = null
 let actorLossChart: Chart | null = null
 
+// Positioning Chart refs (MSE Loss 雙線圖)
+const posLossChartRef = ref<HTMLCanvasElement | null>(null)
+let posLossChart: Chart | null = null
+
 // Map
 let map: mapboxgl.Map | null = null
 const mapMarkers: mapboxgl.Marker[] = []
 
 // 訓練定時器
 let finetuneInterval: ReturnType<typeof setInterval> | null = null
+let posFinetuneInterval: ReturnType<typeof setInterval> | null = null
 
 // Computed
 const selectedModelName = computed(() => {
@@ -319,15 +416,23 @@ function selectModel(modelId: string) {
 // 返回 Model List
 function goBack() {
   selectedModel.value = null
+  // 重置 NES 狀態
   nesModelSelect.value = null
   nesFinetuneStatus.value = 'idle'
   nesEnableMode.value = false
+  // 重置 Positioning 狀態
   posModelSelect.value = null
+  posFinetuneStatus.value = 'idle'
+  posEnableMode.value = false
 
   // 清除訓練定時器
   if (finetuneInterval) {
     clearInterval(finetuneInterval)
     finetuneInterval = null
+  }
+  if (posFinetuneInterval) {
+    clearInterval(posFinetuneInterval)
+    posFinetuneInterval = null
   }
 
   // 重新初始化地圖
@@ -385,7 +490,120 @@ function startNesRetrain() {
   currentEpoch.value = 0
 }
 
-// 初始化訓練圖表
+// Positioning Finetune 操作 (Figma 277:993, 277:1032)
+function startPosFinetune() {
+  if (!posModelSelect.value) return
+
+  posFinetuneStatus.value = 'running'
+  posCurrentEpoch.value = 0
+
+  // 初始化 MSE Loss 圖表
+  nextTick(() => {
+    initPosLossChart()
+  })
+
+  // 模擬訓練進度
+  posFinetuneInterval = setInterval(() => {
+    posCurrentEpoch.value += 5
+    updatePosLossChart()
+
+    if (posCurrentEpoch.value >= posTotalEpochs.value) {
+      posFinetuneStatus.value = 'finish'
+      if (posFinetuneInterval) {
+        clearInterval(posFinetuneInterval)
+        posFinetuneInterval = null
+      }
+    }
+  }, 100)
+}
+
+function stopPosFinetune() {
+  if (posFinetuneInterval) {
+    clearInterval(posFinetuneInterval)
+    posFinetuneInterval = null
+  }
+  posFinetuneStatus.value = 'idle'
+}
+
+function updatePosFinetuneModel() {
+  posEnableMode.value = true
+}
+
+function enablePosModel() {
+  posEnableMode.value = true
+}
+
+function startPosRetrain() {
+  posEnableMode.value = false
+  posFinetuneStatus.value = 'idle'
+  posCurrentEpoch.value = 0
+}
+
+// 初始化 Positioning MSE Loss 圖表 (雙線：training + validation)
+function initPosLossChart() {
+  if (posLossChartRef.value) {
+    if (posLossChart) posLossChart.destroy()
+    posLossChart = new Chart(posLossChartRef.value, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'training',
+            data: [],
+            borderColor: '#2196F3',
+            backgroundColor: 'transparent',
+            tension: 0.1,
+            borderWidth: 2
+          },
+          {
+            label: 'validation',
+            data: [],
+            borderColor: '#FF9800',
+            backgroundColor: 'transparent',
+            tension: 0.1,
+            borderWidth: 2,
+            borderDash: [5, 5]
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: 'loss', position: 'top' },
+          legend: { display: true, position: 'top' }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Epoch' } },
+          y: { title: { display: true, text: 'loss' }, min: 0, max: 0.6 }
+        }
+      }
+    })
+  }
+}
+
+// 更新 Positioning MSE Loss 圖表
+function updatePosLossChart() {
+  const epoch = posCurrentEpoch.value
+
+  if (posLossChart) {
+    posLossChart.data.labels?.push(epoch.toString())
+    // 模擬 training loss 下降曲線
+    const trainingLoss = 0.5 * Math.exp(-epoch / 100) + 0.05 + Math.random() * 0.02
+    // 模擬 validation loss (略高於 training loss)
+    const validationLoss = 0.5 * Math.exp(-epoch / 120) + 0.15 + Math.random() * 0.03
+    posLossChart.data.datasets[0].data.push(trainingLoss)
+    posLossChart.data.datasets[1].data.push(validationLoss)
+    posLossChart.update('none')
+
+    // 更新最終結果
+    posTrainingResults.value.trainingLoss = trainingLoss
+    posTrainingResults.value.validationLoss = validationLoss
+  }
+}
+
+// 初始化 NES 訓練圖表
 function initTrainingCharts() {
   // Reward Chart
   if (rewardChartRef.value) {
@@ -594,6 +812,9 @@ onUnmounted(() => {
   if (finetuneInterval) {
     clearInterval(finetuneInterval)
   }
+  if (posFinetuneInterval) {
+    clearInterval(posFinetuneInterval)
+  }
 
   // 清除地圖
   if (map) {
@@ -601,10 +822,12 @@ onUnmounted(() => {
     map.remove()
   }
 
-  // 清除圖表
+  // 清除 NES 圖表
   if (rewardChart) rewardChart.destroy()
   if (criticLossChart) criticLossChart.destroy()
   if (actorLossChart) actorLossChart.destroy()
+  // 清除 Positioning 圖表
+  if (posLossChart) posLossChart.destroy()
 })
 </script>
 
@@ -901,6 +1124,60 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   color: #999;
+}
+
+/* Positioning Training 面板 (Figma 277:993, 277:1032) */
+.pos-training {
+  padding: 16px;
+}
+
+.mse-label {
+  margin-bottom: 16px;
+}
+
+.mse-label .value.mse {
+  color: #2196F3;
+  font-weight: 600;
+}
+
+.pos-chart-container {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+.chart-wrapper.large {
+  flex: 2;
+  height: 350px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.pos-training-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.pos-training-info .info-row {
+  font-size: 16px;
+}
+
+.pos-training-info .label {
+  font-weight: 500;
+}
+
+.pos-training-info .value {
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.stop-btn {
+  background: #DC3545 !important;
 }
 
 /* gNB Marker 樣式 */
