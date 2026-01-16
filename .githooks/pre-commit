@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Pre-commit hook: Run lint on staged files
+# To enable: git config core.hooksPath .githooks
+
+set -e
+
+# Get the frontend directory
+FRONTEND_DIR="new/new-frontend"
+
+# Check if we have staged .vue, .ts, or .js files in the frontend
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "^$FRONTEND_DIR/.*\.(vue|ts|js)$" || true)
+
+if [ -n "$STAGED_FILES" ]; then
+  echo "Running ESLint on staged files..."
+
+  # Check if node_modules exists
+  if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
+    echo "Warning: node_modules not found. Skipping lint check."
+    exit 0
+  fi
+
+  # Run lint on staged files
+  cd "$FRONTEND_DIR"
+
+  # Convert full paths to relative paths for eslint
+  RELATIVE_FILES=$(echo "$STAGED_FILES" | sed "s|^$FRONTEND_DIR/||")
+
+  # Run eslint
+  if ! npx eslint $RELATIVE_FILES --max-warnings=0 2>/dev/null; then
+    echo ""
+    echo "Lint errors found. Please fix them before committing."
+    echo "Run 'npm run lint:fix' in $FRONTEND_DIR to auto-fix."
+    exit 1
+  fi
+
+  echo "Lint check passed."
+fi
+
+exit 0

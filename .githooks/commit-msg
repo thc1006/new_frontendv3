@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Commit-msg hook: Validate commit message format
+# To enable: git config core.hooksPath .githooks
+
+msg_file="$1"
+msg=$(cat "$msg_file")
+
+# Check for AI attribution (must remove before committing)
+if grep -Eiq 'Co-Authored-By:.*Claude|Generated with Claude Code' "$msg_file"; then
+  echo "Commit message contains AI attribution. Remove it and try again." >&2
+  exit 1
+fi
+
+# Check for emojis (project style: no emojis in commits)
+if echo "$msg" | grep -P '[\x{1F300}-\x{1F9FF}]|[\x{2600}-\x{26FF}]' >/dev/null 2>&1; then
+  echo "Commit message contains emoji. Please remove emojis per project guidelines." >&2
+  exit 1
+fi
+
+# Check commit message format (conventional commits)
+# Format: type(scope): description OR type: description
+# Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert
+first_line=$(echo "$msg" | head -n1)
+
+if ! echo "$first_line" | grep -Eq '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
+  echo "Commit message format invalid." >&2
+  echo "" >&2
+  echo "Expected format: type(scope): description" >&2
+  echo "  or: type: description" >&2
+  echo "" >&2
+  echo "Valid types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert" >&2
+  echo "" >&2
+  echo "Examples:" >&2
+  echo "  feat: Add user authentication" >&2
+  echo "  fix(login): Resolve password validation issue" >&2
+  echo "  test: Add regression tests for marker hover" >&2
+  exit 1
+fi
+
+exit 0
