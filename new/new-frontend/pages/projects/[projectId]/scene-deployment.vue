@@ -67,6 +67,14 @@
             <!-- 地圖區域 -->
             <div class="map-container">
               <div id="sceneMapContainer" class="map-view" />
+              <!-- 色標 (Figma: 垂直在地圖右側) -->
+              <div v-show="showHeatmap" class="color-bar-vertical">
+                <div class="color-bar-gradient" />
+                <div class="color-bar-labels-vertical">
+                  <span>{{ colorBarMax }}</span>
+                  <span>{{ colorBarMin }}</span>
+                </div>
+              </div>
             </div>
 
             <!-- RU 互動提示 -->
@@ -105,14 +113,6 @@
               />
             </div>
 
-            <!-- 色標 (Heatmap 啟用時顯示) -->
-            <div v-show="showHeatmap" class="color-bar-container">
-              <div class="color-bar" />
-              <div class="color-bar-labels">
-                <span class="color-bar-label top">{{ colorBarMax }}</span>
-                <span class="color-bar-label bottom">{{ colorBarMin }}</span>
-              </div>
-            </div>
           </v-card-text>
         </v-card>
       </div>
@@ -679,9 +679,9 @@ onUnmounted(() => {
 }
 
 .page-title {
-  font-size: 24px;
-  font-weight: 500;
-  color: #333;
+  font-size: 48px;
+  font-weight: 400;
+  color: #000;
 }
 
 .content-card {
@@ -756,38 +756,35 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
-/* 色標 */
-.color-bar-container {
+/* 色標 - 垂直顯示在地圖右側 (Figma 277:24) */
+.color-bar-vertical {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  margin-top: 16px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.03);
+  z-index: 10;
+}
+
+.color-bar-gradient {
+  width: 24px;
+  height: 280px;
+  background: linear-gradient(to bottom, red, orange, yellow, green, cyan, blue);
   border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-.color-bar {
-  width: 200px;
-  height: 16px;
-  background: linear-gradient(to right, blue, cyan, green, yellow, orange, red);
-  border-radius: 2px;
-}
-
-.color-bar-labels {
+.color-bar-labels-vertical {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  flex: 1;
+  height: 280px;
   font-size: 12px;
-  color: #666;
-}
-
-.color-bar-label.top {
   font-weight: 500;
-}
-
-.color-bar-label.bottom {
-  font-weight: 500;
+  color: #333;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
 /* RU Configuration 對話框 */
