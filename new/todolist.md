@@ -11,7 +11,8 @@
 |------|---------|------------|------|
 | Login | `pages/login.vue` | 277:201 | ✅ 完全符合 |
 | Projects List | `pages/index.vue` | 277:154 | ✅ 完全符合 |
-| Overview | `pages/projects/[projectId]/overviews.vue` | 277:11, 277:64 | ✅ 符合 |
+| Overview (OUTDOOR) | `pages/projects/[projectId]/overviews.vue` | 277:11, 277:64 | ✅ 符合 |
+| Overview (INDOOR) | `overviews.vue` (projectType=INDOOR) | 17:318 | ✅ 完全符合 |
 | Scene Deployment | `pages/projects/[projectId]/scene-deployment.vue` | 277:24 | ✅ 已修復 |
 | AI Simulator Menu | `pages/projects/[projectId]/ai-simulator.vue` | 277:952 | ✅ 完全符合 |
 | NES Model Select | `ai-simulator.vue` (selectedModel=nes) | 277:465 | ✅ 完全符合 |
@@ -116,3 +117,4 @@ POST /ai-simulator/pos/inference
 | 2026-01-16 | 實作 NES Dashboard 模式 (nesDashboardMode), AI-RAN Model 系列部分標記為已完成 |
 | 2026-01-16 | 新增 AI-RAN Applications 獨立頁面 (ai-ran.vue)，包含 Model List、NES Finetune、Training Charts |
 | 2026-01-16 | 實作 POS RAN Model (AI-RAN Positioning)，MSE Loss 雙線圖表 (training/validation) |
+| 2026-01-16 | 實作 INDOOR Overview 頁面對齊 (Node 17:318)，專案類型偵測、地圖縮放/俯仰角調整 |

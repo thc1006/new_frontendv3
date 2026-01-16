@@ -25,7 +25,8 @@
       <v-col cols="12">
         <v-card>
           <v-card-title class="text-h5">
-            Overview for Project ID: {{ projectId }}
+            Project ID : {{ projectTitle || projectId }}
+            <v-chip v-if="projectType === 'INDOOR'" size="small" color="info" class="ml-2">INDOOR</v-chip>
           </v-card-title>
           <v-card-text style="position:relative;">
             <!-- Map Container -->
@@ -138,6 +139,11 @@
   const projectMargin = ref<number | null>(null)
   const modelScale = ref(1.0)
 
+  // 專案類型偵測 (INDOOR/OUTDOOR)
+  // TODO: 待後端 API 提供 type 欄位後可直接使用 response.data.type
+  const projectType = ref<'INDOOR' | 'OUTDOOR'>('OUTDOOR')
+  const projectTitle = ref<string>('')
+
   const modelLonOffset = ref<number| null>(null)
   const modelLatOffset = ref<number | null>(null)
   const modelRotateOffset = ref<number | null>(null)
@@ -160,6 +166,18 @@
         modelLonOffset.value = response.data.lon_offset ? Number(response.data.lon_offset) : null;
         modelRotateOffset.value = response.data.rotation_offset ? Number(response.data.rotation_offset) : null;
         modelScalingOffset.value = response.data.scale ? Number(response.data.scale) : null;
+
+        // 儲存專案標題並偵測類型
+        projectTitle.value = response.data.title || ''
+        // 偵測邏輯：短 ID 如 "ED8F" 為 INDOOR，長名稱如 "Nanzih" 為 OUTDOOR
+        // 或包含 "indoor"/"室內" 關鍵字則為 INDOOR
+        const title = projectTitle.value.toLowerCase()
+        if (title.includes('indoor') || title.includes('室內') || /^[A-Z0-9]{2,6}$/i.test(projectTitle.value)) {
+          projectType.value = 'INDOOR'
+        } else {
+          projectType.value = 'OUTDOOR'
+        }
+
         return response.data
       } catch (err: any) {
         if (err.response?.status === 404) {
@@ -435,12 +453,18 @@
       // Cast runtime config value to the expected Mapbox style type to satisfy TypeScript
       const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
 
+      // 根據專案類型調整地圖設定 (Figma 17:318 INDOOR, 17:143 OUTDOOR)
+      const isIndoor = projectType.value === 'INDOOR'
+      const mapZoom = isIndoor ? 18 : 15
+      const mapPitch = isIndoor ? 45 : 0
+
       map = new mapboxgl.Map({
         container: 'mapContainer',
         style: initialStyle,
         projection: 'globe',
         center: mapCenter.value,
-        zoom: 15,
+        zoom: mapZoom,
+        pitch: mapPitch,
       });
       map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }));
       map.addControl(new mapboxgl.ScaleControl());
