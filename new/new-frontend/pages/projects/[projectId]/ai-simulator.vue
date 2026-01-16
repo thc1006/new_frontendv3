@@ -29,7 +29,7 @@
           </div>
         </template>
 
-        <!-- NES Model 控制面板 (Figma 277:465) -->
+        <!-- NES Model 控制面板 (Figma 277:465, 277:510, 277:1326) -->
         <template v-else-if="selectedModel === 'nes'">
           <div class="panel-header">NES</div>
           <div class="nes-controls">
@@ -42,53 +42,231 @@
               class="model-select"
               hide-details
             />
+            <!-- Pre-train 階段按鈕 -->
+            <template v-if="!nesPretrainDone">
+              <v-btn
+                :color="trainingStatus === 'finish' ? 'success' : 'default'"
+                :disabled="!nesModelSelect || trainingStatus === 'running'"
+                variant="elevated"
+                class="control-btn"
+                @click="startPreTrain"
+              >
+                Pre-train
+              </v-btn>
+              <v-btn
+                :color="nesReviewMode ? 'warning' : (trainingStatus === 'finish' ? 'warning' : 'default')"
+                :disabled="trainingStatus !== 'finish'"
+                variant="elevated"
+                class="control-btn"
+                @click="showNesReview"
+              >
+                Review
+              </v-btn>
+            </template>
+            <!-- Finetune 階段按鈕 (Figma 277:1326) -->
+            <template v-else>
+              <v-btn
+                :color="nesFinetuneStatus !== 'idle' ? 'success' : 'success'"
+                :disabled="nesFinetuneStatus === 'running'"
+                variant="elevated"
+                class="control-btn"
+                @click="showNesUploadDialogFn"
+              >
+                Finetune
+              </v-btn>
+              <v-btn
+                :color="nesEnableMode ? 'warning' : 'default'"
+                :disabled="nesFinetuneStatus !== 'finish'"
+                variant="elevated"
+                class="control-btn"
+                @click="enableNesModel"
+              >
+                Enable
+              </v-btn>
+              <v-btn
+                color="default"
+                :disabled="!nesEnableMode"
+                variant="elevated"
+                class="control-btn"
+                @click="startNesRetrain"
+              >
+                Re-train
+              </v-btn>
+            </template>
+          </div>
+          <div class="panel-actions">
+            <v-btn color="primary" variant="outlined" class="action-btn" @click="handleNesBack">
+              BACK
+            </v-btn>
+            <!-- Pre-train 階段動作按鈕 -->
+            <template v-if="!nesPretrainDone">
+              <v-btn
+                v-if="trainingStatus === 'running'"
+                color="error"
+                variant="elevated"
+                class="action-btn"
+                @click="stopTraining"
+              >
+                STOP
+              </v-btn>
+              <v-btn
+                v-else-if="trainingStatus === 'finish' && !nesReviewMode"
+                color="primary"
+                variant="elevated"
+                class="action-btn"
+                @click="confirmNesPretrainDone"
+              >
+                Update
+              </v-btn>
+              <v-btn
+                v-else-if="!nesReviewMode && trainingStatus === 'idle'"
+                color="primary"
+                variant="elevated"
+                class="action-btn"
+                @click="startTraining"
+              >
+                START
+              </v-btn>
+            </template>
+            <!-- Finetune 階段動作按鈕 -->
+            <template v-else>
+              <v-btn
+                v-if="nesFinetuneStatus === 'running'"
+                color="error"
+                variant="elevated"
+                class="action-btn"
+                @click="stopNesFinetuning"
+              >
+                STOP
+              </v-btn>
+              <v-btn
+                v-else-if="nesFinetuneStatus === 'finish'"
+                color="primary"
+                variant="elevated"
+                class="action-btn"
+                @click="updateNesFinetuneModel"
+              >
+                Update
+              </v-btn>
+              <v-btn
+                v-else-if="nesFinetuneStatus === 'idle' && !nesEnableMode"
+                color="primary"
+                variant="elevated"
+                class="action-btn"
+                @click="showNesUploadDialogFn"
+              >
+                START
+              </v-btn>
+            </template>
+          </div>
+        </template>
+
+        <!-- Positioning Model 控制面板 (Figma 277:907, 277:993) -->
+        <template v-else-if="selectedModel === 'positioning'">
+          <div class="panel-header">Positioning</div>
+          <div class="positioning-controls">
+            <v-select
+              v-model="posModelSelect"
+              :items="posModelOptions"
+              label="Model Select"
+              density="compact"
+              variant="outlined"
+              class="model-select"
+              hide-details
+            />
+            <!-- Pre-train 按鈕（初始階段） -->
             <v-btn
-              :color="nesModelSelect ? 'success' : 'default'"
-              :disabled="!nesModelSelect || trainingStatus === 'running'"
+              v-if="!posPretrainDone"
+              :color="posModelSelect ? 'success' : 'default'"
+              :disabled="!posModelSelect || posTrainingStatus === 'running'"
               variant="elevated"
               class="control-btn"
-              @click="startPreTrain"
+              @click="startPosPretrain"
             >
               Pre-train
             </v-btn>
+            <!-- Finetune 按鈕（Pre-train 完成後） -->
             <v-btn
-              :color="trainingStatus === 'finish' ? 'warning' : 'default'"
-              :disabled="trainingStatus !== 'finish'"
+              v-else
+              :color="posFinetuneStatus === 'idle' ? 'success' : 'default'"
+              :disabled="posFinetuneStatus === 'running'"
               variant="elevated"
               class="control-btn"
-              @click="showPreview"
+              @click="startPosFinetune"
             >
-              Preview
+              Finetune
+            </v-btn>
+            <!-- Review 按鈕（Pre-train 完成後，Finetune 前） -->
+            <v-btn
+              v-if="!posPretrainDone"
+              :color="posTrainingStatus === 'finish' ? 'warning' : 'default'"
+              :disabled="posTrainingStatus !== 'finish'"
+              variant="elevated"
+              class="control-btn"
+              @click="showPosReview"
+            >
+              Review
+            </v-btn>
+            <!-- Enable 按鈕（Finetune 完成後） -->
+            <v-btn
+              v-else
+              :color="posEnableMode ? 'warning' : 'default'"
+              :disabled="posFinetuneStatus !== 'finish'"
+              variant="elevated"
+              class="control-btn"
+              @click="enablePosModel"
+            >
+              Enable
+            </v-btn>
+            <!-- Re-train 按鈕（Enable 後） -->
+            <v-btn
+              v-if="posPretrainDone"
+              :color="posEnableMode ? 'info' : 'default'"
+              :disabled="!posEnableMode"
+              variant="elevated"
+              class="control-btn"
+              @click="startPosRetrain"
+            >
+              Re-train
             </v-btn>
           </div>
           <div class="panel-actions">
-            <v-btn color="primary" variant="outlined" class="action-btn" @click="goBack">
+            <v-btn color="primary" variant="outlined" class="action-btn" @click="handlePosBack">
               BACK
             </v-btn>
             <v-btn
-              v-if="trainingStatus === 'running'"
+              v-if="posTrainingStatus === 'running' || posFinetuneStatus === 'running'"
               color="error"
               variant="elevated"
               class="action-btn"
-              @click="stopTraining"
+              @click="stopPosTraining"
             >
               STOP
             </v-btn>
             <v-btn
-              v-else-if="trainingStatus === 'finish'"
+              v-else-if="posTrainingStatus === 'finish' && !posPretrainDone"
               color="primary"
               variant="elevated"
               class="action-btn"
-              @click="updateModel"
+              @click="confirmPretrainDone"
             >
               Update
             </v-btn>
             <v-btn
-              v-else
+              v-else-if="posFinetuneStatus === 'finish'"
               color="primary"
               variant="elevated"
               class="action-btn"
-              @click="startTraining"
+              @click="updatePosModel"
+            >
+              Update
+            </v-btn>
+            <v-btn
+              v-else-if="!posPretrainDone && posTrainingStatus === 'idle'"
+              color="primary"
+              variant="elevated"
+              class="action-btn"
+              @click="startPosTraining"
             >
               START
             </v-btn>
@@ -113,7 +291,7 @@
       <!-- 右側面板：Scene 或 Pre-Train Process -->
       <div class="right-panel">
         <!-- Scene 視圖 (無訓練時) -->
-        <template v-if="trainingStatus !== 'running' && trainingStatus !== 'finish'">
+        <template v-if="!isTrainingActive">
           <div class="panel-header">Scene</div>
           <div class="map-container">
             <div id="aiSimulatorMap" class="map-view" />
@@ -145,8 +323,8 @@
           </div>
         </template>
 
-        <!-- Pre-Train Process 視圖 (Figma 277:383) -->
-        <template v-else>
+        <!-- NES Pre-Train Process 視圖 (Figma 277:383) -->
+        <template v-else-if="selectedModel === 'nes' && !nesReviewMode && !nesPretrainDone">
           <div class="panel-header">
             Pre-Train Process
             <span :class="['training-status', trainingStatus]">
@@ -192,8 +370,387 @@
             </div>
           </div>
         </template>
+
+        <!-- NES Review 視圖 (Figma 277:1286, 277:296) -->
+        <template v-else-if="selectedModel === 'nes' && nesReviewMode">
+          <div class="panel-header">Review</div>
+          <div class="nes-review-content">
+            <div class="nes-review-map-container">
+              <!-- 場景選擇下拉選單 -->
+              <v-select
+                v-model="nesSelectedScenario"
+                :items="nesScenarioOptions"
+                density="compact"
+                variant="outlined"
+                class="scenario-select"
+                hide-details
+              />
+              <!-- 地圖 -->
+              <div id="nesReviewMap" class="nes-review-map" />
+              <!-- 色標 -->
+              <div v-show="showNesHeatmap && nesSelectedScenario !== 'None'" class="color-bar">
+                <div class="color-gradient" />
+                <div class="color-labels">
+                  <span>-55 dBm</span>
+                  <span>-140 dBm</span>
+                </div>
+              </div>
+              <!-- 圖例 -->
+              <div v-if="nesSelectedScenario !== 'None'" class="nes-review-legend">
+                <div class="legend-item">
+                  <span class="legend-icon ue-icon">👤</span>
+                  <span>: UE</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-icon wifi-icon">📶</span>
+                  <span>: gNB</span>
+                </div>
+              </div>
+              <!-- Heatmap 控制 -->
+              <div class="heatmap-control">
+                <v-switch
+                  v-model="showNesHeatmap"
+                  label="Heatmap"
+                  density="compact"
+                  hide-details
+                  class="heatmap-switch"
+                />
+                <v-select
+                  v-model="nesHeatmapType"
+                  :items="['RSRP']"
+                  density="compact"
+                  class="heatmap-select"
+                  hide-details
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- NES Finetune Training Process 視圖 (Figma 277:1326, 277:1366) -->
+        <template v-else-if="selectedModel === 'nes' && nesPretrainDone && !nesEnableMode && (nesFinetuneStatus === 'running' || nesFinetuneStatus === 'finish')">
+          <div class="panel-header">
+            Training Process
+            <span :class="['training-status', nesFinetuneStatus]">
+              Training Status : {{ nesFinetuneStatus === 'finish' ? 'Finish' : 'running' }}
+            </span>
+          </div>
+          <div class="training-content">
+            <!-- 訓練圖表區域 -->
+            <div class="charts-section">
+              <!-- 主圖表：Reward over Epochs -->
+              <div class="chart-container main-chart">
+                <p class="chart-title">Reward over Epochs (with MA10)</p>
+                <div class="chart-wrapper">
+                  <canvas ref="nesFinetuneRewardChartRef" />
+                </div>
+              </div>
+              <!-- 底部兩個小圖表 -->
+              <div class="charts-row">
+                <div class="chart-container">
+                  <p class="chart-title">Critic Loss over Epochs</p>
+                  <div class="chart-wrapper small">
+                    <canvas ref="nesFinetuneCriticLossChartRef" />
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <p class="chart-title">Actor Loss over Epochs</p>
+                  <div class="chart-wrapper small">
+                    <canvas ref="nesFinetuneActorLossChartRef" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 訓練資訊 -->
+            <div class="training-info">
+              <p class="info-item highlight">Loss Function : Self-defined</p>
+              <p class="info-item">Epoch: {{ nesFinetuneEpoch }}/1000</p>
+              <div class="results-section">
+                <p class="results-title">Training Results:</p>
+                <p class="result-item">Reward: {{ nesFinetuneResults.reward.toFixed(2) }}</p>
+                <p class="result-item">Actor Loss: {{ nesFinetuneResults.actorLoss.toFixed(1) }}</p>
+                <p class="result-item">Critic Loss: {{ nesFinetuneResults.criticLoss.toFixed(3) }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- NES Enable Project 視圖 -->
+        <template v-else-if="selectedModel === 'nes' && nesPretrainDone && nesEnableMode">
+          <div class="panel-header">Project</div>
+          <div class="enable-content">
+            <div class="enable-map-container">
+              <div id="nesEnableMap" class="enable-map" />
+              <!-- 色標 -->
+              <div class="color-bar">
+                <div class="color-gradient" />
+                <div class="color-labels">
+                  <span>-55 dBm</span>
+                  <span>-140 dBm</span>
+                </div>
+              </div>
+              <!-- 圖例 -->
+              <div class="enable-legend">
+                <div class="legend-item">
+                  <span class="legend-icon ue-icon">👤</span>
+                  <span>: UE</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-icon wifi-icon">📶</span>
+                  <span>: gNB</span>
+                </div>
+              </div>
+              <!-- Heatmap 控制 -->
+              <div class="enable-controls">
+                <v-switch
+                  v-model="showNesHeatmap"
+                  label="Heatmap"
+                  density="compact"
+                  hide-details
+                  class="heatmap-switch"
+                />
+                <v-select
+                  v-model="nesHeatmapType"
+                  :items="['RSRP']"
+                  label="Signal"
+                  density="compact"
+                  class="signal-select"
+                  hide-details
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- NES Finetune 空白狀態視圖 (等待開始) -->
+        <template v-else-if="selectedModel === 'nes' && nesPretrainDone && nesFinetuneStatus === 'idle' && !nesEnableMode">
+          <div class="panel-header">Project</div>
+          <div class="map-container">
+            <div id="aiSimulatorMap" class="map-view" />
+            <!-- Heatmap 控制 -->
+            <div class="heatmap-control">
+              <v-switch
+                v-model="showHeatmap"
+                label="Heatmap"
+                density="compact"
+                hide-details
+                class="heatmap-switch"
+              />
+              <v-select
+                v-model="heatmapType"
+                :items="['RSRP']"
+                density="compact"
+                class="heatmap-select"
+                hide-details
+              />
+            </div>
+          </div>
+        </template>
+
+        <!-- Positioning Pre-Train Process 視圖 (Figma 277:824) -->
+        <template v-else-if="selectedModel === 'positioning' && !posPretrainDone && !posReviewMode && !posEnableMode">
+          <div class="panel-header">
+            Pre-Train Process
+            <span :class="['training-status', posTrainingStatus]">
+              Training Status : {{ posTrainingStatus }}
+            </span>
+          </div>
+          <div class="training-content">
+            <!-- 訓練圖表區域 (單一 Loss 圖表) -->
+            <div class="charts-section">
+              <div class="chart-container main-chart pos-chart">
+                <p class="chart-title">Loss over Epochs</p>
+                <div class="chart-wrapper pos-wrapper">
+                  <canvas ref="posLossChartRef" />
+                </div>
+              </div>
+            </div>
+            <!-- 訓練資訊 -->
+            <div class="training-info">
+              <p class="info-item highlight">Loss Function : MSE</p>
+              <p class="info-item">Epoch: {{ posTrainingEpoch }}/500</p>
+              <div class="results-section">
+                <p class="results-title">Training Results:</p>
+                <p class="result-item">Training Loss: {{ posTrainingResults.trainLoss.toFixed(4) }}</p>
+                <p class="result-item">Validation Loss: {{ posTrainingResults.valLoss.toFixed(4) }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Positioning Finetune Training Process 視圖 (Figma 277:993, 277:1032) -->
+        <template v-else-if="selectedModel === 'positioning' && posPretrainDone && !posEnableMode && (posFinetuneStatus === 'running' || posFinetuneStatus === 'finish')">
+          <div class="panel-header">
+            Training Process
+            <span :class="['training-status', posFinetuneStatus]">
+              Training Status : {{ posFinetuneStatus === 'finish' ? 'Finish' : 'running' }}
+            </span>
+          </div>
+          <div class="training-content">
+            <!-- Finetune 圖表 -->
+            <div class="charts-section">
+              <div class="chart-container main-chart pos-chart">
+                <p class="chart-title finetune-title">Loss Function : MSE</p>
+                <div class="chart-wrapper pos-wrapper">
+                  <canvas ref="posFinetuneChartRef" />
+                </div>
+              </div>
+            </div>
+            <!-- Finetune 訓練資訊 -->
+            <div class="training-info">
+              <p class="info-item">Epoch:</p>
+              <p class="info-item large">{{ posFinetuneEpoch }}/500</p>
+              <div class="results-section">
+                <p class="result-item">Training Loss :</p>
+                <p class="result-item large">{{ posFinetuneResults.trainLoss.toFixed(2) }}</p>
+                <p class="result-item">Validation Loss :</p>
+                <p class="result-item large">{{ posFinetuneResults.valLoss.toFixed(2) }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Positioning Enable Project 視圖 (Figma 277:1190) -->
+        <template v-else-if="selectedModel === 'positioning' && posEnableMode">
+          <div class="panel-header">Project</div>
+          <div class="enable-content">
+            <div class="enable-map-container">
+              <div id="posEnableMap" class="enable-map" />
+              <!-- 色標 -->
+              <div class="color-bar">
+                <div class="color-gradient" />
+                <div class="color-labels">
+                  <span>-55 dBm</span>
+                  <span>-140 dBm</span>
+                </div>
+              </div>
+              <!-- 圖例 -->
+              <div class="enable-legend">
+                <div class="legend-item">
+                  <span class="legend-icon ue-icon">👤</span>
+                  <span>: UE</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-icon wifi-icon">📶</span>
+                  <span>: gNB</span>
+                </div>
+              </div>
+              <!-- Heatmap 和 Signal 控制 -->
+              <div class="enable-controls">
+                <v-switch
+                  v-model="showEnableHeatmap"
+                  label="Heatmap"
+                  density="compact"
+                  hide-details
+                  class="heatmap-switch"
+                />
+                <v-select
+                  v-model="enableSignalType"
+                  :items="['RSRP']"
+                  label="Signal"
+                  density="compact"
+                  class="signal-select"
+                  hide-details
+                />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Positioning Review 視圖 (Figma 277:599, 277:652, 277:702) -->
+        <template v-else-if="selectedModel === 'positioning' && posReviewMode">
+          <div class="panel-header">Review</div>
+          <div class="review-content">
+            <div class="review-map-container">
+              <div id="posReviewMap" class="review-map" />
+              <!-- Add Path 按鈕 -->
+              <v-btn
+                color="info"
+                variant="elevated"
+                class="add-path-btn"
+                @click="addPath"
+              >
+                Add Path
+              </v-btn>
+              <!-- UE/Path 圖例 -->
+              <div v-if="posPathData.length > 0" class="path-legend">
+                <div class="legend-item">
+                  <span class="legend-dot ue" />
+                  <span>: UE</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-arrow">↗</span>
+                  <span>: Path</span>
+                </div>
+              </div>
+              <!-- 色標 -->
+              <div v-show="showReviewHeatmap" class="color-bar">
+                <div class="color-gradient" />
+                <div class="color-labels">
+                  <span>-59.8 dBm</span>
+                  <span>-140.0 dBm</span>
+                </div>
+              </div>
+              <!-- Heatmap 控制 -->
+              <div class="heatmap-control">
+                <v-switch
+                  v-model="showReviewHeatmap"
+                  label="Heatmap"
+                  density="compact"
+                  hide-details
+                  class="heatmap-switch"
+                />
+                <v-select
+                  v-model="reviewHeatmapType"
+                  :items="['RSRP']"
+                  density="compact"
+                  class="heatmap-select"
+                  hide-details
+                />
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
+
+    <!-- NES Upload Finetuning Dataset 對話框 (Figma 277:1405) -->
+    <v-dialog v-model="showNesUploadDialog" max-width="400" persistent>
+      <v-card class="upload-dialog">
+        <v-card-title class="upload-dialog-title">
+          Upload finetuning dataset
+        </v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="nesUploadDataset"
+            :items="nesDatasetOptions"
+            density="compact"
+            variant="outlined"
+            placeholder="Select dataset"
+            hide-details
+            class="dataset-select"
+          />
+        </v-card-text>
+        <v-card-actions class="upload-dialog-actions">
+          <v-btn
+            variant="outlined"
+            color="default"
+            class="dialog-btn"
+            @click="submitNesUpload"
+          >
+            submit
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            color="default"
+            class="dialog-btn"
+            @click="cancelNesUpload"
+          >
+            cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- 提示訊息 -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" location="top">
@@ -203,539 +760,1826 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
-import {
-  Chart,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  LineController
-} from 'chart.js'
+  import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
+  import mapboxgl from 'mapbox-gl'
+  import 'mapbox-gl/dist/mapbox-gl.css'
+  import {
+    Chart,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    LineController
+  } from 'chart.js'
 
-// 註冊 Chart.js 組件
-Chart.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  LineController
-)
+  // 註冊 Chart.js 組件
+  Chart.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    LineController
+  )
 
-const config = useRuntimeConfig()
-const isOnline = config.public?.isOnline
+  const config = useRuntimeConfig()
+  const isOnline = config.public?.isOnline
 
-// 地圖相關
-let map: mapboxgl.Map | null = null
-const mapAccessToken = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
-const onlineStyle = 'mapbox://styles/mapbox/streets-v12'
-const offlineStyle = config.public?.offlineMapboxGLJSURL
+  // 地圖相關
+  let map: mapboxgl.Map | null = null
+  const mapAccessToken = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
+  const onlineStyle = 'mapbox://styles/mapbox/streets-v12'
+  const offlineStyle = config.public?.offlineMapboxGLJSURL
 
-// Model 列表 (Figma 277:952)
-const modelList = [
-  { id: 'nes', name: 'NES' },
-  { id: 'positioning', name: 'Positioning' },
-  { id: 'im', name: 'IM' },
-  { id: 'mro', name: 'MRO' },
-  { id: 'rs', name: 'RS' },
-  { id: 'bc', name: 'BC' }
-]
+  // Model 列表 (Figma 277:952)
+  const modelList = [
+    { id: 'nes', name: 'NES' },
+    { id: 'positioning', name: 'Positioning' },
+    { id: 'im', name: 'IM' },
+    { id: 'mro', name: 'MRO' },
+    { id: 'rs', name: 'RS' },
+    { id: 'bc', name: 'BC' }
+  ]
 
-const selectedModel = ref<string | null>(null)
+  const selectedModel = ref<string | null>(null)
 
-// NES Model 控制 (Figma 277:465)
-const nesModelSelect = ref<string | null>(null)
-const nesModelOptions = ['Model 1', 'Model 2', 'Model 3']
+  // NES Model 控制 (Figma 277:465)
+  const nesModelSelect = ref<string | null>(null)
+  const nesModelOptions = ['Model 1', 'Model 2', 'Model 3']
 
-// 訓練狀態
-type TrainingStatus = 'idle' | 'running' | 'finish'
-const trainingStatus = ref<TrainingStatus>('idle')
-const trainingEpoch = ref(0)
-const trainingResults = ref({
-  reward: 0,
-  actorLoss: 0,
-  criticLoss: 0
-})
+  // Positioning Model 控制 (Figma 277:907)
+  const posModelSelect = ref<string | null>(null)
+  const posModelOptions = ['Model A', 'Model B', 'Model C']
 
-// 圖表 refs
-const rewardChartRef = ref<HTMLCanvasElement | null>(null)
-const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
-const actorLossChartRef = ref<HTMLCanvasElement | null>(null)
-
-// Chart.js 實例 (使用 shallowRef 避免深度響應)
-const rewardChart = shallowRef<Chart | null>(null)
-const criticLossChart = shallowRef<Chart | null>(null)
-const actorLossChart = shallowRef<Chart | null>(null)
-
-// 訓練數據存儲
-const trainingData = ref({
-  epochs: [] as number[],
-  rewards: [] as number[],
-  rewardsMA10: [] as number[],
-  bestRewards: [] as number[],
-  bestRewardsMA10: [] as number[],
-  criticLosses: [] as number[],
-  actorLosses: [] as number[]
-})
-
-// Heatmap 控制
-const showHeatmap = ref(false)
-const heatmapType = ref('RSRP')
-
-const snackbar = ref({ show: false, text: '', color: 'info' })
-
-// 計算移動平均 (MA10)
-function calculateMA(data: number[], windowSize: number = 10): number[] {
-  const result: number[] = []
-  for (let i = 0; i < data.length; i++) {
-    if (i < windowSize - 1) {
-      // 數據不足時，使用可用數據的平均
-      const slice = data.slice(0, i + 1)
-      result.push(slice.reduce((a, b) => a + b, 0) / slice.length)
-    } else {
-      const slice = data.slice(i - windowSize + 1, i + 1)
-      result.push(slice.reduce((a, b) => a + b, 0) / windowSize)
-    }
-  }
-  return result
-}
-
-// 初始化圖表
-function initCharts() {
-  destroyCharts()
-
-  nextTick(() => {
-    // Reward 圖表 (主圖表，4 條線)
-    if (rewardChartRef.value) {
-      const ctx = rewardChartRef.value.getContext('2d')
-      if (ctx) {
-        rewardChart.value = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: [],
-            datasets: [
-              {
-                label: 'reward',
-                data: [],
-                borderColor: '#2196F3',
-                backgroundColor: 'transparent',
-                borderWidth: 1,
-                pointRadius: 0,
-                tension: 0.1
-              },
-              {
-                label: 'reward (MA10)',
-                data: [],
-                borderColor: '#64B5F6',
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                pointRadius: 0,
-                tension: 0.3
-              },
-              {
-                label: 'bestReward',
-                data: [],
-                borderColor: '#4CAF50',
-                backgroundColor: 'transparent',
-                borderWidth: 1,
-                pointRadius: 0,
-                tension: 0.1
-              },
-              {
-                label: 'bestReward (MA10)',
-                data: [],
-                borderColor: '#FFD600',
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                pointRadius: 0,
-                tension: 0.3
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            scales: {
-              x: {
-                title: { display: true, text: 'epoch', font: { size: 10 } },
-                ticks: { font: { size: 9 }, maxTicksLimit: 6 }
-              },
-              y: {
-                title: { display: true, text: 'value', font: { size: 10 } },
-                ticks: { font: { size: 9 } },
-                min: 0.4,
-                max: 1.1
-              }
-            },
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: { font: { size: 9 }, boxWidth: 20, padding: 8 }
-              },
-              tooltip: { enabled: true, mode: 'index', intersect: false }
-            }
-          }
-        })
-      }
-    }
-
-    // Critic Loss 圖表 (左下)
-    if (criticLossChartRef.value) {
-      const ctx = criticLossChartRef.value.getContext('2d')
-      if (ctx) {
-        criticLossChart.value = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: [],
-            datasets: [{
-              label: 'critic_loss',
-              data: [],
-              borderColor: '#FFC107',
-              backgroundColor: 'transparent',
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            scales: {
-              x: {
-                title: { display: true, text: 'epoch', font: { size: 9 } },
-                ticks: { font: { size: 8 }, maxTicksLimit: 5 }
-              },
-              y: {
-                title: { display: true, text: 'critic_loss', font: { size: 9 } },
-                ticks: { font: { size: 8 } }
-              }
-            },
-            plugins: {
-              legend: { display: false },
-              tooltip: { enabled: true }
-            }
-          }
-        })
-      }
-    }
-
-    // Actor Loss 圖表 (右下)
-    if (actorLossChartRef.value) {
-      const ctx = actorLossChartRef.value.getContext('2d')
-      if (ctx) {
-        actorLossChart.value = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: [],
-            datasets: [{
-              label: 'actor_loss',
-              data: [],
-              borderColor: '#FF9800',
-              backgroundColor: 'transparent',
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            scales: {
-              x: {
-                title: { display: true, text: 'epoch', font: { size: 9 } },
-                ticks: { font: { size: 8 }, maxTicksLimit: 5 }
-              },
-              y: {
-                title: { display: true, text: 'actor_loss', font: { size: 9 } },
-                ticks: { font: { size: 8 } }
-              }
-            },
-            plugins: {
-              legend: { display: false },
-              tooltip: { enabled: true }
-            }
-          }
-        })
-      }
-    }
+  // 訓練狀態
+  type TrainingStatus = 'idle' | 'running' | 'finish'
+  const trainingStatus = ref<TrainingStatus>('idle')
+  const trainingEpoch = ref(0)
+  const trainingResults = ref({
+    reward: 0,
+    actorLoss: 0,
+    criticLoss: 0
   })
-}
 
-// 銷毀圖表
-function destroyCharts() {
-  if (rewardChart.value) {
-    rewardChart.value.destroy()
-    rewardChart.value = null
+  // Positioning 訓練狀態
+  const posTrainingStatus = ref<TrainingStatus>('idle')
+  const posTrainingEpoch = ref(0)
+  const posTrainingResults = ref({
+    trainLoss: 0,
+    valLoss: 0
+  })
+
+  // Positioning Review 模式狀態 (Figma 277:599, 277:652, 277:702)
+  const posReviewMode = ref(false)
+  const showReviewHeatmap = ref(false)
+  const reviewHeatmapType = ref('RSRP')
+  let reviewMap: mapboxgl.Map | null = null
+
+  // 路徑數據類型
+  interface PathPoint {
+    lng: number
+    lat: number
   }
-  if (criticLossChart.value) {
-    criticLossChart.value.destroy()
-    criticLossChart.value = null
+  interface PathData {
+    id: number
+    points: PathPoint[]
+    uePosition: PathPoint
   }
-  if (actorLossChart.value) {
-    actorLossChart.value.destroy()
-    actorLossChart.value = null
+  const posPathData = ref<PathData[]>([])
+
+  // Positioning Finetune 狀態 (Figma 277:993, 277:1032)
+  const posPretrainDone = ref(false)
+  const posFinetuneStatus = ref<TrainingStatus>('idle')
+  const posFinetuneEpoch = ref(0)
+  const posFinetuneResults = ref({
+    trainLoss: 0,
+    valLoss: 0
+  })
+  const posFinetuneData = ref({
+    epochs: [] as number[],
+    trainLosses: [] as number[],
+    valLosses: [] as number[]
+  })
+
+  // Positioning Enable 模式狀態 (Figma 277:1190)
+  const posEnableMode = ref(false)
+  const showEnableHeatmap = ref(true)
+  const enableSignalType = ref('RSRP')
+  let enableMap: mapboxgl.Map | null = null
+
+  // NES Review 模式狀態 (Figma 277:1286, 277:296)
+  const nesReviewMode = ref(false)
+  const nesScenarioOptions = ['None', '上班', '下班', '上課1/隨機', '上課2/同步']
+  const nesSelectedScenario = ref('None')
+  const showNesHeatmap = ref(false)
+  const nesHeatmapType = ref('RSRP')
+  let nesReviewMap: mapboxgl.Map | null = null
+
+  // gNB 標記數據
+  interface GnbMarker {
+    id: number
+    lng: number
+    lat: number
+    color: string
   }
-}
+  const nesGnbMarkers: GnbMarker[] = [
+    { id: 1, lng: 120.9965, lat: 24.7875, color: '#00BCD4' },
+    { id: 2, lng: 120.9975, lat: 24.7865, color: '#E91E63' },
+    { id: 3, lng: 120.9980, lat: 24.7880, color: '#FFEB3B' },
+    { id: 4, lng: 120.9955, lat: 24.7870, color: '#4CAF50' }
+  ]
 
-// 更新圖表數據
-function updateCharts() {
-  const data = trainingData.value
+  // NES Finetune 狀態 (Figma 277:1326, 277:1366, 277:1405)
+  const nesPretrainDone = ref(false)
+  const nesFinetuneStatus = ref<TrainingStatus>('idle')
+  const nesFinetuneEpoch = ref(0)
+  const nesFinetuneResults = ref({
+    reward: 0,
+    actorLoss: 0,
+    criticLoss: 0
+  })
+  const nesFinetuneData = ref({
+    epochs: [] as number[],
+    rewards: [] as number[],
+    rewardsMA10: [] as number[],
+    bestRewards: [] as number[],
+    bestRewardsMA10: [] as number[],
+    criticLosses: [] as number[],
+    actorLosses: [] as number[]
+  })
 
-  // 更新 Reward 圖表
-  if (rewardChart.value) {
-    rewardChart.value.data.labels = data.epochs
-    rewardChart.value.data.datasets[0].data = data.rewards
-    rewardChart.value.data.datasets[1].data = data.rewardsMA10
-    rewardChart.value.data.datasets[2].data = data.bestRewards
-    rewardChart.value.data.datasets[3].data = data.bestRewardsMA10
-    rewardChart.value.update('none')
-  }
+  // NES Upload 對話框狀態
+  const showNesUploadDialog = ref(false)
+  const nesUploadDataset = ref<string | null>(null)
+  const nesDatasetOptions = ['Dataset A', 'Dataset B', 'Dataset C']
 
-  // 更新 Critic Loss 圖表
-  if (criticLossChart.value) {
-    criticLossChart.value.data.labels = data.epochs
-    criticLossChart.value.data.datasets[0].data = data.criticLosses
-    criticLossChart.value.update('none')
-  }
+  // NES Enable 模式狀態
+  const nesEnableMode = ref(false)
+  let nesEnableMap: mapboxgl.Map | null = null
 
-  // 更新 Actor Loss 圖表
-  if (actorLossChart.value) {
-    actorLossChart.value.data.labels = data.epochs
-    actorLossChart.value.data.datasets[0].data = data.actorLosses
-    actorLossChart.value.update('none')
-  }
-}
+  // 圖表 refs
+  const rewardChartRef = ref<HTMLCanvasElement | null>(null)
+  const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
+  const actorLossChartRef = ref<HTMLCanvasElement | null>(null)
+  const posLossChartRef = ref<HTMLCanvasElement | null>(null)
+  const posFinetuneChartRef = ref<HTMLCanvasElement | null>(null)
+  // NES Finetune 圖表 refs
+  const nesFinetuneRewardChartRef = ref<HTMLCanvasElement | null>(null)
+  const nesFinetuneCriticLossChartRef = ref<HTMLCanvasElement | null>(null)
+  const nesFinetuneActorLossChartRef = ref<HTMLCanvasElement | null>(null)
 
-// 重置訓練數據
-function resetTrainingData() {
-  trainingData.value = {
-    epochs: [],
-    rewards: [],
-    rewardsMA10: [],
-    bestRewards: [],
-    bestRewardsMA10: [],
-    criticLosses: [],
-    actorLosses: []
-  }
-}
+  // Chart.js 實例 (使用 shallowRef 避免深度響應)
+  const rewardChart = shallowRef<Chart | null>(null)
+  const criticLossChart = shallowRef<Chart | null>(null)
+  const actorLossChart = shallowRef<Chart | null>(null)
+  const posLossChart = shallowRef<Chart | null>(null)
+  const posFinetuneChart = shallowRef<Chart | null>(null)
+  // NES Finetune 圖表實例
+  const nesFinetuneRewardChart = shallowRef<Chart | null>(null)
+  const nesFinetuneCriticLossChart = shallowRef<Chart | null>(null)
+  const nesFinetuneActorLossChart = shallowRef<Chart | null>(null)
 
-// 選擇模型
-function selectModel(modelId: string) {
-  selectedModel.value = modelId
-  trainingStatus.value = 'idle'
-  trainingEpoch.value = 0
-  nesModelSelect.value = null
-  resetTrainingData()
-}
+  // 訓練數據存儲 (NES)
+  const trainingData = ref({
+    epochs: [] as number[],
+    rewards: [] as number[],
+    rewardsMA10: [] as number[],
+    bestRewards: [] as number[],
+    bestRewardsMA10: [] as number[],
+    criticLosses: [] as number[],
+    actorLosses: [] as number[]
+  })
 
-// 返回 Model List
-function goBack() {
-  selectedModel.value = null
-  trainingStatus.value = 'idle'
-  trainingEpoch.value = 0
-  nesModelSelect.value = null
-  resetTrainingData()
-  destroyCharts()
-  // 重新初始化地圖
-  nextTick(() => initializeMap())
-}
+  // Positioning 訓練數據存儲
+  const posTrainingData = ref({
+    epochs: [] as number[],
+    trainLosses: [] as number[],
+    valLosses: [] as number[]
+  })
 
-// 開始預訓練 (Pre-train 按鈕)
-function startPreTrain() {
-  if (!nesModelSelect.value) return
-  snackbar.value = {
-    show: true,
-    text: 'Pre-train 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/start)',
-    color: 'warning'
-  }
-}
+  // 是否正在訓練（任一模型）
+  const isTrainingActive = computed(() => {
+    return trainingStatus.value !== 'idle' || posTrainingStatus.value !== 'idle'
+  })
 
-// 開始訓練 (START 按鈕)
-function startTraining() {
-  if (!nesModelSelect.value) {
-    snackbar.value = {
-      show: true,
-      text: '請先選擇模型',
-      color: 'warning'
+  // Heatmap 控制
+  const showHeatmap = ref(false)
+  const heatmapType = ref('RSRP')
+
+  const snackbar = ref({ show: false, text: '', color: 'info' })
+
+  // 計算移動平均 (MA10)
+  function calculateMA(data: number[], windowSize: number = 10): number[] {
+    const result: number[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < windowSize - 1) {
+        // 數據不足時，使用可用數據的平均
+        const slice = data.slice(0, i + 1)
+        result.push(slice.reduce((a, b) => a + b, 0) / slice.length)
+      } else {
+        const slice = data.slice(i - windowSize + 1, i + 1)
+        result.push(slice.reduce((a, b) => a + b, 0) / windowSize)
+      }
     }
-    return
+    return result
   }
-
-  trainingStatus.value = 'running'
-  trainingEpoch.value = 0
-  resetTrainingData()
 
   // 初始化圖表
-  nextTick(() => {
-    initCharts()
-    // 開始模擬訓練
-    nextTick(() => simulateTraining())
-  })
-}
+  function initCharts() {
+    destroyCharts()
 
-// 停止訓練
-function stopTraining() {
-  if (trainingInterval) {
-    clearInterval(trainingInterval)
-    trainingInterval = null
+    nextTick(() => {
+      // Reward 圖表 (主圖表，4 條線)
+      if (rewardChartRef.value) {
+        const ctx = rewardChartRef.value.getContext('2d')
+        if (ctx) {
+          rewardChart.value = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  label: 'reward',
+                  data: [],
+                  borderColor: '#2196F3',
+                  backgroundColor: 'transparent',
+                  borderWidth: 1,
+                  pointRadius: 0,
+                  tension: 0.1
+                },
+                {
+                  label: 'reward (MA10)',
+                  data: [],
+                  borderColor: '#64B5F6',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.3
+                },
+                {
+                  label: 'bestReward',
+                  data: [],
+                  borderColor: '#4CAF50',
+                  backgroundColor: 'transparent',
+                  borderWidth: 1,
+                  pointRadius: 0,
+                  tension: 0.1
+                },
+                {
+                  label: 'bestReward (MA10)',
+                  data: [],
+                  borderColor: '#FFD600',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.3
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              scales: {
+                x: {
+                  title: { display: true, text: 'epoch', font: { size: 10 } },
+                  ticks: { font: { size: 9 }, maxTicksLimit: 6 }
+                },
+                y: {
+                  title: { display: true, text: 'value', font: { size: 10 } },
+                  ticks: { font: { size: 9 } },
+                  min: 0.4,
+                  max: 1.1
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { font: { size: 9 }, boxWidth: 20, padding: 8 }
+                },
+                tooltip: { enabled: true, mode: 'index', intersect: false }
+              }
+            }
+          })
+        }
+      }
+
+      // Critic Loss 圖表 (左下)
+      if (criticLossChartRef.value) {
+        const ctx = criticLossChartRef.value.getContext('2d')
+        if (ctx) {
+          criticLossChart.value = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'critic_loss',
+                data: [],
+                borderColor: '#FFC107',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              scales: {
+                x: {
+                  title: { display: true, text: 'epoch', font: { size: 9 } },
+                  ticks: { font: { size: 8 }, maxTicksLimit: 5 }
+                },
+                y: {
+                  title: { display: true, text: 'critic_loss', font: { size: 9 } },
+                  ticks: { font: { size: 8 } }
+                }
+              },
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+              }
+            }
+          })
+        }
+      }
+
+      // Actor Loss 圖表 (右下)
+      if (actorLossChartRef.value) {
+        const ctx = actorLossChartRef.value.getContext('2d')
+        if (ctx) {
+          actorLossChart.value = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                label: 'actor_loss',
+                data: [],
+                borderColor: '#FF9800',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              scales: {
+                x: {
+                  title: { display: true, text: 'epoch', font: { size: 9 } },
+                  ticks: { font: { size: 8 }, maxTicksLimit: 5 }
+                },
+                y: {
+                  title: { display: true, text: 'actor_loss', font: { size: 9 } },
+                  ticks: { font: { size: 8 } }
+                }
+              },
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+              }
+            }
+          })
+        }
+      }
+    })
   }
-  trainingStatus.value = 'idle'
-  snackbar.value = {
-    show: true,
-    text: '訓練已停止',
-    color: 'info'
+
+  // 銷毀圖表
+  function destroyCharts() {
+    if (rewardChart.value) {
+      rewardChart.value.destroy()
+      rewardChart.value = null
+    }
+    if (criticLossChart.value) {
+      criticLossChart.value.destroy()
+      criticLossChart.value = null
+    }
+    if (actorLossChart.value) {
+      actorLossChart.value.destroy()
+      actorLossChart.value = null
+    }
+    if (posLossChart.value) {
+      posLossChart.value.destroy()
+      posLossChart.value = null
+    }
+    if (posFinetuneChart.value) {
+      posFinetuneChart.value.destroy()
+      posFinetuneChart.value = null
+    }
   }
-}
 
-// 更新模型
-function updateModel() {
-  snackbar.value = {
-    show: true,
-    text: 'Update 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/update)',
-    color: 'warning'
+  // 更新圖表數據
+  function updateCharts() {
+    const data = trainingData.value
+
+    // 更新 Reward 圖表
+    if (rewardChart.value) {
+      rewardChart.value.data.labels = data.epochs
+      rewardChart.value.data.datasets[0].data = data.rewards
+      rewardChart.value.data.datasets[1].data = data.rewardsMA10
+      rewardChart.value.data.datasets[2].data = data.bestRewards
+      rewardChart.value.data.datasets[3].data = data.bestRewardsMA10
+      rewardChart.value.update('none')
+    }
+
+    // 更新 Critic Loss 圖表
+    if (criticLossChart.value) {
+      criticLossChart.value.data.labels = data.epochs
+      criticLossChart.value.data.datasets[0].data = data.criticLosses
+      criticLossChart.value.update('none')
+    }
+
+    // 更新 Actor Loss 圖表
+    if (actorLossChart.value) {
+      actorLossChart.value.data.labels = data.epochs
+      actorLossChart.value.data.datasets[0].data = data.actorLosses
+      actorLossChart.value.update('none')
+    }
   }
-}
 
-// 顯示預覽
-function showPreview() {
-  snackbar.value = {
-    show: true,
-    text: 'Preview 功能尚未實作 (需後端 API: GET /ai-simulator/preview)',
-    color: 'warning'
+  // 重置訓練數據
+  function resetTrainingData() {
+    trainingData.value = {
+      epochs: [],
+      rewards: [],
+      rewardsMA10: [],
+      bestRewards: [],
+      bestRewardsMA10: [],
+      criticLosses: [],
+      actorLosses: []
+    }
   }
-}
 
-// 模擬訓練過程 - 生成類似 Figma 設計的數據
-let trainingInterval: ReturnType<typeof setInterval> | null = null
+  // 重置 Positioning 訓練數據
+  function resetPosTrainingData() {
+    posTrainingData.value = {
+      epochs: [],
+      trainLosses: [],
+      valLosses: []
+    }
+  }
 
-function simulateTraining() {
-  if (trainingInterval) clearInterval(trainingInterval)
+  // 初始化 Positioning Loss 圖表
+  function initPosChart() {
+    if (posLossChart.value) {
+      posLossChart.value.destroy()
+      posLossChart.value = null
+    }
 
-  // 訓練參數
-  let currentEpoch = 0
-  const maxEpoch = 1000
-  const stepSize = 10 // 每次更新的 epoch 數
-  let bestReward = 0.5
+    nextTick(() => {
+      if (posLossChartRef.value) {
+        const ctx = posLossChartRef.value.getContext('2d')
+        if (ctx) {
+          posLossChart.value = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  label: 'training',
+                  data: [],
+                  borderColor: '#2196F3',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.1
+                },
+                {
+                  label: 'validation',
+                  data: [],
+                  borderColor: '#FF9800',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2,
+                  borderDash: [5, 5],
+                  pointRadius: 0,
+                  tension: 0.1
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              scales: {
+                x: {
+                  title: { display: true, text: 'epoch', font: { size: 10 } },
+                  ticks: { font: { size: 9 }, maxTicksLimit: 6 }
+                },
+                y: {
+                  title: { display: true, text: 'loss', font: { size: 10 } },
+                  ticks: { font: { size: 9 } },
+                  min: 0
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { font: { size: 10 }, boxWidth: 20, padding: 10 }
+                },
+                tooltip: { enabled: true, mode: 'index', intersect: false }
+              }
+            }
+          })
+        }
+      }
+    })
+  }
 
-  trainingInterval = setInterval(() => {
-    if (currentEpoch >= maxEpoch) {
-      if (trainingInterval) clearInterval(trainingInterval)
-      trainingStatus.value = 'finish'
-      trainingResults.value = {
-        reward: 0.98,
-        actorLoss: -2.3,
-        criticLoss: 0.002
+  // 更新 Positioning 圖表數據
+  function updatePosChart() {
+    const data = posTrainingData.value
+    if (posLossChart.value) {
+      posLossChart.value.data.labels = data.epochs
+      posLossChart.value.data.datasets[0].data = data.trainLosses
+      posLossChart.value.data.datasets[1].data = data.valLosses
+      posLossChart.value.update('none')
+    }
+  }
+
+  // 選擇模型
+  function selectModel(modelId: string) {
+    selectedModel.value = modelId
+    // 重置 NES 狀態
+    trainingStatus.value = 'idle'
+    trainingEpoch.value = 0
+    nesModelSelect.value = null
+    resetTrainingData()
+    // 重置 Positioning 狀態
+    posTrainingStatus.value = 'idle'
+    posTrainingEpoch.value = 0
+    posModelSelect.value = null
+    resetPosTrainingData()
+  }
+
+  // 返回 Model List
+  function goBack() {
+    selectedModel.value = null
+    // 重置 NES 狀態
+    trainingStatus.value = 'idle'
+    trainingEpoch.value = 0
+    nesModelSelect.value = null
+    resetTrainingData()
+    // 重置 NES Review 狀態
+    nesReviewMode.value = false
+    nesSelectedScenario.value = 'None'
+    if (nesReviewMap) {
+      nesReviewMap.remove()
+      nesReviewMap = null
+    }
+    // 重置 NES Finetune/Enable 狀態
+    nesPretrainDone.value = false
+    nesFinetuneStatus.value = 'idle'
+    nesFinetuneEpoch.value = 0
+    nesEnableMode.value = false
+    if (nesEnableMap) {
+      nesEnableMap.remove()
+      nesEnableMap = null
+    }
+    if (nesFinetuneInterval) {
+      clearInterval(nesFinetuneInterval)
+      nesFinetuneInterval = null
+    }
+    destroyNesFinetuneCharts()
+    // 重置 Positioning 狀態
+    posTrainingStatus.value = 'idle'
+    posTrainingEpoch.value = 0
+    posModelSelect.value = null
+    resetPosTrainingData()
+    // 退出 Review 模式
+    posReviewMode.value = false
+    posPathData.value = []
+    if (reviewMap) {
+      reviewMap.remove()
+      reviewMap = null
+    }
+    // 重置 Finetune/Enable 狀態
+    posPretrainDone.value = false
+    posFinetuneStatus.value = 'idle'
+    posFinetuneEpoch.value = 0
+    posEnableMode.value = false
+    if (enableMap) {
+      enableMap.remove()
+      enableMap = null
+    }
+    // 停止訓練
+    if (trainingInterval) {
+      clearInterval(trainingInterval)
+      trainingInterval = null
+    }
+    if (posTrainingInterval) {
+      clearInterval(posTrainingInterval)
+      posTrainingInterval = null
+    }
+    destroyCharts()
+    // 重新初始化地圖
+    nextTick(() => initializeMap())
+  }
+
+  // 開始預訓練 (Pre-train 按鈕)
+  function startPreTrain() {
+    if (!nesModelSelect.value) return
+    snackbar.value = {
+      show: true,
+      text: 'Pre-train 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/start)',
+      color: 'warning'
+    }
+  }
+
+  // 開始訓練 (START 按鈕)
+  function startTraining() {
+    if (!nesModelSelect.value) {
+      snackbar.value = {
+        show: true,
+        text: '請先選擇模型',
+        color: 'warning'
       }
       return
     }
 
-    currentEpoch += stepSize
-    trainingEpoch.value = currentEpoch
+    trainingStatus.value = 'running'
+    trainingEpoch.value = 0
+    resetTrainingData()
 
-    // 模擬 Reward 數據 (逐漸從 0.5 增長到 0.98，帶隨機波動)
-    const progress = currentEpoch / maxEpoch
-    const baseReward = 0.5 + (0.48 * progress)
-    const noise = (Math.random() - 0.5) * 0.15
-    const currentReward = Math.max(0.4, Math.min(1.1, baseReward + noise))
-
-    // 更新 best reward
-    if (currentReward > bestReward) {
-      bestReward = currentReward
-    }
-
-    // Critic Loss: 從 0.35 下降到 0.002 (快速下降後趨於平穩)
-    const criticBase = 0.35 * Math.exp(-progress * 3)
-    const criticNoise = Math.random() * 0.02
-    const criticLoss = Math.max(0.002, criticBase + criticNoise)
-
-    // Actor Loss: 從 -1.2 下降到 -2.0 (帶較大波動)
-    const actorBase = -1.2 - (0.8 * progress)
-    const actorNoise = (Math.random() - 0.5) * 0.3
-    const actorLoss = actorBase + actorNoise
-
-    // 存儲數據
-    trainingData.value.epochs.push(currentEpoch)
-    trainingData.value.rewards.push(currentReward)
-    trainingData.value.bestRewards.push(bestReward)
-    trainingData.value.criticLosses.push(criticLoss)
-    trainingData.value.actorLosses.push(actorLoss)
-
-    // 計算移動平均
-    trainingData.value.rewardsMA10 = calculateMA(trainingData.value.rewards, 10)
-    trainingData.value.bestRewardsMA10 = calculateMA(trainingData.value.bestRewards, 10)
-
-    // 更新顯示結果
-    trainingResults.value = {
-      reward: currentReward,
-      actorLoss: actorLoss,
-      criticLoss: criticLoss
-    }
-
-    // 更新圖表
-    updateCharts()
-  }, 50) // 50ms 更新一次，讓動畫流暢
-}
-
-// 初始化地圖
-const initializeMap = async () => {
-  if (map) {
-    map.remove()
-    map = null
-  }
-
-  await nextTick()
-  const mapContainer = document.getElementById('aiSimulatorMap')
-  if (!mapContainer) return
-
-  try {
-    mapboxgl.accessToken = mapAccessToken
-    const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
-
-    map = new mapboxgl.Map({
-      container: 'aiSimulatorMap',
-      style: initialStyle,
-      center: [120.997, 24.787], // 交大座標
-      zoom: 16
+    // 初始化圖表
+    nextTick(() => {
+      initCharts()
+      // 開始模擬訓練
+      nextTick(() => simulateTraining())
     })
-    map.addControl(new mapboxgl.NavigationControl())
-  } catch (error) {
-    console.error('Map initialization error:', error)
   }
-}
 
-// 監聽訓練狀態，重新初始化地圖
-watch(trainingStatus, (newStatus) => {
-  if (newStatus === 'idle') {
+  // 停止訓練
+  function stopTraining() {
+    if (trainingInterval) {
+      clearInterval(trainingInterval)
+      trainingInterval = null
+    }
+    trainingStatus.value = 'idle'
+    snackbar.value = {
+      show: true,
+      text: '訓練已停止',
+      color: 'info'
+    }
+  }
+
+  // 更新模型
+  function updateModel() {
+    snackbar.value = {
+      show: true,
+      text: 'Update 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/update)',
+      color: 'warning'
+    }
+  }
+
+  // 顯示預覽
+  // ========== NES Review 模式控制 (Figma 277:1286, 277:296) ==========
+
+  // 顯示 NES Review 模式
+  function showNesReview() {
+    nesReviewMode.value = true
+    nesSelectedScenario.value = 'None'
+    nextTick(() => initNesReviewMap())
+  }
+
+  // 處理 NES BACK 按鈕
+  function handleNesBack() {
+    if (nesReviewMode.value) {
+      exitNesReviewMode()
+      return
+    }
+    goBack()
+  }
+
+  // 退出 NES Review 模式
+  function exitNesReviewMode() {
+    nesReviewMode.value = false
+    nesSelectedScenario.value = 'None'
+    if (nesReviewMap) {
+      nesReviewMap.remove()
+      nesReviewMap = null
+    }
+  }
+
+  // 初始化 NES Review 地圖
+  async function initNesReviewMap() {
+    if (nesReviewMap) {
+      nesReviewMap.remove()
+      nesReviewMap = null
+    }
+
+    await nextTick()
+    const mapContainer = document.getElementById('nesReviewMap')
+    if (!mapContainer) return
+
+    try {
+      mapboxgl.accessToken = mapAccessToken
+      const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
+
+      nesReviewMap = new mapboxgl.Map({
+        container: 'nesReviewMap',
+        style: initialStyle,
+        center: [120.997, 24.787],
+        zoom: 17
+      })
+
+      nesReviewMap.addControl(new mapboxgl.NavigationControl())
+
+      // 地圖載入完成後添加 gNB 標記
+      nesReviewMap.on('load', () => {
+        addNesGnbMarkers()
+      })
+    } catch (error) {
+      console.error('NES Review map initialization error:', error)
+    }
+  }
+
+  // 添加 gNB 標記到地圖
+  function addNesGnbMarkers() {
+    if (!nesReviewMap) return
+
+    nesGnbMarkers.forEach(gnb => {
+      const el = document.createElement('div')
+      el.innerHTML = '📶'
+      el.style.fontSize = '20px'
+      el.style.filter = `drop-shadow(0 0 2px ${gnb.color})`
+
+      new mapboxgl.Marker(el)
+        .setLngLat([gnb.lng, gnb.lat])
+        .addTo(nesReviewMap!)
+    })
+  }
+
+  // 添加 UE 標記（根據場景）
+  function addNesUeMarkers() {
+    if (!nesReviewMap || nesSelectedScenario.value === 'None') return
+
+    // 根據場景生成不同的 UE 位置
+    const uePositions = generateUePositions(nesSelectedScenario.value)
+
+    uePositions.forEach(pos => {
+      const el = document.createElement('div')
+      el.innerHTML = '👤'
+      el.style.fontSize = '16px'
+      el.className = 'nes-ue-marker'
+
+      new mapboxgl.Marker(el)
+        .setLngLat([pos.lng, pos.lat])
+        .addTo(nesReviewMap!)
+    })
+  }
+
+  // 根據場景生成 UE 位置
+  function generateUePositions(scenario: string): { lng: number; lat: number }[] {
+    const centerLng = 120.997
+    const centerLat = 24.787
+    const positions: { lng: number; lat: number }[] = []
+
+    // 根據不同場景生成不同分布的 UE
+    let count = 0
+    let spread = 0.001
+
+    switch (scenario) {
+      case '上班':
+        count = 12
+        spread = 0.002
+        break
+      case '下班':
+        count = 15
+        spread = 0.0025
+        break
+      case '上課1/隨機':
+        count = 8
+        spread = 0.0015
+        break
+      case '上課2/同步':
+        count = 10
+        spread = 0.0018
+        break
+      default:
+        count = 10
+        spread = 0.002
+    }
+
+    for (let i = 0; i < count; i++) {
+      positions.push({
+        lng: centerLng + (Math.random() - 0.5) * spread,
+        lat: centerLat + (Math.random() - 0.5) * spread
+      })
+    }
+
+    return positions
+  }
+
+  // 監聽場景變化，更新 UE 標記
+  watch(nesSelectedScenario, (newScenario) => {
+    if (!nesReviewMap) return
+
+    // 移除現有的 UE 標記
+    const existingMarkers = document.querySelectorAll('.nes-ue-marker')
+    existingMarkers.forEach(marker => {
+      const parent = marker.parentElement
+      if (parent) parent.remove()
+    })
+
+    // 如果選擇了場景，添加新的 UE 標記
+    if (newScenario !== 'None') {
+      addNesUeMarkers()
+    }
+  })
+
+  // ========== NES Finetune 控制 (Figma 277:1326, 277:1366, 277:1405) ==========
+
+  // 確認 NES Pre-train 完成，進入 Finetune 階段
+  function confirmNesPretrainDone() {
+    nesPretrainDone.value = true
+    trainingStatus.value = 'idle'
+    snackbar.value = {
+      show: true,
+      text: 'Pre-train 完成，可以開始 Finetune',
+      color: 'success'
+    }
+  }
+
+  // 顯示 Upload 對話框
+  function showNesUploadDialogFn() {
+    nesUploadDataset.value = null
+    showNesUploadDialog.value = true
+  }
+
+  // 提交 Upload
+  function submitNesUpload() {
+    if (!nesUploadDataset.value) {
+      snackbar.value = {
+        show: true,
+        text: '請選擇數據集',
+        color: 'warning'
+      }
+      return
+    }
+    showNesUploadDialog.value = false
+    startNesFinetuning()
+  }
+
+  // 取消 Upload
+  function cancelNesUpload() {
+    showNesUploadDialog.value = false
+    nesUploadDataset.value = null
+  }
+
+  // 開始 NES Finetune 訓練
+  function startNesFinetuning() {
+    nesFinetuneStatus.value = 'running'
+    nesFinetuneEpoch.value = 0
+    resetNesFinetuneData()
+
+    nextTick(() => {
+      initNesFinetuneCharts()
+      nextTick(() => simulateNesFinetuning())
+    })
+  }
+
+  // 重置 NES Finetune 訓練數據
+  function resetNesFinetuneData() {
+    nesFinetuneData.value = {
+      epochs: [],
+      rewards: [],
+      rewardsMA10: [],
+      bestRewards: [],
+      bestRewardsMA10: [],
+      criticLosses: [],
+      actorLosses: []
+    }
+  }
+
+  // 初始化 NES Finetune 圖表
+  function initNesFinetuneCharts() {
+    destroyNesFinetuneCharts()
+
+    nextTick(() => {
+      // Reward 圖表
+      if (nesFinetuneRewardChartRef.value) {
+        const ctx = nesFinetuneRewardChartRef.value.getContext('2d')
+        if (ctx) {
+          nesFinetuneRewardChart.value = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [
+                { label: 'reward', data: [], borderColor: '#2196F3', backgroundColor: 'transparent', borderWidth: 1, pointRadius: 0, tension: 0.1 },
+                { label: 'reward (MA10)', data: [], borderColor: '#64B5F6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.3 },
+                { label: 'bestReward', data: [], borderColor: '#4CAF50', backgroundColor: 'transparent', borderWidth: 1, pointRadius: 0, tension: 0.1 },
+                { label: 'bestReward (MA10)', data: [], borderColor: '#FFD600', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.3 }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false, animation: false,
+              scales: {
+                x: { title: { display: true, text: 'epoch', font: { size: 10 } }, ticks: { font: { size: 9 }, maxTicksLimit: 6 } },
+                y: { title: { display: true, text: 'value', font: { size: 10 } }, ticks: { font: { size: 9 } }, min: 0.4, max: 1.1 }
+              },
+              plugins: { legend: { position: 'bottom', labels: { font: { size: 9 }, boxWidth: 20, padding: 8 } }, tooltip: { enabled: true, mode: 'index', intersect: false } }
+            }
+          })
+        }
+      }
+
+      // Critic Loss 圖表
+      if (nesFinetuneCriticLossChartRef.value) {
+        const ctx = nesFinetuneCriticLossChartRef.value.getContext('2d')
+        if (ctx) {
+          nesFinetuneCriticLossChart.value = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'critic_loss', data: [], borderColor: '#FFC107', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] },
+            options: {
+              responsive: true, maintainAspectRatio: false, animation: false,
+              scales: {
+                x: { title: { display: true, text: 'epoch', font: { size: 9 } }, ticks: { font: { size: 8 }, maxTicksLimit: 5 } },
+                y: { title: { display: true, text: 'critic_loss', font: { size: 9 } }, ticks: { font: { size: 8 } } }
+              },
+              plugins: { legend: { display: false }, tooltip: { enabled: true } }
+            }
+          })
+        }
+      }
+
+      // Actor Loss 圖表
+      if (nesFinetuneActorLossChartRef.value) {
+        const ctx = nesFinetuneActorLossChartRef.value.getContext('2d')
+        if (ctx) {
+          nesFinetuneActorLossChart.value = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'actor_loss', data: [], borderColor: '#FF9800', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.1 }] },
+            options: {
+              responsive: true, maintainAspectRatio: false, animation: false,
+              scales: {
+                x: { title: { display: true, text: 'epoch', font: { size: 9 } }, ticks: { font: { size: 8 }, maxTicksLimit: 5 } },
+                y: { title: { display: true, text: 'actor_loss', font: { size: 9 } }, ticks: { font: { size: 8 } } }
+              },
+              plugins: { legend: { display: false }, tooltip: { enabled: true } }
+            }
+          })
+        }
+      }
+    })
+  }
+
+  // 銷毀 NES Finetune 圖表
+  function destroyNesFinetuneCharts() {
+    if (nesFinetuneRewardChart.value) { nesFinetuneRewardChart.value.destroy(); nesFinetuneRewardChart.value = null }
+    if (nesFinetuneCriticLossChart.value) { nesFinetuneCriticLossChart.value.destroy(); nesFinetuneCriticLossChart.value = null }
+    if (nesFinetuneActorLossChart.value) { nesFinetuneActorLossChart.value.destroy(); nesFinetuneActorLossChart.value = null }
+  }
+
+  // 更新 NES Finetune 圖表
+  function updateNesFinetuneCharts() {
+    const data = nesFinetuneData.value
+    if (nesFinetuneRewardChart.value) {
+      nesFinetuneRewardChart.value.data.labels = data.epochs
+      nesFinetuneRewardChart.value.data.datasets[0].data = data.rewards
+      nesFinetuneRewardChart.value.data.datasets[1].data = data.rewardsMA10
+      nesFinetuneRewardChart.value.data.datasets[2].data = data.bestRewards
+      nesFinetuneRewardChart.value.data.datasets[3].data = data.bestRewardsMA10
+      nesFinetuneRewardChart.value.update('none')
+    }
+    if (nesFinetuneCriticLossChart.value) {
+      nesFinetuneCriticLossChart.value.data.labels = data.epochs
+      nesFinetuneCriticLossChart.value.data.datasets[0].data = data.criticLosses
+      nesFinetuneCriticLossChart.value.update('none')
+    }
+    if (nesFinetuneActorLossChart.value) {
+      nesFinetuneActorLossChart.value.data.labels = data.epochs
+      nesFinetuneActorLossChart.value.data.datasets[0].data = data.actorLosses
+      nesFinetuneActorLossChart.value.update('none')
+    }
+  }
+
+  // 模擬 NES Finetune 訓練
+  let nesFinetuneInterval: ReturnType<typeof setInterval> | null = null
+
+  function simulateNesFinetuning() {
+    if (nesFinetuneInterval) clearInterval(nesFinetuneInterval)
+
+    let currentEpoch = 0
+    const maxEpoch = 1000
+    const stepSize = 10
+    let bestReward = 0.7 // Finetune 從較高起點開始
+
+    nesFinetuneInterval = setInterval(() => {
+      if (currentEpoch >= maxEpoch) {
+        if (nesFinetuneInterval) clearInterval(nesFinetuneInterval)
+        nesFinetuneStatus.value = 'finish'
+        nesFinetuneResults.value = { reward: 0.98, actorLoss: -2.3, criticLoss: 0.002 }
+        return
+      }
+
+      currentEpoch += stepSize
+      nesFinetuneEpoch.value = currentEpoch
+
+      const progress = currentEpoch / maxEpoch
+      const baseReward = 0.7 + (0.28 * progress) // 從 0.7 增長到 0.98
+      const noise = (Math.random() - 0.5) * 0.1
+      const currentReward = Math.max(0.6, Math.min(1.1, baseReward + noise))
+
+      if (currentReward > bestReward) bestReward = currentReward
+
+      const criticBase = 0.15 * Math.exp(-progress * 3)
+      const criticNoise = Math.random() * 0.01
+      const criticLoss = Math.max(0.002, criticBase + criticNoise)
+
+      const actorBase = -1.5 - (0.5 * progress)
+      const actorNoise = (Math.random() - 0.5) * 0.2
+      const actorLoss = actorBase + actorNoise
+
+      nesFinetuneData.value.epochs.push(currentEpoch)
+      nesFinetuneData.value.rewards.push(currentReward)
+      nesFinetuneData.value.bestRewards.push(bestReward)
+      nesFinetuneData.value.criticLosses.push(criticLoss)
+      nesFinetuneData.value.actorLosses.push(actorLoss)
+
+      nesFinetuneData.value.rewardsMA10 = calculateMA(nesFinetuneData.value.rewards, 10)
+      nesFinetuneData.value.bestRewardsMA10 = calculateMA(nesFinetuneData.value.bestRewards, 10)
+
+      nesFinetuneResults.value = { reward: currentReward, actorLoss: actorLoss, criticLoss: criticLoss }
+
+      updateNesFinetuneCharts()
+    }, 50)
+  }
+
+  // 停止 NES Finetune 訓練
+  function stopNesFinetuning() {
+    if (nesFinetuneInterval) {
+      clearInterval(nesFinetuneInterval)
+      nesFinetuneInterval = null
+    }
+    nesFinetuneStatus.value = 'idle'
+    snackbar.value = { show: true, text: 'Finetune 訓練已停止', color: 'info' }
+  }
+
+  // 更新 NES Finetune 模型
+  function updateNesFinetuneModel() {
+    snackbar.value = {
+      show: true,
+      text: 'Finetune 模型已更新，可以 Enable',
+      color: 'success'
+    }
+  }
+
+  // 啟用 NES 模型
+  function enableNesModel() {
+    nesEnableMode.value = true
+    nextTick(() => initNesEnableMap())
+  }
+
+  // 初始化 NES Enable 地圖
+  async function initNesEnableMap() {
+    if (nesEnableMap) {
+      nesEnableMap.remove()
+      nesEnableMap = null
+    }
+
+    await nextTick()
+    const mapContainer = document.getElementById('nesEnableMap')
+    if (!mapContainer) return
+
+    try {
+      mapboxgl.accessToken = mapAccessToken
+      const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
+
+      nesEnableMap = new mapboxgl.Map({
+        container: 'nesEnableMap',
+        style: initialStyle,
+        center: [120.997, 24.787],
+        zoom: 17
+      })
+
+      nesEnableMap.addControl(new mapboxgl.NavigationControl())
+
+      nesEnableMap.on('load', () => {
+        // 添加 gNB 標記
+        nesGnbMarkers.forEach(gnb => {
+          const el = document.createElement('div')
+          el.innerHTML = '📶'
+          el.style.fontSize = '20px'
+          new mapboxgl.Marker(el).setLngLat([gnb.lng, gnb.lat]).addTo(nesEnableMap!)
+        })
+        // 添加 UE 標記
+        const uePositions = [[120.9965, 24.7875], [120.9975, 24.7865], [120.9980, 24.7880]]
+        uePositions.forEach(pos => {
+          const ueEl = document.createElement('div')
+          ueEl.innerHTML = '👤'
+          ueEl.style.fontSize = '18px'
+          new mapboxgl.Marker(ueEl).setLngLat(pos as [number, number]).addTo(nesEnableMap!)
+        })
+      })
+    } catch (error) {
+      console.error('NES Enable map initialization error:', error)
+    }
+  }
+
+  // 重新訓練 NES
+  function startNesRetrain() {
+    nesEnableMode.value = false
+    nesPretrainDone.value = false
+    nesFinetuneStatus.value = 'idle'
+    nesFinetuneEpoch.value = 0
+    resetNesFinetuneData()
+
+    if (nesEnableMap) {
+      nesEnableMap.remove()
+      nesEnableMap = null
+    }
+
+    // 開始新的 Pre-train
+    startTraining()
+  }
+
+  // ========== Positioning Model 訓練控制 ==========
+
+  // 開始 Positioning 預訓練 (Pre-train 按鈕)
+  function startPosPretrain() {
+    if (!posModelSelect.value) return
+    snackbar.value = {
+      show: true,
+      text: 'Pre-train 功能尚未實作 (需後端 API: POST /ai-simulator/positioning/pretrain/start)',
+      color: 'warning'
+    }
+  }
+
+  // 開始 Positioning 訓練 (START 按鈕)
+  function startPosTraining() {
+    if (!posModelSelect.value) {
+      snackbar.value = {
+        show: true,
+        text: '請先選擇模型',
+        color: 'warning'
+      }
+      return
+    }
+
+    posTrainingStatus.value = 'running'
+    posTrainingEpoch.value = 0
+    resetPosTrainingData()
+
+    // 初始化圖表
+    nextTick(() => {
+      initPosChart()
+      nextTick(() => simulatePosTraining())
+    })
+  }
+
+  // 停止 Positioning 訓練
+  function stopPosTraining() {
+    if (posTrainingInterval) {
+      clearInterval(posTrainingInterval)
+      posTrainingInterval = null
+    }
+    posTrainingStatus.value = 'idle'
+    snackbar.value = {
+      show: true,
+      text: '訓練已停止',
+      color: 'info'
+    }
+  }
+
+  // 更新 Positioning 模型
+  function updatePosModel() {
+    snackbar.value = {
+      show: true,
+      text: 'Update 功能尚未實作 (需後端 API: POST /ai-simulator/positioning/pretrain/update)',
+      color: 'warning'
+    }
+  }
+
+  // 顯示 Positioning Review
+  function showPosReview() {
+    posReviewMode.value = true
+    // 初始化 Review 地圖
+    nextTick(() => initReviewMap())
+  }
+
+  // 退出 Review 模式
+  function exitReviewMode() {
+    posReviewMode.value = false
+    posPathData.value = []
+    if (reviewMap) {
+      reviewMap.remove()
+      reviewMap = null
+    }
+  }
+
+  // 處理 Positioning BACK 按鈕（根據當前模式決定行為）
+  function handlePosBack() {
+    // 如果在 Enable 模式，退出 Enable
+    if (posEnableMode.value) {
+      posEnableMode.value = false
+      if (enableMap) {
+        enableMap.remove()
+        enableMap = null
+      }
+      return
+    }
+    // 如果在 Review 模式，退出 Review
+    if (posReviewMode.value) {
+      exitReviewMode()
+      return
+    }
+    // 如果在 Finetune 訓練中，停止訓練
+    if (posFinetuneStatus.value === 'running') {
+      stopPosTraining()
+      return
+    }
+    // 否則返回 Model List
+    goBack()
+  }
+
+  // 確認 Pre-train 完成，進入 Finetune 階段
+  function confirmPretrainDone() {
+    posPretrainDone.value = true
+    posTrainingStatus.value = 'idle'
+    snackbar.value = {
+      show: true,
+      text: 'Pre-train 完成，可以開始 Finetune',
+      color: 'success'
+    }
+  }
+
+  // 重置 Finetune 訓練數據
+  function resetFinetuneData() {
+    posFinetuneData.value = {
+      epochs: [],
+      trainLosses: [],
+      valLosses: []
+    }
+  }
+
+  // 開始 Finetune 訓練
+  function startPosFinetune() {
+    posFinetuneStatus.value = 'running'
+    posFinetuneEpoch.value = 0
+    resetFinetuneData()
+
+    nextTick(() => {
+      initFinetuneChart()
+      nextTick(() => simulateFinetuneTraining())
+    })
+  }
+
+  // 初始化 Finetune 圖表
+  function initFinetuneChart() {
+    if (posFinetuneChart.value) {
+      posFinetuneChart.value.destroy()
+      posFinetuneChart.value = null
+    }
+
+    nextTick(() => {
+      if (posFinetuneChartRef.value) {
+        const ctx = posFinetuneChartRef.value.getContext('2d')
+        if (ctx) {
+          posFinetuneChart.value = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [
+                {
+                  label: 'training',
+                  data: [],
+                  borderColor: '#2196F3',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.1
+                },
+                {
+                  label: 'validation',
+                  data: [],
+                  borderColor: '#FF9800',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2,
+                  borderDash: [5, 5],
+                  pointRadius: 0,
+                  tension: 0.1
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              scales: {
+                x: {
+                  title: { display: true, text: 'epoch', font: { size: 10 } },
+                  ticks: { font: { size: 9 }, maxTicksLimit: 6 }
+                },
+                y: {
+                  title: { display: true, text: 'loss', font: { size: 10 } },
+                  ticks: { font: { size: 9 } },
+                  min: 0
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: { font: { size: 10 }, boxWidth: 20, padding: 10 }
+                },
+                tooltip: { enabled: true, mode: 'index', intersect: false }
+              }
+            }
+          })
+        }
+      }
+    })
+  }
+
+  // 更新 Finetune 圖表數據
+  function updateFinetuneChart() {
+    const data = posFinetuneData.value
+    if (posFinetuneChart.value) {
+      posFinetuneChart.value.data.labels = data.epochs
+      posFinetuneChart.value.data.datasets[0].data = data.trainLosses
+      posFinetuneChart.value.data.datasets[1].data = data.valLosses
+      posFinetuneChart.value.update('none')
+    }
+  }
+
+  // 模擬 Finetune 訓練過程
+  let finetuneInterval: ReturnType<typeof setInterval> | null = null
+
+  function simulateFinetuneTraining() {
+    if (finetuneInterval) clearInterval(finetuneInterval)
+
+    let currentEpoch = 0
+    const maxEpoch = 500
+    const stepSize = 5
+
+    finetuneInterval = setInterval(() => {
+      if (currentEpoch >= maxEpoch) {
+        if (finetuneInterval) clearInterval(finetuneInterval)
+        posFinetuneStatus.value = 'finish'
+        posFinetuneResults.value = {
+          trainLoss: 0.08,
+          valLoss: 0.12
+        }
+        return
+      }
+
+      currentEpoch += stepSize
+      posFinetuneEpoch.value = currentEpoch
+
+      // Finetune 的 loss 從較低值開始（因為已經 Pre-train 過）
+      const progress = currentEpoch / maxEpoch
+      const trainBase = 0.25 * Math.exp(-progress * 3)
+      const trainNoise = Math.random() * 0.02
+      const trainLoss = Math.max(0.08, trainBase + trainNoise)
+
+      const valBase = 0.30 * Math.exp(-progress * 2.5)
+      const valNoise = Math.random() * 0.03
+      const valLoss = Math.max(0.10, valBase + valNoise)
+
+      posFinetuneData.value.epochs.push(currentEpoch)
+      posFinetuneData.value.trainLosses.push(trainLoss)
+      posFinetuneData.value.valLosses.push(valLoss)
+
+      posFinetuneResults.value = {
+        trainLoss: trainLoss,
+        valLoss: valLoss
+      }
+
+      updateFinetuneChart()
+    }, 50)
+  }
+
+  // 啟用模型（Enable）並顯示 Project 視圖
+  function enablePosModel() {
+    posEnableMode.value = true
+    nextTick(() => initEnableMap())
+  }
+
+  // 初始化 Enable 模式地圖
+  async function initEnableMap() {
+    if (enableMap) {
+      enableMap.remove()
+      enableMap = null
+    }
+
+    await nextTick()
+    const mapContainer = document.getElementById('posEnableMap')
+    if (!mapContainer) return
+
+    try {
+      mapboxgl.accessToken = mapAccessToken
+      const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
+
+      enableMap = new mapboxgl.Map({
+        container: 'posEnableMap',
+        style: initialStyle,
+        center: [120.997, 24.787],
+        zoom: 17
+      })
+
+      enableMap.addControl(new mapboxgl.NavigationControl())
+
+      // 地圖載入完成後添加標記
+      enableMap.on('load', () => {
+        // 添加 gNB 標記
+        const gnbEl = document.createElement('div')
+        gnbEl.innerHTML = '📶'
+        gnbEl.style.fontSize = '24px'
+        new mapboxgl.Marker(gnbEl)
+          .setLngLat([120.997, 24.787])
+          .addTo(enableMap!)
+
+        // 添加模擬 UE 標記
+        const uePositions = [
+          [120.9965, 24.7875],
+          [120.9975, 24.7865],
+          [120.9980, 24.7880]
+        ]
+        uePositions.forEach(pos => {
+          const ueEl = document.createElement('div')
+          ueEl.innerHTML = '👤'
+          ueEl.style.fontSize = '20px'
+          new mapboxgl.Marker(ueEl)
+            .setLngLat(pos as [number, number])
+            .addTo(enableMap!)
+        })
+      })
+    } catch (error) {
+      console.error('Enable map initialization error:', error)
+    }
+  }
+
+  // 重新訓練（Re-train）
+  function startPosRetrain() {
+    // 重置所有狀態回到 Pre-train 階段
+    posEnableMode.value = false
+    posPretrainDone.value = false
+    posFinetuneStatus.value = 'idle'
+    posFinetuneEpoch.value = 0
+    resetFinetuneData()
+
+    if (enableMap) {
+      enableMap.remove()
+      enableMap = null
+    }
+
+    // 開始新的訓練
+    startPosTraining()
+  }
+
+  // 初始化 Review 地圖
+  async function initReviewMap() {
+    if (reviewMap) {
+      reviewMap.remove()
+      reviewMap = null
+    }
+
+    await nextTick()
+    const mapContainer = document.getElementById('posReviewMap')
+    if (!mapContainer) return
+
+    try {
+      mapboxgl.accessToken = mapAccessToken
+      const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
+
+      reviewMap = new mapboxgl.Map({
+        container: 'posReviewMap',
+        style: initialStyle,
+        center: [120.997, 24.787],
+        zoom: 17
+      })
+
+      reviewMap.addControl(new mapboxgl.NavigationControl())
+
+      // 地圖載入完成後繪製路徑
+      reviewMap.on('load', () => {
+        drawPathsOnMap()
+      })
+    } catch (error) {
+      console.error('Review map initialization error:', error)
+    }
+  }
+
+  // 添加路徑
+  function addPath() {
+    // 生成模擬路徑數據
+    const pathId = posPathData.value.length + 1
+    const basePoints = generateSimulatedPath()
+
+    posPathData.value.push({
+      id: pathId,
+      points: basePoints,
+      uePosition: basePoints[basePoints.length - 1]
+    })
+
+    // 在地圖上繪製路徑
+    if (reviewMap && reviewMap.loaded()) {
+      drawPathsOnMap()
+    }
+
+    snackbar.value = {
+      show: true,
+      text: `已添加路徑 ${pathId}`,
+      color: 'success'
+    }
+  }
+
+  // 生成模擬路徑
+  function generateSimulatedPath(): PathPoint[] {
+    const centerLng = 120.997
+    const centerLat = 24.787
+    const pathLength = 8 + Math.floor(Math.random() * 5)
+    const points: PathPoint[] = []
+
+    // 隨機起點
+    let lng = centerLng + (Math.random() - 0.5) * 0.003
+    let lat = centerLat + (Math.random() - 0.5) * 0.002
+
+    for (let i = 0; i < pathLength; i++) {
+      points.push({ lng, lat })
+      // 隨機方向移動
+      lng += (Math.random() - 0.5) * 0.0008
+      lat += (Math.random() - 0.5) * 0.0005
+    }
+
+    return points
+  }
+
+  // 在地圖上繪製路徑
+  function drawPathsOnMap() {
+    if (!reviewMap) return
+
+    // 移除舊的路徑圖層和數據源
+    posPathData.value.forEach((_, index) => {
+      const sourceId = `path-source-${index}`
+      const lineLayerId = `path-line-${index}`
+      const pointLayerId = `path-points-${index}`
+
+      if (reviewMap!.getLayer(lineLayerId)) {
+        reviewMap!.removeLayer(lineLayerId)
+      }
+      if (reviewMap!.getLayer(pointLayerId)) {
+        reviewMap!.removeLayer(pointLayerId)
+      }
+      if (reviewMap!.getSource(sourceId)) {
+        reviewMap!.removeSource(sourceId)
+      }
+    })
+
+    // 繪製每條路徑
+    posPathData.value.forEach((path, index) => {
+      const sourceId = `path-source-${index}`
+      const lineLayerId = `path-line-${index}`
+
+      // 添加路徑線數據源
+      reviewMap!.addSource(sourceId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: path.points.map(p => [p.lng, p.lat])
+          }
+        }
+      })
+
+      // 添加路徑線圖層
+      reviewMap!.addLayer({
+        id: lineLayerId,
+        type: 'line',
+        source: sourceId,
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#FF6B00',
+          'line-width': 3
+        }
+      })
+
+      // 添加 UE 標記
+      const ueEl = document.createElement('div')
+      ueEl.className = 'ue-marker'
+      ueEl.style.width = '12px'
+      ueEl.style.height = '12px'
+      ueEl.style.backgroundColor = '#FF0000'
+      ueEl.style.borderRadius = '50%'
+      ueEl.style.border = '2px solid white'
+
+      new mapboxgl.Marker(ueEl)
+        .setLngLat([path.uePosition.lng, path.uePosition.lat])
+        .addTo(reviewMap!)
+    })
+  }
+
+  // 模擬訓練過程 - 生成類似 Figma 設計的數據
+  let trainingInterval: ReturnType<typeof setInterval> | null = null
+  let posTrainingInterval: ReturnType<typeof setInterval> | null = null
+
+  function simulateTraining() {
+    if (trainingInterval) clearInterval(trainingInterval)
+
+    // 訓練參數
+    let currentEpoch = 0
+    const maxEpoch = 1000
+    const stepSize = 10 // 每次更新的 epoch 數
+    let bestReward = 0.5
+
+    trainingInterval = setInterval(() => {
+      if (currentEpoch >= maxEpoch) {
+        if (trainingInterval) clearInterval(trainingInterval)
+        trainingStatus.value = 'finish'
+        trainingResults.value = {
+          reward: 0.98,
+          actorLoss: -2.3,
+          criticLoss: 0.002
+        }
+        return
+      }
+
+      currentEpoch += stepSize
+      trainingEpoch.value = currentEpoch
+
+      // 模擬 Reward 數據 (逐漸從 0.5 增長到 0.98，帶隨機波動)
+      const progress = currentEpoch / maxEpoch
+      const baseReward = 0.5 + (0.48 * progress)
+      const noise = (Math.random() - 0.5) * 0.15
+      const currentReward = Math.max(0.4, Math.min(1.1, baseReward + noise))
+
+      // 更新 best reward
+      if (currentReward > bestReward) {
+        bestReward = currentReward
+      }
+
+      // Critic Loss: 從 0.35 下降到 0.002 (快速下降後趨於平穩)
+      const criticBase = 0.35 * Math.exp(-progress * 3)
+      const criticNoise = Math.random() * 0.02
+      const criticLoss = Math.max(0.002, criticBase + criticNoise)
+
+      // Actor Loss: 從 -1.2 下降到 -2.0 (帶較大波動)
+      const actorBase = -1.2 - (0.8 * progress)
+      const actorNoise = (Math.random() - 0.5) * 0.3
+      const actorLoss = actorBase + actorNoise
+
+      // 存儲數據
+      trainingData.value.epochs.push(currentEpoch)
+      trainingData.value.rewards.push(currentReward)
+      trainingData.value.bestRewards.push(bestReward)
+      trainingData.value.criticLosses.push(criticLoss)
+      trainingData.value.actorLosses.push(actorLoss)
+
+      // 計算移動平均
+      trainingData.value.rewardsMA10 = calculateMA(trainingData.value.rewards, 10)
+      trainingData.value.bestRewardsMA10 = calculateMA(trainingData.value.bestRewards, 10)
+
+      // 更新顯示結果
+      trainingResults.value = {
+        reward: currentReward,
+        actorLoss: actorLoss,
+        criticLoss: criticLoss
+      }
+
+      // 更新圖表
+      updateCharts()
+    }, 50) // 50ms 更新一次，讓動畫流暢
+  }
+
+  // 模擬 Positioning 訓練過程 - MSE Loss，500 epochs
+  function simulatePosTraining() {
+    if (posTrainingInterval) clearInterval(posTrainingInterval)
+
+    let currentEpoch = 0
+    const maxEpoch = 500
+    const stepSize = 5
+
+    posTrainingInterval = setInterval(() => {
+      if (currentEpoch >= maxEpoch) {
+        if (posTrainingInterval) clearInterval(posTrainingInterval)
+        posTrainingStatus.value = 'finish'
+        posTrainingResults.value = {
+          trainLoss: 0.0012,
+          valLoss: 0.0018
+        }
+        return
+      }
+
+      currentEpoch += stepSize
+      posTrainingEpoch.value = currentEpoch
+
+      // 模擬 MSE Loss 下降曲線
+      const progress = currentEpoch / maxEpoch
+      // Training loss: 從 0.5 下降到 0.001 (指數衰減)
+      const trainBase = 0.5 * Math.exp(-progress * 4)
+      const trainNoise = Math.random() * 0.01
+      const trainLoss = Math.max(0.001, trainBase + trainNoise)
+
+      // Validation loss: 比 training 稍高，有更多波動
+      const valBase = 0.55 * Math.exp(-progress * 3.5)
+      const valNoise = Math.random() * 0.02
+      const valLoss = Math.max(0.0015, valBase + valNoise)
+
+      // 存儲數據
+      posTrainingData.value.epochs.push(currentEpoch)
+      posTrainingData.value.trainLosses.push(trainLoss)
+      posTrainingData.value.valLosses.push(valLoss)
+
+      // 更新顯示結果
+      posTrainingResults.value = {
+        trainLoss: trainLoss,
+        valLoss: valLoss
+      }
+
+      // 更新圖表
+      updatePosChart()
+    }, 50)
+  }
+
+  // 初始化地圖
+  const initializeMap = async () => {
+    if (map) {
+      map.remove()
+      map = null
+    }
+
+    await nextTick()
+    const mapContainer = document.getElementById('aiSimulatorMap')
+    if (!mapContainer) return
+
+    try {
+      mapboxgl.accessToken = mapAccessToken
+      const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
+
+      map = new mapboxgl.Map({
+        container: 'aiSimulatorMap',
+        style: initialStyle,
+        center: [120.997, 24.787], // 交大座標
+        zoom: 16
+      })
+      map.addControl(new mapboxgl.NavigationControl())
+    } catch (error) {
+      console.error('Map initialization error:', error)
+    }
+  }
+
+  // 監聽訓練狀態，重新初始化地圖
+  watch([trainingStatus, posTrainingStatus], ([nesStatus, posStatus]) => {
+    // 當所有訓練都停止時，重新初始化地圖
+    if (nesStatus === 'idle' && posStatus === 'idle') {
+      destroyCharts()
+      nextTick(() => initializeMap())
+    }
+  })
+
+  onMounted(() => {
+    initializeMap()
+  })
+
+  onUnmounted(() => {
+    if (map) {
+      map.remove()
+      map = null
+    }
+    if (reviewMap) {
+      reviewMap.remove()
+      reviewMap = null
+    }
+    if (enableMap) {
+      enableMap.remove()
+      enableMap = null
+    }
+    if (nesReviewMap) {
+      nesReviewMap.remove()
+      nesReviewMap = null
+    }
+    if (nesEnableMap) {
+      nesEnableMap.remove()
+      nesEnableMap = null
+    }
+    if (trainingInterval) {
+      clearInterval(trainingInterval)
+    }
+    if (posTrainingInterval) {
+      clearInterval(posTrainingInterval)
+    }
+    if (finetuneInterval) {
+      clearInterval(finetuneInterval)
+    }
+    if (nesFinetuneInterval) {
+      clearInterval(nesFinetuneInterval)
+    }
     destroyCharts()
-    nextTick(() => initializeMap())
-  }
-})
-
-onMounted(() => {
-  initializeMap()
-})
-
-onUnmounted(() => {
-  if (map) {
-    map.remove()
-    map = null
-  }
-  if (trainingInterval) {
-    clearInterval(trainingInterval)
-  }
-  destroyCharts()
-})
+    destroyNesFinetuneCharts()
+  })
 </script>
 
 <style scoped>
@@ -819,6 +2663,15 @@ onUnmounted(() => {
 
 /* NES 控制面板 */
 .nes-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  flex: 1;
+}
+
+/* Positioning 控制面板 */
+.positioning-controls {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -996,6 +2849,15 @@ onUnmounted(() => {
   height: 150px;
 }
 
+/* Positioning 圖表樣式 */
+.pos-chart {
+  flex: 1;
+}
+
+.pos-wrapper {
+  height: 400px;
+}
+
 .charts-row {
   display: flex;
   gap: 16px;
@@ -1038,6 +2900,239 @@ onUnmounted(() => {
   font-size: 16px;
   margin-bottom: 8px;
   padding-left: 16px;
+}
+
+/* Review 模式 (Figma 277:599, 277:652, 277:702) */
+.review-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-map-container {
+  flex: 1;
+  position: relative;
+  min-height: 500px;
+}
+
+.review-map {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+.add-path-btn {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  z-index: 10;
+  border-radius: 20px !important;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.path-legend {
+  position: absolute;
+  left: 20px;
+  top: 70px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 10px 14px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-dot.ue {
+  background-color: #FF0000;
+}
+
+.legend-arrow {
+  color: #FF6B00;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* Enable 模式 (Figma 277:1190) */
+.enable-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.enable-map-container {
+  flex: 1;
+  position: relative;
+  min-height: 500px;
+}
+
+.enable-map {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+.enable-legend {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 10px 14px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.enable-controls {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signal-select {
+  max-width: 100px;
+}
+
+/* Finetune 標題樣式 */
+.finetune-title {
+  color: #006ab5;
+  font-weight: 600;
+}
+
+/* 訓練資訊大字體 */
+.info-item.large {
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.result-item.large {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+/* NES Review 模式 (Figma 277:1286, 277:296) */
+.nes-review-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.nes-review-map-container {
+  flex: 1;
+  position: relative;
+  min-height: 500px;
+}
+
+.nes-review-map {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+.scenario-select {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  z-index: 10;
+  background: white;
+  max-width: 150px;
+  border-radius: 4px;
+}
+
+.nes-review-legend {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 10px 14px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.legend-icon {
+  font-size: 16px;
+}
+
+/* Upload 對話框樣式 (Figma 277:510, 277:1405) */
+.upload-dialog {
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.upload-dialog-title {
+  font-size: 18px;
+  font-weight: 500;
+  padding: 16px 20px 8px;
+}
+
+.upload-dialog-content {
+  padding: 12px 20px 20px;
+}
+
+.upload-dialog-actions {
+  padding: 8px 20px 16px;
+  gap: 12px;
+}
+
+.dialog-btn {
+  min-width: 80px;
+  border-radius: 8px !important;
+  text-transform: none;
+}
+
+.dataset-select {
+  margin-top: 8px;
+}
+
+/* NES Finetune idle 狀態樣式 */
+.finetune-idle-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+}
+
+.idle-text {
+  font-size: 24px;
+  color: #666;
+  text-align: center;
 }
 
 /* 響應式 */
