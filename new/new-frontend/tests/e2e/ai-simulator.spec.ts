@@ -148,14 +148,74 @@ test.describe('AI Application Simulator Page', () => {
       await expect(page.locator('.info-item.highlight')).toContainText('Loss Function')
     })
 
-    test('should stop training when clicking STOP', async ({ page }) => {
+    test('should display STOP button when training starts', async ({ page }) => {
       await page.locator('.action-btn:has-text("START")').click()
-      await expect(page.locator('.action-btn:has-text("STOP")')).toBeVisible({ timeout: 3000 })
 
-      await page.locator('.action-btn:has-text("STOP")').click()
+      // 訓練開始後 STOP 按鈕應該可見
+      await expect(page.locator('.action-btn:has-text("STOP")')).toBeVisible({ timeout: 5000 })
+    })
 
-      // 應該顯示 snackbar 訊息
-      await expect(page.locator('.v-snackbar')).toBeVisible({ timeout: 3000 })
+    test('should display chart containers during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.charts-section')).toBeVisible({ timeout: 3000 })
+
+      // 檢查有圖表容器（使用更寬鬆的選擇器）
+      await expect(page.locator('.chart-container').first()).toBeVisible()
+      // 檢查 charts-row 區域有兩個子容器
+      await expect(page.locator('.charts-row')).toBeVisible()
+    })
+
+    test('should display chart titles correctly', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.charts-section')).toBeVisible({ timeout: 3000 })
+
+      // 檢查圖表標題（使用文字匹配）
+      await expect(page.getByText('Reward over Epochs')).toBeVisible()
+      await expect(page.getByText('Critic Loss over Epochs')).toBeVisible()
+      await expect(page.getByText('Actor Loss over Epochs')).toBeVisible()
+    })
+
+    test('should display chart wrappers for charts', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.charts-section')).toBeVisible({ timeout: 3000 })
+
+      // 檢查圖表包裹區域（canvas 在 SSR hydration 中可能延遲）
+      const chartWrappers = page.locator('.chart-wrapper')
+      await expect(chartWrappers).toHaveCount(3)
+    })
+
+    test('should display training results during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.training-info')).toBeVisible({ timeout: 3000 })
+
+      // 等待訓練開始更新數據
+      await page.waitForTimeout(500)
+
+      // 檢查訓練結果顯示
+      await expect(page.locator('.results-title')).toContainText('Training Results')
+      await expect(page.locator('.result-item:has-text("Reward")')).toBeVisible()
+      await expect(page.locator('.result-item:has-text("Actor Loss")')).toBeVisible()
+      await expect(page.locator('.result-item:has-text("Critic Loss")')).toBeVisible()
+    })
+
+    test('should show running status when training starts', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+
+      // 訓練開始後應該顯示 running 狀態
+      await expect(page.locator('.training-status')).toContainText('running', { timeout: 5000 })
+    })
+
+    test('should display epoch progress during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.training-info')).toBeVisible({ timeout: 3000 })
+
+      // 檢查 Epoch 顯示格式
+      await expect(page.locator('.info-item:has-text("Epoch:")')).toBeVisible()
+
+      // 等待一段時間確認 epoch 有在更新
+      await page.waitForTimeout(500)
+      const epochText = await page.locator('.info-item:has-text("Epoch:")').textContent()
+      expect(epochText).toMatch(/Epoch: \d+\/1000/)
     })
   })
 

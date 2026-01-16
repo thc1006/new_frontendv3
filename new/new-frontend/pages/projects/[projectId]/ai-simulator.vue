@@ -150,42 +150,44 @@
           <div class="panel-header">
             Pre-Train Process
             <span :class="['training-status', trainingStatus]">
-              Training Status: {{ trainingStatus }}
+              Training Status : {{ trainingStatus }}
             </span>
           </div>
           <div class="training-content">
             <!-- 訓練圖表區域 -->
             <div class="charts-section">
-              <div class="chart-placeholder main-chart">
+              <!-- 主圖表：Reward over Epochs -->
+              <div class="chart-container main-chart">
                 <p class="chart-title">Reward over Epochs (with MA10)</p>
-                <div class="chart-area">
-                  <v-icon size="32" color="grey">mdi-chart-line</v-icon>
+                <div class="chart-wrapper">
+                  <canvas ref="rewardChartRef" />
                 </div>
               </div>
+              <!-- 底部兩個小圖表 -->
               <div class="charts-row">
-                <div class="chart-placeholder">
+                <div class="chart-container">
                   <p class="chart-title">Critic Loss over Epochs</p>
-                  <div class="chart-area">
-                    <v-icon size="24" color="grey">mdi-chart-line</v-icon>
+                  <div class="chart-wrapper small">
+                    <canvas ref="criticLossChartRef" />
                   </div>
                 </div>
-                <div class="chart-placeholder">
+                <div class="chart-container">
                   <p class="chart-title">Actor Loss over Epochs</p>
-                  <div class="chart-area">
-                    <v-icon size="24" color="grey">mdi-chart-line</v-icon>
+                  <div class="chart-wrapper small">
+                    <canvas ref="actorLossChartRef" />
                   </div>
                 </div>
               </div>
             </div>
             <!-- 訓練資訊 -->
             <div class="training-info">
-              <p class="info-item highlight">Loss Function: Self-defined</p>
+              <p class="info-item highlight">Loss Function : Self-defined</p>
               <p class="info-item">Epoch: {{ trainingEpoch }}/1000</p>
               <div class="results-section">
                 <p class="results-title">Training Results:</p>
-                <p class="result-item">Reward: {{ trainingResults.reward }}</p>
-                <p class="result-item">Actor Loss: {{ trainingResults.actorLoss }}</p>
-                <p class="result-item">Critic Loss: {{ trainingResults.criticLoss }}</p>
+                <p class="result-item">Reward: {{ trainingResults.reward.toFixed(2) }}</p>
+                <p class="result-item">Actor Loss: {{ trainingResults.actorLoss.toFixed(1) }}</p>
+                <p class="result-item">Critic Loss: {{ trainingResults.criticLoss.toFixed(3) }}</p>
               </div>
             </div>
           </div>
@@ -201,12 +203,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import {
+  Chart,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  LineController
+} from 'chart.js'
 
-const route = useRoute()
+// 註冊 Chart.js 組件
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  LineController
+)
+
 const config = useRuntimeConfig()
 const isOnline = config.public?.isOnline
 
@@ -242,9 +265,26 @@ const trainingResults = ref({
   criticLoss: 0
 })
 
-// 場景選項 (Figma 277:592)
-const sceneOptions = ['None', '上班', '下班', '上課1/隨機', '上課2/同步']
-const selectedScene = ref('None')
+// 圖表 refs
+const rewardChartRef = ref<HTMLCanvasElement | null>(null)
+const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
+const actorLossChartRef = ref<HTMLCanvasElement | null>(null)
+
+// Chart.js 實例 (使用 shallowRef 避免深度響應)
+const rewardChart = shallowRef<Chart | null>(null)
+const criticLossChart = shallowRef<Chart | null>(null)
+const actorLossChart = shallowRef<Chart | null>(null)
+
+// 訓練數據存儲
+const trainingData = ref({
+  epochs: [] as number[],
+  rewards: [] as number[],
+  rewardsMA10: [] as number[],
+  bestRewards: [] as number[],
+  bestRewardsMA10: [] as number[],
+  criticLosses: [] as number[],
+  actorLosses: [] as number[]
+})
 
 // Heatmap 控制
 const showHeatmap = ref(false)
@@ -252,12 +292,251 @@ const heatmapType = ref('RSRP')
 
 const snackbar = ref({ show: false, text: '', color: 'info' })
 
+// 計算移動平均 (MA10)
+function calculateMA(data: number[], windowSize: number = 10): number[] {
+  const result: number[] = []
+  for (let i = 0; i < data.length; i++) {
+    if (i < windowSize - 1) {
+      // 數據不足時，使用可用數據的平均
+      const slice = data.slice(0, i + 1)
+      result.push(slice.reduce((a, b) => a + b, 0) / slice.length)
+    } else {
+      const slice = data.slice(i - windowSize + 1, i + 1)
+      result.push(slice.reduce((a, b) => a + b, 0) / windowSize)
+    }
+  }
+  return result
+}
+
+// 初始化圖表
+function initCharts() {
+  destroyCharts()
+
+  nextTick(() => {
+    // Reward 圖表 (主圖表，4 條線)
+    if (rewardChartRef.value) {
+      const ctx = rewardChartRef.value.getContext('2d')
+      if (ctx) {
+        rewardChart.value = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: 'reward',
+                data: [],
+                borderColor: '#2196F3',
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.1
+              },
+              {
+                label: 'reward (MA10)',
+                data: [],
+                borderColor: '#64B5F6',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3
+              },
+              {
+                label: 'bestReward',
+                data: [],
+                borderColor: '#4CAF50',
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0.1
+              },
+              {
+                label: 'bestReward (MA10)',
+                data: [],
+                borderColor: '#FFD600',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+              x: {
+                title: { display: true, text: 'epoch', font: { size: 10 } },
+                ticks: { font: { size: 9 }, maxTicksLimit: 6 }
+              },
+              y: {
+                title: { display: true, text: 'value', font: { size: 10 } },
+                ticks: { font: { size: 9 } },
+                min: 0.4,
+                max: 1.1
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { font: { size: 9 }, boxWidth: 20, padding: 8 }
+              },
+              tooltip: { enabled: true, mode: 'index', intersect: false }
+            }
+          }
+        })
+      }
+    }
+
+    // Critic Loss 圖表 (左下)
+    if (criticLossChartRef.value) {
+      const ctx = criticLossChartRef.value.getContext('2d')
+      if (ctx) {
+        criticLossChart.value = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'critic_loss',
+              data: [],
+              borderColor: '#FFC107',
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+              x: {
+                title: { display: true, text: 'epoch', font: { size: 9 } },
+                ticks: { font: { size: 8 }, maxTicksLimit: 5 }
+              },
+              y: {
+                title: { display: true, text: 'critic_loss', font: { size: 9 } },
+                ticks: { font: { size: 8 } }
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: true }
+            }
+          }
+        })
+      }
+    }
+
+    // Actor Loss 圖表 (右下)
+    if (actorLossChartRef.value) {
+      const ctx = actorLossChartRef.value.getContext('2d')
+      if (ctx) {
+        actorLossChart.value = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'actor_loss',
+              data: [],
+              borderColor: '#FF9800',
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+              x: {
+                title: { display: true, text: 'epoch', font: { size: 9 } },
+                ticks: { font: { size: 8 }, maxTicksLimit: 5 }
+              },
+              y: {
+                title: { display: true, text: 'actor_loss', font: { size: 9 } },
+                ticks: { font: { size: 8 } }
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: true }
+            }
+          }
+        })
+      }
+    }
+  })
+}
+
+// 銷毀圖表
+function destroyCharts() {
+  if (rewardChart.value) {
+    rewardChart.value.destroy()
+    rewardChart.value = null
+  }
+  if (criticLossChart.value) {
+    criticLossChart.value.destroy()
+    criticLossChart.value = null
+  }
+  if (actorLossChart.value) {
+    actorLossChart.value.destroy()
+    actorLossChart.value = null
+  }
+}
+
+// 更新圖表數據
+function updateCharts() {
+  const data = trainingData.value
+
+  // 更新 Reward 圖表
+  if (rewardChart.value) {
+    rewardChart.value.data.labels = data.epochs
+    rewardChart.value.data.datasets[0].data = data.rewards
+    rewardChart.value.data.datasets[1].data = data.rewardsMA10
+    rewardChart.value.data.datasets[2].data = data.bestRewards
+    rewardChart.value.data.datasets[3].data = data.bestRewardsMA10
+    rewardChart.value.update('none')
+  }
+
+  // 更新 Critic Loss 圖表
+  if (criticLossChart.value) {
+    criticLossChart.value.data.labels = data.epochs
+    criticLossChart.value.data.datasets[0].data = data.criticLosses
+    criticLossChart.value.update('none')
+  }
+
+  // 更新 Actor Loss 圖表
+  if (actorLossChart.value) {
+    actorLossChart.value.data.labels = data.epochs
+    actorLossChart.value.data.datasets[0].data = data.actorLosses
+    actorLossChart.value.update('none')
+  }
+}
+
+// 重置訓練數據
+function resetTrainingData() {
+  trainingData.value = {
+    epochs: [],
+    rewards: [],
+    rewardsMA10: [],
+    bestRewards: [],
+    bestRewardsMA10: [],
+    criticLosses: [],
+    actorLosses: []
+  }
+}
+
 // 選擇模型
 function selectModel(modelId: string) {
   selectedModel.value = modelId
   trainingStatus.value = 'idle'
   trainingEpoch.value = 0
   nesModelSelect.value = null
+  resetTrainingData()
 }
 
 // 返回 Model List
@@ -266,21 +545,23 @@ function goBack() {
   trainingStatus.value = 'idle'
   trainingEpoch.value = 0
   nesModelSelect.value = null
+  resetTrainingData()
+  destroyCharts()
   // 重新初始化地圖
   nextTick(() => initializeMap())
 }
 
-// 開始預訓練
+// 開始預訓練 (Pre-train 按鈕)
 function startPreTrain() {
   if (!nesModelSelect.value) return
   snackbar.value = {
     show: true,
-    text: 'Pre-train 功能尚未實作',
+    text: 'Pre-train 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/start)',
     color: 'warning'
   }
 }
 
-// 開始訓練
+// 開始訓練 (START 按鈕)
 function startTraining() {
   if (!nesModelSelect.value) {
     snackbar.value = {
@@ -290,14 +571,25 @@ function startTraining() {
     }
     return
   }
+
   trainingStatus.value = 'running'
   trainingEpoch.value = 0
-  // 模擬訓練過程
-  simulateTraining()
+  resetTrainingData()
+
+  // 初始化圖表
+  nextTick(() => {
+    initCharts()
+    // 開始模擬訓練
+    nextTick(() => simulateTraining())
+  })
 }
 
 // 停止訓練
 function stopTraining() {
+  if (trainingInterval) {
+    clearInterval(trainingInterval)
+    trainingInterval = null
+  }
   trainingStatus.value = 'idle'
   snackbar.value = {
     show: true,
@@ -310,7 +602,7 @@ function stopTraining() {
 function updateModel() {
   snackbar.value = {
     show: true,
-    text: 'Update 功能尚未實作 (需後端 API)',
+    text: 'Update 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/update)',
     color: 'warning'
   }
 }
@@ -319,18 +611,25 @@ function updateModel() {
 function showPreview() {
   snackbar.value = {
     show: true,
-    text: 'Preview 功能尚未實作',
+    text: 'Preview 功能尚未實作 (需後端 API: GET /ai-simulator/preview)',
     color: 'warning'
   }
 }
 
-// 模擬訓練過程 (placeholder)
+// 模擬訓練過程 - 生成類似 Figma 設計的數據
 let trainingInterval: ReturnType<typeof setInterval> | null = null
+
 function simulateTraining() {
   if (trainingInterval) clearInterval(trainingInterval)
 
+  // 訓練參數
+  let currentEpoch = 0
+  const maxEpoch = 1000
+  const stepSize = 10 // 每次更新的 epoch 數
+  let bestReward = 0.5
+
   trainingInterval = setInterval(() => {
-    if (trainingEpoch.value >= 1000) {
+    if (currentEpoch >= maxEpoch) {
       if (trainingInterval) clearInterval(trainingInterval)
       trainingStatus.value = 'finish'
       trainingResults.value = {
@@ -340,14 +639,52 @@ function simulateTraining() {
       }
       return
     }
-    trainingEpoch.value += 50
-    // 模擬結果更新
-    trainingResults.value = {
-      reward: Math.min(0.98, trainingEpoch.value / 1000),
-      actorLoss: -2.3 + Math.random() * 0.2,
-      criticLoss: Math.max(0.002, 0.3 - trainingEpoch.value / 3500)
+
+    currentEpoch += stepSize
+    trainingEpoch.value = currentEpoch
+
+    // 模擬 Reward 數據 (逐漸從 0.5 增長到 0.98，帶隨機波動)
+    const progress = currentEpoch / maxEpoch
+    const baseReward = 0.5 + (0.48 * progress)
+    const noise = (Math.random() - 0.5) * 0.15
+    const currentReward = Math.max(0.4, Math.min(1.1, baseReward + noise))
+
+    // 更新 best reward
+    if (currentReward > bestReward) {
+      bestReward = currentReward
     }
-  }, 100)
+
+    // Critic Loss: 從 0.35 下降到 0.002 (快速下降後趨於平穩)
+    const criticBase = 0.35 * Math.exp(-progress * 3)
+    const criticNoise = Math.random() * 0.02
+    const criticLoss = Math.max(0.002, criticBase + criticNoise)
+
+    // Actor Loss: 從 -1.2 下降到 -2.0 (帶較大波動)
+    const actorBase = -1.2 - (0.8 * progress)
+    const actorNoise = (Math.random() - 0.5) * 0.3
+    const actorLoss = actorBase + actorNoise
+
+    // 存儲數據
+    trainingData.value.epochs.push(currentEpoch)
+    trainingData.value.rewards.push(currentReward)
+    trainingData.value.bestRewards.push(bestReward)
+    trainingData.value.criticLosses.push(criticLoss)
+    trainingData.value.actorLosses.push(actorLoss)
+
+    // 計算移動平均
+    trainingData.value.rewardsMA10 = calculateMA(trainingData.value.rewards, 10)
+    trainingData.value.bestRewardsMA10 = calculateMA(trainingData.value.bestRewards, 10)
+
+    // 更新顯示結果
+    trainingResults.value = {
+      reward: currentReward,
+      actorLoss: actorLoss,
+      criticLoss: criticLoss
+    }
+
+    // 更新圖表
+    updateCharts()
+  }, 50) // 50ms 更新一次，讓動畫流暢
 }
 
 // 初始化地圖
@@ -380,6 +717,7 @@ const initializeMap = async () => {
 // 監聽訓練狀態，重新初始化地圖
 watch(trainingStatus, (newStatus) => {
   if (newStatus === 'idle') {
+    destroyCharts()
     nextTick(() => initializeMap())
   }
 })
@@ -396,6 +734,7 @@ onUnmounted(() => {
   if (trainingInterval) {
     clearInterval(trainingInterval)
   }
+  destroyCharts()
 })
 </script>
 
@@ -626,11 +965,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
-.chart-placeholder {
-  background: #f9f9f9;
-  border: 1px solid #ddd;
+.chart-container {
+  background: #fff;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 12px;
 }
@@ -639,37 +979,39 @@ onUnmounted(() => {
   flex: 2;
 }
 
+.chart-title {
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.chart-wrapper {
+  height: 240px;
+  position: relative;
+}
+
+.chart-wrapper.small {
+  height: 150px;
+}
+
 .charts-row {
   display: flex;
   gap: 16px;
   flex: 1;
 }
 
-.charts-row .chart-placeholder {
+.charts-row .chart-container {
   flex: 1;
-}
-
-.chart-title {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-.chart-area {
-  height: 100%;
-  min-height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 4px;
+  min-width: 0;
 }
 
 /* 訓練資訊 */
 .training-info {
   width: 280px;
   padding: 16px;
+  flex-shrink: 0;
 }
 
 .info-item {
@@ -735,6 +1077,10 @@ onUnmounted(() => {
 
   .panel-header {
     font-size: 24px;
+  }
+
+  .charts-row {
+    flex-direction: column;
   }
 }
 </style>
