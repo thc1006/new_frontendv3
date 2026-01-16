@@ -118,6 +118,134 @@
       </div>
     </template>
 
+    <!-- RU Configuration 對話框 -->
+    <v-dialog v-model="ruConfigDialog" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="ru-dialog-title">
+          <v-icon class="me-2">mdi-access-point</v-icon>
+          RU Configuration
+          <v-spacer />
+          <v-btn icon variant="text" @click="closeRuConfigDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <!-- 基本資訊 (唯讀) -->
+          <div class="config-section">
+            <h4 class="section-title">基本資訊</h4>
+            <div class="info-row">
+              <span class="info-label">RU ID:</span>
+              <span class="info-value">{{ selectedRu?.RU_id || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">名稱:</span>
+              <span class="info-value">{{ selectedRu?.name || 'N/A' }}</span>
+            </div>
+          </div>
+
+          <!-- 位置設定 -->
+          <div class="config-section">
+            <h4 class="section-title">位置設定</h4>
+            <v-row dense>
+              <v-col cols="4">
+                <v-text-field
+                  v-model.number="ruConfigForm.lat"
+                  label="緯度"
+                  type="number"
+                  step="0.000001"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field
+                  v-model.number="ruConfigForm.lon"
+                  label="經度"
+                  type="number"
+                  step="0.000001"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="4">
+                <v-text-field
+                  v-model.number="ruConfigForm.z"
+                  label="高度 (m)"
+                  type="number"
+                  step="0.1"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- 技術規格 -->
+          <div class="config-section">
+            <h4 class="section-title">技術規格</h4>
+            <v-row dense>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="ruConfigForm.bandwidth"
+                  label="Bandwidth (MHz)"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="ruConfigForm.tx_power"
+                  label="Tx Power (dBm)"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+            <v-row dense class="mt-2">
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="ruConfigForm.opening_angle"
+                  label="Opening Angle (°)"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="ruConfigForm.roll"
+                  label="Roll (°)"
+                  type="number"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="closeRuConfigDialog">
+            取消
+          </v-btn>
+          <v-btn color="primary" variant="elevated" @click="saveRuConfig">
+            儲存設定
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 提示訊息 -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" location="top">
       {{ snackbar.text }}
@@ -292,6 +420,79 @@ function onHeatmapToggle() {
 
 const snackbar = ref({ show: false, text: '', color: 'info' })
 
+// RU Configuration 對話框
+const ruConfigDialog = ref(false)
+const selectedRu = ref<{
+  RU_id: number
+  name?: string
+  lat?: number
+  lon?: number
+  z?: number
+  bandwidth?: number
+  tx_power?: number
+  opening_angle?: number
+  roll?: number
+} | null>(null)
+
+const ruConfigForm = ref({
+  lat: 0,
+  lon: 0,
+  z: 0,
+  bandwidth: 0,
+  tx_power: 0,
+  opening_angle: 0,
+  roll: 0
+})
+
+// 開啟 RU 設定對話框 (由雙擊 RU marker 觸發)
+function openRuConfigDialog(ru: typeof selectedRu.value) {
+  selectedRu.value = ru
+  if (ru) {
+    ruConfigForm.value = {
+      lat: ru.lat ?? 0,
+      lon: ru.lon ?? 0,
+      z: ru.z ?? 0,
+      bandwidth: ru.bandwidth ?? 0,
+      tx_power: ru.tx_power ?? 0,
+      opening_angle: ru.opening_angle ?? 0,
+      roll: ru.roll ?? 0
+    }
+  }
+  ruConfigDialog.value = true
+}
+
+function closeRuConfigDialog() {
+  ruConfigDialog.value = false
+  selectedRu.value = null
+}
+
+function saveRuConfig() {
+  // TODO: 整合後端 API 儲存 RU 設定
+  snackbar.value = {
+    show: true,
+    text: 'RU 設定儲存功能尚未實作',
+    color: 'warning'
+  }
+  closeRuConfigDialog()
+}
+
+// 模擬雙擊 RU marker (供測試用)
+function handleMapDoubleClick() {
+  // 模擬一個 RU 資料供展示
+  const mockRu = {
+    RU_id: 1,
+    name: 'RU-001',
+    lat: mapCenter.value[1],
+    lon: mapCenter.value[0],
+    z: 10,
+    bandwidth: 100,
+    tx_power: 30,
+    opening_angle: 120,
+    roll: 0
+  }
+  openRuConfigDialog(mockRu)
+}
+
 function showPlaceholder(action: string) {
   snackbar.value = {
     show: true,
@@ -302,7 +503,19 @@ function showPlaceholder(action: string) {
 }
 
 function handleAddRu() {
-  showPlaceholder('ADD RU')
+  // 暫時開啟 RU 設定對話框來測試 (新增 RU 功能)
+  const newRu = {
+    RU_id: Date.now(), // 暫用時間戳作為 ID
+    name: '',
+    lat: mapCenter.value[1],
+    lon: mapCenter.value[0],
+    z: 10,
+    bandwidth: 100,
+    tx_power: 30,
+    opening_angle: 120,
+    roll: 0
+  }
+  openRuConfigDialog(newRu)
 }
 
 function handleUesSettings() {
@@ -575,5 +788,45 @@ onUnmounted(() => {
 
 .color-bar-label.bottom {
   font-weight: 500;
+}
+
+/* RU Configuration 對話框 */
+.ru-dialog-title {
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.config-section {
+  margin-bottom: 20px;
+}
+
+.config-section .section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.info-row .info-label {
+  font-weight: 500;
+  color: #666;
+  min-width: 80px;
+}
+
+.info-row .info-value {
+  color: #333;
 }
 </style>

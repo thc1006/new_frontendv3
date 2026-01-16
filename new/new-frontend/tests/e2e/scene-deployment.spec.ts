@@ -226,16 +226,99 @@ test.describe('Scene Deployment Page', () => {
     })
   })
 
-  // 按鈕互動測試
-  test.describe('Button Interactions', () => {
-    test('should show feedback when clicking ADD RU', async ({ page }) => {
+  // RU Configuration 對話框測試
+  test.describe('RU Configuration Dialog', () => {
+    test('should open RU config dialog when clicking ADD RU', async ({ page }) => {
       await page.goto('/projects/3/scene-deployment')
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
       await page.locator('button:has-text("ADD RU")').click()
 
-      // 應該顯示某種回饋（snackbar 或對話框）
-      await expect(page.locator('.v-snackbar, .v-dialog')).toBeVisible({ timeout: 3000 })
+      // 對話框應該出現
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
+      await expect(page.locator('.ru-dialog-title')).toContainText('RU Configuration')
+    })
+
+    test('should display location settings in dialog', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('button:has-text("ADD RU")').click()
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
+
+      // 確認位置設定欄位存在
+      await expect(page.locator('.v-dialog input[type="number"]').first()).toBeVisible()
+      await expect(page.locator('.v-dialog').getByText('位置設定')).toBeVisible()
+    })
+
+    test('should display technical specs in dialog', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('button:has-text("ADD RU")').click()
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
+
+      // 確認技術規格區塊存在
+      await expect(page.locator('.v-dialog').getByText('技術規格')).toBeVisible()
+      // 確認有多個輸入欄位 (位置 3 個 + 技術規格 4 個 = 7 個)
+      const inputs = page.locator('.v-dialog input[type="number"]')
+      await expect(inputs).toHaveCount(7)
+    })
+
+    test('should close dialog when clicking cancel', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('button:has-text("ADD RU")').click()
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
+
+      // 點擊取消按鈕
+      await page.locator('.v-dialog button:has-text("取消")').click()
+
+      // 對話框應該關閉
+      await expect(page.locator('.v-dialog')).toBeHidden({ timeout: 3000 })
+    })
+
+    test('should show placeholder message when clicking save', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('button:has-text("ADD RU")').click()
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
+
+      // 點擊儲存按鈕
+      await page.locator('.v-dialog button:has-text("儲存設定")').click()
+
+      // 應該顯示 placeholder 訊息
+      await expect(page.locator('.v-snackbar')).toBeVisible({ timeout: 3000 })
+      await expect(page.locator('.v-snackbar')).toContainText('尚未實作')
+    })
+
+    test('should close dialog with X button', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('button:has-text("ADD RU")').click()
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
+
+      // 點擊 X 按鈕
+      await page.locator('.ru-dialog-title button').click()
+
+      // 對話框應該關閉
+      await expect(page.locator('.v-dialog')).toBeHidden({ timeout: 3000 })
+    })
+  })
+
+  // 按鈕互動測試
+  test.describe('Button Interactions', () => {
+    test('should open dialog when clicking ADD RU', async ({ page }) => {
+      await page.goto('/projects/3/scene-deployment')
+      await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('button:has-text("ADD RU")').click()
+
+      // 應該顯示 RU Configuration 對話框
+      await expect(page.locator('.v-dialog')).toBeVisible({ timeout: 3000 })
     })
 
     test('should show feedback when clicking EVALUATE', async ({ page }) => {
