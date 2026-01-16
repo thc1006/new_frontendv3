@@ -204,13 +204,15 @@
 </template>
 
 <script setup lang="ts">
-  
+
   import 'mapbox-gl/dist/mapbox-gl.css'
 
-  import { computed, ref } from 'vue'
+  import { computed, ref, watchEffect } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { navigateTo } from '#app'
+  import { useQuery } from '@tanstack/vue-query'
   import mapboxgl from 'mapbox-gl'
+  import { useUserStore } from '~/stores/user'
 
   const route = useRoute()
   const router = useRouter()
@@ -313,8 +315,9 @@
           memberEmails.value[0] = ownerEmail
         }
         return response.data
-      } catch (err: any) {
-        if (err.response?.status === 404) {
+      } catch (err: unknown) {
+        const error = err as { response?: { status?: number } }
+        if (error.response?.status === 404) {
           errorMessage.value = `Project with ID ${projectId.value} not found.`
           errorDialog.value = true
           projectExists.value = false
