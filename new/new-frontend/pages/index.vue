@@ -192,12 +192,6 @@
     })
   })
 
-  // 取得所有有座標的專案
-  const projectsWithCoords = computed(() => {
-    if (!projects.value) return []
-    return projects.value.filter((p: Project) => getProjectCoords(p) !== null)
-  })
-
   // 初始化地圖
   const initMap = () => {
     const container = document.getElementById('projectsMap')
@@ -249,14 +243,14 @@
     `
       el.dataset.projectId = String(projectId)
 
-      // 滑鼠互動
+      // 滑鼠互動（使用 CSS class 避免覆蓋 mapbox 的定位 transform）
       el.addEventListener('mouseenter', () => {
         hoveredProjectId.value = projectId
-        el.style.transform = 'scale(1.2)'
+        el.classList.add('marker-hovered')
       })
       el.addEventListener('mouseleave', () => {
         hoveredProjectId.value = null
-        el.style.transform = 'scale(1)'
+        el.classList.remove('marker-hovered')
       })
       el.addEventListener('click', () => {
         viewProject(project)
