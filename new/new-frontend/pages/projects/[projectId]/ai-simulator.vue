@@ -476,11 +476,20 @@
         </template>
 
         <!-- NES Enable Project 視圖 -->
-        <template v-else-if="selectedModel === 'nes' && nesPretrainDone && nesEnableMode">
+        <template v-else-if="selectedModel === 'nes' && nesPretrainDone && nesEnableMode && !nesDashboardMode">
           <div class="panel-header">Project</div>
           <div class="enable-content">
             <div class="enable-map-container">
               <div id="nesEnableMap" class="enable-map" />
+              <!-- Dashboard 按鈕 (Figma 277:1526) -->
+              <v-btn
+                color="warning"
+                variant="flat"
+                class="dashboard-btn"
+                @click="showNesDashboard"
+              >
+                Dashboard
+              </v-btn>
               <!-- 色標 -->
               <div class="color-bar">
                 <div class="color-gradient" />
@@ -517,6 +526,72 @@
                   class="signal-select"
                   hide-details
                 />
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- NES Dashboard 視圖 (Figma 277:1561) -->
+        <template v-else-if="selectedModel === 'nes' && nesPretrainDone && nesEnableMode && nesDashboardMode">
+          <div class="panel-header">Project</div>
+          <div class="dashboard-content">
+            <!-- Map UI 按鈕 -->
+            <v-btn
+              color="warning"
+              variant="flat"
+              class="map-ui-btn"
+              @click="hideNesDashboard"
+            >
+              Map UI
+            </v-btn>
+            <!-- Dashboard 面板 -->
+            <div class="dashboard-panel">
+              <!-- 頂部統計卡片 -->
+              <div class="dashboard-stats">
+                <div class="stat-card num-ues">
+                  <div class="stat-label">Num of UEs</div>
+                  <div class="stat-value">{{ nesDashboardData.numOfUEs }}</div>
+                </div>
+                <div class="stat-card throughput">
+                  <div class="stat-label">DL Throughput</div>
+                  <div class="stat-value">{{ nesDashboardData.dlThroughput }} <span class="stat-unit">Mbps</span></div>
+                </div>
+              </div>
+              <!-- 能耗儀表 -->
+              <div class="dashboard-row">
+                <div class="energy-gauge">
+                  <div class="gauge-label">Energy Usage</div>
+                  <div class="gauge-value">{{ nesDashboardData.energyUsage }} <span class="gauge-unit">W</span></div>
+                </div>
+                <!-- Radio Power -->
+                <div class="radio-power">
+                  <div class="power-label">Radio Power</div>
+                  <div class="power-bars">
+                    <div v-for="(val, idx) in nesDashboardData.radioPower" :key="idx" class="power-bar-item">
+                      <div class="power-bar" :style="{ height: val + '%', backgroundColor: val > 0 ? '#4CAF50' : '#ccc' }" />
+                      <span class="power-value">{{ val }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 圖表區域 (placeholder) -->
+              <div class="dashboard-charts">
+                <div class="chart-placeholder">
+                  <div class="chart-title">Att</div>
+                  <div class="chart-area">圖表資料待後端 API</div>
+                </div>
+                <div class="chart-placeholder">
+                  <div class="chart-title">Success</div>
+                  <div class="chart-area">圖表資料待後端 API</div>
+                </div>
+                <div class="chart-placeholder">
+                  <div class="chart-title">Energy Efficiency</div>
+                  <div class="chart-area">圖表資料待後端 API</div>
+                </div>
+                <div class="chart-placeholder">
+                  <div class="chart-title">Energy</div>
+                  <div class="chart-area">圖表資料待後端 API</div>
+                </div>
               </div>
             </div>
           </div>
@@ -965,6 +1040,15 @@
   const nesEnableMode = ref(false)
   let nesEnableMap: mapboxgl.Map | null = null
 
+  // NES Dashboard 模式狀態 (Figma 277:1526, 277:1561)
+  const nesDashboardMode = ref(false)
+  const nesDashboardData = ref({
+    numOfUEs: 100,
+    dlThroughput: 5375,
+    energyUsage: 444,
+    radioPower: [0, 18, 0, 18, 0]
+  })
+
   // 圖表 refs
   const rewardChartRef = ref<HTMLCanvasElement | null>(null)
   const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
@@ -1383,6 +1467,7 @@
     nesFinetuneStatus.value = 'idle'
     nesFinetuneEpoch.value = 0
     nesEnableMode.value = false
+    nesDashboardMode.value = false
     if (nesEnableMap) {
       nesEnableMap.remove()
       nesEnableMap = null
@@ -1879,7 +1964,18 @@
   // 啟用 NES 模型
   function enableNesModel() {
     nesEnableMode.value = true
+    nesDashboardMode.value = false
     nextTick(() => initNesEnableMap())
+  }
+
+  // 顯示 NES Dashboard (Figma 277:1561)
+  function showNesDashboard() {
+    nesDashboardMode.value = true
+  }
+
+  // 隱藏 NES Dashboard，返回 Map UI
+  function hideNesDashboard() {
+    nesDashboardMode.value = false
   }
 
   // 初始化 NES Enable 地圖
@@ -1931,6 +2027,7 @@
   // 重新訓練 NES
   function startNesRetrain() {
     nesEnableMode.value = false
+    nesDashboardMode.value = false
     nesPretrainDone.value = false
     nesFinetuneStatus.value = 'idle'
     nesFinetuneEpoch.value = 0
@@ -3203,6 +3300,180 @@
   font-size: 24px;
   color: #666;
   text-align: center;
+}
+
+/* Dashboard 按鈕 (Figma 277:1526) */
+.dashboard-btn {
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  z-index: 10;
+  border-radius: 4px !important;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.map-ui-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  border-radius: 4px !important;
+  text-transform: none;
+  font-weight: 500;
+}
+
+/* Dashboard 內容 (Figma 277:1561) */
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #1a1a2e;
+  padding: 20px;
+  overflow: auto;
+}
+
+.dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 50px;
+}
+
+.dashboard-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 16px 24px;
+  border-radius: 8px;
+  min-width: 150px;
+}
+
+.stat-card.num-ues {
+  background: #2196F3;
+  color: white;
+}
+
+.stat-card.throughput {
+  background: #f44336;
+  color: white;
+}
+
+.stat-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 600;
+}
+
+.stat-unit {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.dashboard-row {
+  display: flex;
+  gap: 16px;
+}
+
+.energy-gauge {
+  background: #2d2d44;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 150px;
+  text-align: center;
+}
+
+.gauge-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.gauge-value {
+  font-size: 28px;
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.gauge-unit {
+  font-size: 14px;
+  color: #aaa;
+}
+
+.radio-power {
+  background: #2d2d44;
+  border-radius: 8px;
+  padding: 16px;
+  flex: 1;
+}
+
+.power-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 12px;
+}
+
+.power-bars {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  height: 60px;
+}
+
+.power-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.power-bar {
+  width: 24px;
+  min-height: 4px;
+  border-radius: 2px;
+  transition: height 0.3s;
+}
+
+.power-value {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.chart-placeholder {
+  background: #2d2d44;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 120px;
+}
+
+.chart-placeholder .chart-title {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.chart-placeholder .chart-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  color: #666;
+  font-size: 12px;
+  border: 1px dashed #444;
+  border-radius: 4px;
 }
 
 /* 響應式 */

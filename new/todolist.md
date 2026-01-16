@@ -30,6 +30,7 @@
 | NES Finetune Finish | `ai-simulator.vue` (nesFinetuneStatus=finish) | 277:1366 | ✅ 完全符合 |
 | NES Upload Dialog | `ai-simulator.vue` (showNesUploadDialog=true) | 277:510, 277:1405 | ✅ 完全符合 |
 | NES Enable Mode | `ai-simulator.vue` (nesEnableMode=true) | 277:1190 | ✅ 完全符合 |
+| NES Dashboard | `ai-simulator.vue` (nesDashboardMode=true) | 277:1526, 277:1561 | ✅ 完全符合 |
 | Positioning Upload Dialog | `ai-simulator.vue` (showPosUploadDialog=true) | 277:1070 | ✅ 完全符合 |
 
 ---
@@ -61,10 +62,13 @@
 
 ### P2 優先級 - AI-RAN Model 系列
 
-| 頁面名稱 | Figma Node | 說明 | 預估工作量 |
-|---------|------------|------|-----------|
-| AI-RAN Model menu | 277:1256 | 主選單頁面 | 中 |
-| AI-RAN 相關子頁面 | 277:1481+ | 多個操作頁面 | 大 |
+> 注意：AI-RAN Model 系列 Figma 分析後發現，277:1256 為已實作的 6 模型選單，277:1526/277:1561 為 NES Dashboard，已整合至 NES 流程中。
+
+| 頁面名稱 | Figma Node | 說明 | 狀態 |
+|---------|------------|------|------|
+| AI-RAN Model menu | 277:1256 | ✅ = AI Simulator Menu (6 模型選單) | 已完成 |
+| NES Enable + Dashboard | 277:1526, 277:1561 | ✅ = NES Dashboard Mode | 已完成 |
+| AI-RAN 其他子頁面 | 277:1481+ | 待進一步 Figma 分析 | 待分析 |
 
 ---
 
@@ -106,3 +110,4 @@ POST /ai-simulator/pos/inference
 | 2026-01-16 | 實作 NES Review 模式 (場景選擇, gNB/UE markers, heatmap 控制) |
 | 2026-01-16 | 實作 NES Finetune 系列頁面 (finetune running/finish, upload dialog, enable mode) |
 | 2026-01-16 | 實作 Positioning Upload 對話框 (showPosUploadDialog), POS Model 系列標記為已完成 |
+| 2026-01-16 | 實作 NES Dashboard 模式 (nesDashboardMode), AI-RAN Model 系列部分標記為已完成 |
