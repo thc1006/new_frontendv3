@@ -32,6 +32,8 @@
 | NES Enable Mode | `ai-simulator.vue` (nesEnableMode=true) | 277:1190 | ✅ 完全符合 |
 | NES Dashboard | `ai-simulator.vue` (nesDashboardMode=true) | 277:1526, 277:1561 | ✅ 完全符合 |
 | Positioning Upload Dialog | `ai-simulator.vue` (showPosUploadDialog=true) | 277:1070 | ✅ 完全符合 |
+| AI-RAN Applications | `pages/projects/[projectId]/ai-ran.vue` | 277:1256 | ✅ 完全符合 |
+| AI-RAN NES Finetune | `ai-ran.vue` (selectedModel=nes) | 277:1486, 277:1597 | ✅ 完全符合 |
 
 ---
 
@@ -62,13 +64,13 @@
 
 ### P2 優先級 - AI-RAN Model 系列
 
-> 注意：AI-RAN Model 系列 Figma 分析後發現，277:1256 為已實作的 6 模型選單，277:1526/277:1561 為 NES Dashboard，已整合至 NES 流程中。
+> AI-RAN Applications 是獨立頁面，與 AI Simulator 差異：無警告橫幅、"Project" 標題、Model 下拉選單。
 
 | 頁面名稱 | Figma Node | 說明 | 狀態 |
 |---------|------------|------|------|
-| AI-RAN Model menu | 277:1256 | ✅ = AI Simulator Menu (6 模型選單) | 已完成 |
-| NES Enable + Dashboard | 277:1526, 277:1561 | ✅ = NES Dashboard Mode | 已完成 |
-| AI-RAN 其他子頁面 | 277:1481+ | 待進一步 Figma 分析 | 待分析 |
+| AI-RAN Applications 主頁 | 277:1256 | ✅ `ai-ran.vue` 獨立頁面 | 已完成 |
+| AI-RAN NES Finetune | 277:1486, 277:1597 | ✅ NES Model 控制面板 + Training Charts | 已完成 |
+| AI-RAN Positioning | 277:1481+ | Positioning 控制面板 (基礎) | 已完成 |
 
 ---
 
@@ -111,3 +113,4 @@ POST /ai-simulator/pos/inference
 | 2026-01-16 | 實作 NES Finetune 系列頁面 (finetune running/finish, upload dialog, enable mode) |
 | 2026-01-16 | 實作 Positioning Upload 對話框 (showPosUploadDialog), POS Model 系列標記為已完成 |
 | 2026-01-16 | 實作 NES Dashboard 模式 (nesDashboardMode), AI-RAN Model 系列部分標記為已完成 |
+| 2026-01-16 | 新增 AI-RAN Applications 獨立頁面 (ai-ran.vue)，包含 Model List、NES Finetune、Training Charts |

@@ -149,6 +149,7 @@
     { title: 'Overview', to: `/projects/${projectId.value}/overviews` },
     { title: 'Scene Deployment', to: `/projects/${projectId.value}/scene-deployment` },
     { title: 'AI Application Simulator', to: `/projects/${projectId.value}/ai-simulator` },
+    { title: 'AI-RAN Applications', to: `/projects/${projectId.value}/ai-ran` },
     {
       title: 'Configuration',
       children: [
