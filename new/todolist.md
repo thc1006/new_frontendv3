@@ -30,6 +30,7 @@
 | NES Finetune Finish | `ai-simulator.vue` (nesFinetuneStatus=finish) | 277:1366 | ✅ 完全符合 |
 | NES Upload Dialog | `ai-simulator.vue` (showNesUploadDialog=true) | 277:510, 277:1405 | ✅ 完全符合 |
 | NES Enable Mode | `ai-simulator.vue` (nesEnableMode=true) | 277:1190 | ✅ 完全符合 |
+| Positioning Upload Dialog | `ai-simulator.vue` (showPosUploadDialog=true) | 277:1070 | ✅ 完全符合 |
 
 ---
 
@@ -45,19 +46,18 @@
 
 | 頁面名稱 | Figma Node | 說明 | 預估工作量 |
 |---------|------------|------|-----------|
-| Positioning model Pre-train upload | 277:741 | 上傳訓練資料對話框 | 中 |
+| ~~Positioning model Pre-train upload~~ | 277:741 | ✅ 已實作 (showPosUploadDialog) | - |
 
 ### P1 優先級 - POS Model 系列
 
-| 頁面名稱 | Figma Node | 說明 | 預估工作量 |
-|---------|------------|------|-----------|
-| POS model select init (post-sim) | 277:947 | 模擬後選擇頁面 | 中 |
-| POS model finetuning | 277:993 | 微調流程頁面 | 大 |
-| POS model finetuning finish | 277:1032 | 微調完成狀態 | 小 |
-| POS model updating | 277:1070 | 模型更新中狀態 | 小 |
-| POS model upload dataset | 277:1113 | 上傳訓練資料 | 中 |
-| POS model Inference (1) | 277:1146 | 推斷結果展示 | 中 |
-| POS model Inference (2) | 277:1190 | 推斷過程中 | 小 |
+> 注意：POS Model 實際上是 Positioning 模型的不同狀態視圖，已在 Positioning Finetune/Enable 中實作完成。
+
+| 頁面名稱 | Figma Node | 說明 | 狀態 |
+|---------|------------|------|------|
+| POS model finetuning | 277:993 | ✅ = Positioning Finetune Running | 已完成 |
+| POS model finetuning finish | 277:1032 | ✅ = Positioning Finetune Finish | 已完成 |
+| POS model upload dataset | 277:1070 | ✅ = Positioning Upload Dialog | 已完成 |
+| POS model Inference (2) | 277:1190 | ✅ = Positioning Enable Mode | 已完成 |
 
 ### P2 優先級 - AI-RAN Model 系列
 
@@ -105,3 +105,4 @@ POST /ai-simulator/pos/inference
 | 2026-01-16 | 實作 Positioning Finetune/Enable 系列頁面 (finetune running/finish, enable mode) |
 | 2026-01-16 | 實作 NES Review 模式 (場景選擇, gNB/UE markers, heatmap 控制) |
 | 2026-01-16 | 實作 NES Finetune 系列頁面 (finetune running/finish, upload dialog, enable mode) |
+| 2026-01-16 | 實作 Positioning Upload 對話框 (showPosUploadDialog), POS Model 系列標記為已完成 |

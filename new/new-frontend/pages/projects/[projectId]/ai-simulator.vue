@@ -192,7 +192,7 @@
               :disabled="posFinetuneStatus === 'running'"
               variant="elevated"
               class="control-btn"
-              @click="startPosFinetune"
+              @click="showPosUploadDialogFn"
             >
               Finetune
             </v-btn>
@@ -752,6 +752,44 @@
       </v-card>
     </v-dialog>
 
+    <!-- Positioning Upload Finetuning Dataset 對話框 (Figma 277:1070) -->
+    <v-dialog v-model="showPosUploadDialog" max-width="400" persistent>
+      <v-card class="upload-dialog">
+        <v-card-title class="upload-dialog-title">
+          Upload finetuning dataset
+        </v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="posUploadDataset"
+            :items="posDatasetOptions"
+            density="compact"
+            variant="outlined"
+            placeholder="Select dataset"
+            hide-details
+            class="dataset-select"
+          />
+        </v-card-text>
+        <v-card-actions class="upload-dialog-actions">
+          <v-btn
+            variant="outlined"
+            color="default"
+            class="dialog-btn"
+            @click="submitPosUpload"
+          >
+            submit
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            color="default"
+            class="dialog-btn"
+            @click="cancelPosUpload"
+          >
+            cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 提示訊息 -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000" location="top">
       {{ snackbar.text }}
@@ -871,6 +909,11 @@
   const showEnableHeatmap = ref(true)
   const enableSignalType = ref('RSRP')
   let enableMap: mapboxgl.Map | null = null
+
+  // Positioning Upload 對話框狀態 (Figma 277:1070)
+  const showPosUploadDialog = ref(false)
+  const posUploadDataset = ref<string | null>(null)
+  const posDatasetOptions = ['Dataset A', 'Dataset B', 'Dataset C']
 
   // NES Review 模式狀態 (Figma 277:1286, 277:296)
   const nesReviewMode = ref(false)
@@ -2022,6 +2065,33 @@
   }
 
   // 開始 Finetune 訓練
+  // 顯示 Positioning Upload 對話框 (Figma 277:1070)
+  function showPosUploadDialogFn() {
+    posUploadDataset.value = null
+    showPosUploadDialog.value = true
+  }
+
+  // 提交 Positioning Upload (開始 Finetune)
+  function submitPosUpload() {
+    if (!posUploadDataset.value) {
+      snackbar.value = {
+        show: true,
+        text: '請先選擇訓練資料集',
+        color: 'warning'
+      }
+      return
+    }
+    showPosUploadDialog.value = false
+    startPosFinetune()
+  }
+
+  // 取消 Positioning Upload
+  function cancelPosUpload() {
+    showPosUploadDialog.value = false
+    posUploadDataset.value = null
+  }
+
+  // 開始 Positioning Finetune 訓練
   function startPosFinetune() {
     posFinetuneStatus.value = 'running'
     posFinetuneEpoch.value = 0
