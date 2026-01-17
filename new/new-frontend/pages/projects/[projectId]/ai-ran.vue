@@ -328,507 +328,515 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { Chart, registerables } from 'chart.js'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+  import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+  import { Chart, registerables } from 'chart.js'
+  import mapboxgl from 'mapbox-gl'
+  import 'mapbox-gl/dist/mapbox-gl.css'
+  import { createModuleLogger } from '~/utils/logger'
 
-// 註冊 Chart.js 組件
-Chart.register(...registerables)
+  const log = createModuleLogger('AIRAN')
 
-// Mapbox token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibmV3c2xhYiIsImEiOiJjbDdkNGpyYmQwaDF5M29tcWYzNzNwcGd2In0.2D21D19iczQMljmu7mDnog'
+  // 註冊 Chart.js 組件
+  Chart.register(...registerables)
+  log.lifecycle('setup:start')
 
-// Model 清單 (與 AI Simulator 相同)
-const modelList = [
-  { id: 'nes', name: 'NES' },
-  { id: 'positioning', name: 'Positioning' },
-  { id: 'im', name: 'IM' },
-  { id: 'mro', name: 'MRO' },
-  { id: 'rs', name: 'RS' },
-  { id: 'bc', name: 'BC' }
-]
+  // Mapbox token
+  const MAPBOX_TOKEN = 'pk.eyJ1IjoibmV3c2xhYiIsImEiOiJjbDdkNGpyYmQwaDF5M29tcWYzNzNwcGd2In0.2D21D19iczQMljmu7mDnog'
 
-// 狀態
-const selectedModel = ref<string | null>(null)
-const showHeatmap = ref(true)
+  // Model 清單 (與 AI Simulator 相同)
+  const modelList = [
+    { id: 'nes', name: 'NES' },
+    { id: 'positioning', name: 'Positioning' },
+    { id: 'im', name: 'IM' },
+    { id: 'mro', name: 'MRO' },
+    { id: 'rs', name: 'RS' },
+    { id: 'bc', name: 'BC' }
+  ]
 
-// NES Model 狀態 (AI-RAN 用 Model，非 Scene)
-const nesModelSelect = ref<string | null>(null)
-const nesModelOptions = ['Model 1', 'Model 2', 'Model 3', 'Model 4']
-const nesFinetuneStatus = ref<'idle' | 'running' | 'finish'>('idle')
-const nesEnableMode = ref(false)
+  // 狀態
+  const selectedModel = ref<string | null>(null)
+  const showHeatmap = ref(true)
 
-// Positioning Model 狀態 (Figma 277:993, 277:1032)
-const posModelSelect = ref<string | null>(null)
-const posModelOptions = ['Model 1', 'Model 2', 'Model 3', 'Model 4']
-const posFinetuneStatus = ref<'idle' | 'running' | 'finish'>('idle')
-const posEnableMode = ref(false)
+  // NES Model 狀態 (AI-RAN 用 Model，非 Scene)
+  const nesModelSelect = ref<string | null>(null)
+  const nesModelOptions = ['Model 1', 'Model 2', 'Model 3', 'Model 4']
+  const nesFinetuneStatus = ref<'idle' | 'running' | 'finish'>('idle')
+  const nesEnableMode = ref(false)
 
-// NES 訓練相關
-const currentEpoch = ref(0)
-const totalEpochs = ref(1000)
-const trainingResults = ref({
-  reward: 0.98,
-  actorLoss: -2.3,
-  criticLoss: 0.002
-})
+  // Positioning Model 狀態 (Figma 277:993, 277:1032)
+  const posModelSelect = ref<string | null>(null)
+  const posModelOptions = ['Model 1', 'Model 2', 'Model 3', 'Model 4']
+  const posFinetuneStatus = ref<'idle' | 'running' | 'finish'>('idle')
+  const posEnableMode = ref(false)
 
-// Positioning 訓練相關 (MSE Loss)
-const posCurrentEpoch = ref(0)
-const posTotalEpochs = ref(500)
-const posTrainingResults = ref({
-  trainingLoss: 0.09,
-  validationLoss: 0.09
-})
-
-// NES Chart refs
-const rewardChartRef = ref<HTMLCanvasElement | null>(null)
-const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
-const actorLossChartRef = ref<HTMLCanvasElement | null>(null)
-let rewardChart: Chart | null = null
-let criticLossChart: Chart | null = null
-let actorLossChart: Chart | null = null
-
-// Positioning Chart refs (MSE Loss 雙線圖)
-const posLossChartRef = ref<HTMLCanvasElement | null>(null)
-let posLossChart: Chart | null = null
-
-// Map
-let map: mapboxgl.Map | null = null
-const mapMarkers: mapboxgl.Marker[] = []
-
-// 訓練定時器
-let finetuneInterval: ReturnType<typeof setInterval> | null = null
-let posFinetuneInterval: ReturnType<typeof setInterval> | null = null
-
-// Computed
-const selectedModelName = computed(() => {
-  const model = modelList.find(m => m.id === selectedModel.value)
-  return model ? model.name : ''
-})
-
-// 選擇模型
-function selectModel(modelId: string) {
-  selectedModel.value = modelId
-}
-
-// 返回 Model List
-function goBack() {
-  selectedModel.value = null
-  // 重置 NES 狀態
-  nesModelSelect.value = null
-  nesFinetuneStatus.value = 'idle'
-  nesEnableMode.value = false
-  // 重置 Positioning 狀態
-  posModelSelect.value = null
-  posFinetuneStatus.value = 'idle'
-  posEnableMode.value = false
-
-  // 清除訓練定時器
-  if (finetuneInterval) {
-    clearInterval(finetuneInterval)
-    finetuneInterval = null
-  }
-  if (posFinetuneInterval) {
-    clearInterval(posFinetuneInterval)
-    posFinetuneInterval = null
-  }
-
-  // 重新初始化地圖
-  nextTick(() => {
-    initMap()
-  })
-}
-
-// NES Finetune 操作
-function startNesFinetune() {
-  if (!nesModelSelect.value) return
-
-  nesFinetuneStatus.value = 'running'
-  currentEpoch.value = 0
-
-  // 初始化訓練圖表
-  nextTick(() => {
-    initTrainingCharts()
+  // NES 訓練相關
+  const currentEpoch = ref(0)
+  const totalEpochs = ref(1000)
+  const trainingResults = ref({
+    reward: 0.98,
+    actorLoss: -2.3,
+    criticLoss: 0.002
   })
 
-  // 模擬訓練進度
-  finetuneInterval = setInterval(() => {
-    currentEpoch.value += 10
-    updateTrainingCharts()
+  // Positioning 訓練相關 (MSE Loss)
+  const posCurrentEpoch = ref(0)
+  const posTotalEpochs = ref(500)
+  const posTrainingResults = ref({
+    trainingLoss: 0.09,
+    validationLoss: 0.09
+  })
 
-    if (currentEpoch.value >= totalEpochs.value) {
-      nesFinetuneStatus.value = 'finish'
-      if (finetuneInterval) {
-        clearInterval(finetuneInterval)
-        finetuneInterval = null
-      }
+  // NES Chart refs
+  const rewardChartRef = ref<HTMLCanvasElement | null>(null)
+  const criticLossChartRef = ref<HTMLCanvasElement | null>(null)
+  const actorLossChartRef = ref<HTMLCanvasElement | null>(null)
+  let rewardChart: Chart | null = null
+  let criticLossChart: Chart | null = null
+  let actorLossChart: Chart | null = null
+
+  // Positioning Chart refs (MSE Loss 雙線圖)
+  const posLossChartRef = ref<HTMLCanvasElement | null>(null)
+  let posLossChart: Chart | null = null
+
+  // Map
+  let map: mapboxgl.Map | null = null
+  const mapMarkers: mapboxgl.Marker[] = []
+
+  // 訓練定時器
+  let finetuneInterval: ReturnType<typeof setInterval> | null = null
+  let posFinetuneInterval: ReturnType<typeof setInterval> | null = null
+
+  // Computed
+  const selectedModelName = computed(() => {
+    const model = modelList.find(m => m.id === selectedModel.value)
+    return model ? model.name : ''
+  })
+
+  // 選擇模型
+  function selectModel(modelId: string) {
+    selectedModel.value = modelId
+  }
+
+  // 返回 Model List
+  function goBack() {
+    selectedModel.value = null
+    // 重置 NES 狀態
+    nesModelSelect.value = null
+    nesFinetuneStatus.value = 'idle'
+    nesEnableMode.value = false
+    // 重置 Positioning 狀態
+    posModelSelect.value = null
+    posFinetuneStatus.value = 'idle'
+    posEnableMode.value = false
+
+    // 清除訓練定時器
+    if (finetuneInterval) {
+      clearInterval(finetuneInterval)
+      finetuneInterval = null
     }
-  }, 100)
-}
-
-function stopNesFinetune() {
-  if (finetuneInterval) {
-    clearInterval(finetuneInterval)
-    finetuneInterval = null
-  }
-  nesFinetuneStatus.value = 'idle'
-}
-
-function updateNesFinetuneModel() {
-  nesEnableMode.value = true
-}
-
-function enableNesModel() {
-  nesEnableMode.value = true
-}
-
-function startNesRetrain() {
-  nesEnableMode.value = false
-  nesFinetuneStatus.value = 'idle'
-  currentEpoch.value = 0
-}
-
-// Positioning Finetune 操作 (Figma 277:993, 277:1032)
-function startPosFinetune() {
-  if (!posModelSelect.value) return
-
-  posFinetuneStatus.value = 'running'
-  posCurrentEpoch.value = 0
-
-  // 初始化 MSE Loss 圖表
-  nextTick(() => {
-    initPosLossChart()
-  })
-
-  // 模擬訓練進度
-  posFinetuneInterval = setInterval(() => {
-    posCurrentEpoch.value += 5
-    updatePosLossChart()
-
-    if (posCurrentEpoch.value >= posTotalEpochs.value) {
-      posFinetuneStatus.value = 'finish'
-      if (posFinetuneInterval) {
-        clearInterval(posFinetuneInterval)
-        posFinetuneInterval = null
-      }
+    if (posFinetuneInterval) {
+      clearInterval(posFinetuneInterval)
+      posFinetuneInterval = null
     }
-  }, 100)
-}
 
-function stopPosFinetune() {
-  if (posFinetuneInterval) {
-    clearInterval(posFinetuneInterval)
-    posFinetuneInterval = null
+    // 重新初始化地圖
+    nextTick(() => {
+      initMap()
+    })
   }
-  posFinetuneStatus.value = 'idle'
-}
 
-function updatePosFinetuneModel() {
-  posEnableMode.value = true
-}
+  // NES Finetune 操作
+  function startNesFinetune() {
+    if (!nesModelSelect.value) return
 
-function enablePosModel() {
-  posEnableMode.value = true
-}
+    nesFinetuneStatus.value = 'running'
+    currentEpoch.value = 0
 
-function startPosRetrain() {
-  posEnableMode.value = false
-  posFinetuneStatus.value = 'idle'
-  posCurrentEpoch.value = 0
-}
+    // 初始化訓練圖表
+    nextTick(() => {
+      initTrainingCharts()
+    })
 
-// 初始化 Positioning MSE Loss 圖表 (雙線：training + validation)
-function initPosLossChart() {
-  if (posLossChartRef.value) {
-    if (posLossChart) posLossChart.destroy()
-    posLossChart = new Chart(posLossChartRef.value, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: 'training',
-            data: [],
-            borderColor: '#2196F3',
-            backgroundColor: 'transparent',
-            tension: 0.1,
-            borderWidth: 2
-          },
-          {
-            label: 'validation',
-            data: [],
-            borderColor: '#FF9800',
-            backgroundColor: 'transparent',
-            tension: 0.1,
-            borderWidth: 2,
-            borderDash: [5, 5]
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: { display: true, text: 'loss', position: 'top' },
-          legend: { display: true, position: 'top' }
-        },
-        scales: {
-          x: { title: { display: true, text: 'Epoch' } },
-          y: { title: { display: true, text: 'loss' }, min: 0, max: 0.6 }
+    // 模擬訓練進度
+    finetuneInterval = setInterval(() => {
+      currentEpoch.value += 10
+      updateTrainingCharts()
+
+      if (currentEpoch.value >= totalEpochs.value) {
+        nesFinetuneStatus.value = 'finish'
+        if (finetuneInterval) {
+          clearInterval(finetuneInterval)
+          finetuneInterval = null
         }
       }
+    }, 100)
+  }
+
+  function stopNesFinetune() {
+    if (finetuneInterval) {
+      clearInterval(finetuneInterval)
+      finetuneInterval = null
+    }
+    nesFinetuneStatus.value = 'idle'
+  }
+
+  function updateNesFinetuneModel() {
+    nesEnableMode.value = true
+  }
+
+  function enableNesModel() {
+    nesEnableMode.value = true
+  }
+
+  function startNesRetrain() {
+    nesEnableMode.value = false
+    nesFinetuneStatus.value = 'idle'
+    currentEpoch.value = 0
+  }
+
+  // Positioning Finetune 操作 (Figma 277:993, 277:1032)
+  function startPosFinetune() {
+    if (!posModelSelect.value) return
+
+    posFinetuneStatus.value = 'running'
+    posCurrentEpoch.value = 0
+
+    // 初始化 MSE Loss 圖表
+    nextTick(() => {
+      initPosLossChart()
     })
-  }
-}
 
-// 更新 Positioning MSE Loss 圖表
-function updatePosLossChart() {
-  const epoch = posCurrentEpoch.value
+    // 模擬訓練進度
+    posFinetuneInterval = setInterval(() => {
+      posCurrentEpoch.value += 5
+      updatePosLossChart()
 
-  if (posLossChart) {
-    posLossChart.data.labels?.push(epoch.toString())
-    // 模擬 training loss 下降曲線
-    const trainingLoss = 0.5 * Math.exp(-epoch / 100) + 0.05 + Math.random() * 0.02
-    // 模擬 validation loss (略高於 training loss)
-    const validationLoss = 0.5 * Math.exp(-epoch / 120) + 0.15 + Math.random() * 0.03
-    posLossChart.data.datasets[0].data.push(trainingLoss)
-    posLossChart.data.datasets[1].data.push(validationLoss)
-    posLossChart.update('none')
-
-    // 更新最終結果
-    posTrainingResults.value.trainingLoss = trainingLoss
-    posTrainingResults.value.validationLoss = validationLoss
-  }
-}
-
-// 初始化 NES 訓練圖表
-function initTrainingCharts() {
-  // Reward Chart
-  if (rewardChartRef.value) {
-    if (rewardChart) rewardChart.destroy()
-    rewardChart = new Chart(rewardChartRef.value, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: 'reward',
-            data: [],
-            borderColor: '#FFD700',
-            backgroundColor: 'transparent',
-            tension: 0.1
-          },
-          {
-            label: 'reward (MA10)',
-            data: [],
-            borderColor: '#00CED1',
-            backgroundColor: 'transparent',
-            tension: 0.1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: { display: true, text: 'Reward over Epochs (with MA10)' }
-        },
-        scales: {
-          x: { title: { display: true, text: 'epoch' } },
-          y: { title: { display: true, text: 'value' }, min: 0.4, max: 1.1 }
+      if (posCurrentEpoch.value >= posTotalEpochs.value) {
+        posFinetuneStatus.value = 'finish'
+        if (posFinetuneInterval) {
+          clearInterval(posFinetuneInterval)
+          posFinetuneInterval = null
         }
       }
-    })
+    }, 100)
   }
 
-  // Critic Loss Chart
-  if (criticLossChartRef.value) {
-    if (criticLossChart) criticLossChart.destroy()
-    criticLossChart = new Chart(criticLossChartRef.value, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Critic Loss',
-          data: [],
-          borderColor: '#FFA500',
-          backgroundColor: 'transparent',
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: { display: true, text: 'Critic Loss over Epochs' }
-        },
-        scales: {
-          x: { title: { display: true, text: 'epoch' } },
-          y: { title: { display: true, text: 'critic_loss' } }
-        }
-      }
-    })
+  function stopPosFinetune() {
+    if (posFinetuneInterval) {
+      clearInterval(posFinetuneInterval)
+      posFinetuneInterval = null
+    }
+    posFinetuneStatus.value = 'idle'
   }
 
-  // Actor Loss Chart
-  if (actorLossChartRef.value) {
-    if (actorLossChart) actorLossChart.destroy()
-    actorLossChart = new Chart(actorLossChartRef.value, {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Actor Loss',
-          data: [],
-          borderColor: '#FFA500',
-          backgroundColor: 'transparent',
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: { display: true, text: 'Actor Loss over Epochs' }
-        },
-        scales: {
-          x: { title: { display: true, text: 'epoch' } },
-          y: { title: { display: true, text: 'actor_loss' } }
-        }
-      }
-    })
-  }
-}
-
-// 更新訓練圖表
-function updateTrainingCharts() {
-  const epoch = currentEpoch.value
-
-  if (rewardChart) {
-    rewardChart.data.labels?.push(epoch.toString())
-    const reward = 0.5 + Math.random() * 0.5
-    const rewardMA = 0.7 + Math.random() * 0.3
-    rewardChart.data.datasets[0].data.push(reward)
-    rewardChart.data.datasets[1].data.push(rewardMA)
-    rewardChart.update('none')
+  function updatePosFinetuneModel() {
+    posEnableMode.value = true
   }
 
-  if (criticLossChart) {
-    criticLossChart.data.labels?.push(epoch.toString())
-    const loss = 0.3 * Math.exp(-epoch / 300) + Math.random() * 0.02
-    criticLossChart.data.datasets[0].data.push(loss)
-    criticLossChart.update('none')
+  function enablePosModel() {
+    posEnableMode.value = true
   }
 
-  if (actorLossChart) {
-    actorLossChart.data.labels?.push(epoch.toString())
-    const loss = -1.2 - Math.random() * 0.8
-    actorLossChart.data.datasets[0].data.push(loss)
-    actorLossChart.update('none')
-  }
-}
-
-// 初始化地圖
-function initMap() {
-  const container = document.getElementById('aiRanMapContainer')
-  if (!container) return
-
-  // 清除舊地圖
-  if (map) {
-    mapMarkers.forEach(m => m.remove())
-    mapMarkers.length = 0
-    map.remove()
-    map = null
+  function startPosRetrain() {
+    posEnableMode.value = false
+    posFinetuneStatus.value = 'idle'
+    posCurrentEpoch.value = 0
   }
 
-  mapboxgl.accessToken = MAPBOX_TOKEN
-  map = new mapboxgl.Map({
-    container: 'aiRanMapContainer',
-    style: 'mapbox://styles/mapbox/light-v11',
-    center: [120.9967, 24.7875], // 陽明交大
-    zoom: 16,
-    pitch: 45
-  })
-
-  map.on('load', () => {
-    // 添加 gNB markers
-    const gnbPositions = [
-      [120.9945, 24.7885],
-      [120.9975, 24.7865],
-      [120.9990, 24.7880],
-      [120.9955, 24.7860]
-    ]
-
-    gnbPositions.forEach(pos => {
-      const el = document.createElement('div')
-      el.className = 'gnb-marker'
-      el.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#000"/><path d="M12 6c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2s2-.9 2-2V8c0-1.1-.9-2-2-2z" fill="#FFD700"/></svg>'
-
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat(pos as [number, number])
-        .addTo(map!)
-      mapMarkers.push(marker)
-    })
-
-    // 添加 heatmap (簡化版)
-    if (showHeatmap.value && map) {
-      map.addSource('heatmap-source', {
-        type: 'geojson',
+  // 初始化 Positioning MSE Loss 圖表 (雙線：training + validation)
+  function initPosLossChart() {
+    if (posLossChartRef.value) {
+      if (posLossChart) posLossChart.destroy()
+      posLossChart = new Chart(posLossChartRef.value, {
+        type: 'line',
         data: {
-          type: 'FeatureCollection',
-          features: gnbPositions.map(pos => ({
-            type: 'Feature' as const,
-            properties: { intensity: Math.random() },
-            geometry: { type: 'Point' as const, coordinates: pos }
-          }))
-        }
-      })
-
-      map.addLayer({
-        id: 'heatmap-layer',
-        type: 'heatmap',
-        source: 'heatmap-source',
-        paint: {
-          'heatmap-weight': ['get', 'intensity'],
-          'heatmap-intensity': 1,
-          'heatmap-radius': 50,
-          'heatmap-opacity': 0.7
+          labels: [],
+          datasets: [
+            {
+              label: 'training',
+              data: [],
+              borderColor: '#2196F3',
+              backgroundColor: 'transparent',
+              tension: 0.1,
+              borderWidth: 2
+            },
+            {
+              label: 'validation',
+              data: [],
+              borderColor: '#FF9800',
+              backgroundColor: 'transparent',
+              tension: 0.1,
+              borderWidth: 2,
+              borderDash: [5, 5]
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'loss', position: 'top' },
+            legend: { display: true, position: 'top' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Epoch' } },
+            y: { title: { display: true, text: 'loss' }, min: 0, max: 0.6 }
+          }
         }
       })
     }
+  }
+
+  // 更新 Positioning MSE Loss 圖表
+  function updatePosLossChart() {
+    const epoch = posCurrentEpoch.value
+
+    if (posLossChart) {
+      posLossChart.data.labels?.push(epoch.toString())
+      // 模擬 training loss 下降曲線
+      const trainingLoss = 0.5 * Math.exp(-epoch / 100) + 0.05 + Math.random() * 0.02
+      // 模擬 validation loss (略高於 training loss)
+      const validationLoss = 0.5 * Math.exp(-epoch / 120) + 0.15 + Math.random() * 0.03
+      posLossChart.data.datasets[0].data.push(trainingLoss)
+      posLossChart.data.datasets[1].data.push(validationLoss)
+      posLossChart.update('none')
+
+      // 更新最終結果
+      posTrainingResults.value.trainingLoss = trainingLoss
+      posTrainingResults.value.validationLoss = validationLoss
+    }
+  }
+
+  // 初始化 NES 訓練圖表
+  function initTrainingCharts() {
+    // Reward Chart
+    if (rewardChartRef.value) {
+      if (rewardChart) rewardChart.destroy()
+      rewardChart = new Chart(rewardChartRef.value, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'reward',
+              data: [],
+              borderColor: '#FFD700',
+              backgroundColor: 'transparent',
+              tension: 0.1
+            },
+            {
+              label: 'reward (MA10)',
+              data: [],
+              borderColor: '#00CED1',
+              backgroundColor: 'transparent',
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Reward over Epochs (with MA10)' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'epoch' } },
+            y: { title: { display: true, text: 'value' }, min: 0.4, max: 1.1 }
+          }
+        }
+      })
+    }
+
+    // Critic Loss Chart
+    if (criticLossChartRef.value) {
+      if (criticLossChart) criticLossChart.destroy()
+      criticLossChart = new Chart(criticLossChartRef.value, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Critic Loss',
+            data: [],
+            borderColor: '#FFA500',
+            backgroundColor: 'transparent',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Critic Loss over Epochs' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'epoch' } },
+            y: { title: { display: true, text: 'critic_loss' } }
+          }
+        }
+      })
+    }
+
+    // Actor Loss Chart
+    if (actorLossChartRef.value) {
+      if (actorLossChart) actorLossChart.destroy()
+      actorLossChart = new Chart(actorLossChartRef.value, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Actor Loss',
+            data: [],
+            borderColor: '#FFA500',
+            backgroundColor: 'transparent',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Actor Loss over Epochs' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'epoch' } },
+            y: { title: { display: true, text: 'actor_loss' } }
+          }
+        }
+      })
+    }
+  }
+
+  // 更新訓練圖表
+  function updateTrainingCharts() {
+    const epoch = currentEpoch.value
+
+    if (rewardChart) {
+      rewardChart.data.labels?.push(epoch.toString())
+      const reward = 0.5 + Math.random() * 0.5
+      const rewardMA = 0.7 + Math.random() * 0.3
+      rewardChart.data.datasets[0].data.push(reward)
+      rewardChart.data.datasets[1].data.push(rewardMA)
+      rewardChart.update('none')
+    }
+
+    if (criticLossChart) {
+      criticLossChart.data.labels?.push(epoch.toString())
+      const loss = 0.3 * Math.exp(-epoch / 300) + Math.random() * 0.02
+      criticLossChart.data.datasets[0].data.push(loss)
+      criticLossChart.update('none')
+    }
+
+    if (actorLossChart) {
+      actorLossChart.data.labels?.push(epoch.toString())
+      const loss = -1.2 - Math.random() * 0.8
+      actorLossChart.data.datasets[0].data.push(loss)
+      actorLossChart.update('none')
+    }
+  }
+
+  // 初始化地圖
+  function initMap() {
+    const container = document.getElementById('aiRanMapContainer')
+    if (!container) return
+
+    // 清除舊地圖
+    if (map) {
+      mapMarkers.forEach(m => m.remove())
+      mapMarkers.length = 0
+      map.remove()
+      map = null
+    }
+
+    mapboxgl.accessToken = MAPBOX_TOKEN
+    map = new mapboxgl.Map({
+      container: 'aiRanMapContainer',
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [120.9967, 24.7875], // 陽明交大
+      zoom: 16,
+      pitch: 45
+    })
+
+    map.on('load', () => {
+      // 添加 gNB markers
+      const gnbPositions = [
+        [120.9945, 24.7885],
+        [120.9975, 24.7865],
+        [120.9990, 24.7880],
+        [120.9955, 24.7860]
+      ]
+
+      gnbPositions.forEach(pos => {
+        const el = document.createElement('div')
+        el.className = 'gnb-marker'
+        el.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#000"/><path d="M12 6c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2s2-.9 2-2V8c0-1.1-.9-2-2-2z" fill="#FFD700"/></svg>'
+
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat(pos as [number, number])
+          .addTo(map!)
+        mapMarkers.push(marker)
+      })
+
+      // 添加 heatmap (簡化版)
+      if (showHeatmap.value && map) {
+        map.addSource('heatmap-source', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: gnbPositions.map(pos => ({
+              type: 'Feature' as const,
+              properties: { intensity: Math.random() },
+              geometry: { type: 'Point' as const, coordinates: pos }
+            }))
+          }
+        })
+
+        map.addLayer({
+          id: 'heatmap-layer',
+          type: 'heatmap',
+          source: 'heatmap-source',
+          paint: {
+            'heatmap-weight': ['get', 'intensity'],
+            'heatmap-intensity': 1,
+            'heatmap-radius': 50,
+            'heatmap-opacity': 0.7
+          }
+        })
+      }
+    })
+  }
+
+  onMounted(() => {
+    log.lifecycle('mounted')
+    nextTick(() => {
+      log.mapInit('Initializing map')
+      initMap()
+    })
   })
-}
 
-onMounted(() => {
-  nextTick(() => {
-    initMap()
+  onUnmounted(() => {
+    log.lifecycle('unmounting')
+    // 清除定時器
+    if (finetuneInterval) {
+      clearInterval(finetuneInterval)
+    }
+    if (posFinetuneInterval) {
+      clearInterval(posFinetuneInterval)
+    }
+
+    // 清除地圖
+    if (map) {
+      mapMarkers.forEach(m => m.remove())
+      map.remove()
+    }
+
+    // 清除 NES 圖表
+    if (rewardChart) rewardChart.destroy()
+    if (criticLossChart) criticLossChart.destroy()
+    if (actorLossChart) actorLossChart.destroy()
+    // 清除 Positioning 圖表
+    if (posLossChart) posLossChart.destroy()
+    log.lifecycle('unmounted')
   })
-})
-
-onUnmounted(() => {
-  // 清除定時器
-  if (finetuneInterval) {
-    clearInterval(finetuneInterval)
-  }
-  if (posFinetuneInterval) {
-    clearInterval(posFinetuneInterval)
-  }
-
-  // 清除地圖
-  if (map) {
-    mapMarkers.forEach(m => m.remove())
-    map.remove()
-  }
-
-  // 清除 NES 圖表
-  if (rewardChart) rewardChart.destroy()
-  if (criticLossChart) criticLossChart.destroy()
-  if (actorLossChart) actorLossChart.destroy()
-  // 清除 Positioning 圖表
-  if (posLossChart) posLossChart.destroy()
-})
 </script>
 
 <style scoped>
@@ -898,15 +906,17 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
+  padding: 12px 16px;
 }
 
 .model-select {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  max-width: 180px;
+  flex-shrink: 0;
 }
 
 .control-btn {
-  width: 100%;
+  max-width: 180px;
   height: 40px;
   font-size: 13px;
   font-weight: 500;
@@ -930,6 +940,8 @@ onUnmounted(() => {
 .action-btn {
   flex: 1;
   height: 36px;
+  min-width: 70px;
+  max-width: 90px;
   font-size: 12px;
   text-transform: none;
   border-radius: 18px;

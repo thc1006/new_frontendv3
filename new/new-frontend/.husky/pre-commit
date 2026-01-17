@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Run lint-staged to check and fix code style
+npx lint-staged

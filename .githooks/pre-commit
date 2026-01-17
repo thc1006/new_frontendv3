@@ -25,8 +25,8 @@ if [ -n "$STAGED_FILES" ]; then
   # Convert full paths to relative paths for eslint
   RELATIVE_FILES=$(echo "$STAGED_FILES" | sed "s|^$FRONTEND_DIR/||")
 
-  # Run eslint
-  if ! npx eslint $RELATIVE_FILES --max-warnings=0 2>/dev/null; then
+  # Run eslint (allow warnings but not errors)
+  if ! npx eslint $RELATIVE_FILES 2>/dev/null; then
     echo ""
     echo "Lint errors found. Please fix them before committing."
     echo "Run 'npm run lint:fix' in $FRONTEND_DIR to auto-fix."

@@ -87,19 +87,42 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Fallback for access denied or project not found -->
+    <v-row v-else>
+      <v-col cols="12" class="text-center">
+        <v-alert type="warning" class="mb-4">
+          <template v-if="!projectExists">
+            Project not found. The project may have been deleted or does not exist.
+          </template>
+          <template v-else-if="!hasProjectAccess">
+            You do not have access to this project.
+          </template>
+          <template v-else>
+            Unable to load project. Please try again.
+          </template>
+        </v-alert>
+        <v-btn color="primary" @click="handleDialogClose">
+          Return to Projects
+        </v-btn>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
 <script setup lang="ts">
   import { useRoute, useRouter } from 'vue-router'
   import { useQuery } from '@tanstack/vue-query'
-  import { ref, computed, watchEffect, nextTick, onUnmounted, watch } from 'vue'
+  import { ref, computed, watchEffect, nextTick, onUnmounted, watch, onMounted } from 'vue'
   import mapboxgl from 'mapbox-gl'
   import 'mapbox-gl/dist/mapbox-gl.css'
   import 'threebox-plugin/dist/threebox.css'
   import * as Threebox from 'threebox-plugin'
+  import { createModuleLogger } from '~/utils/logger'
   import { useUserStore } from '~/stores/user'
   import * as THREE from 'three'
+
+  const log = createModuleLogger('Overviews')
 
   declare global {
     interface Window {
@@ -253,24 +276,39 @@
     router.push('/')
   }
 
-  // Wait for element to appear in DOM
-  const waitForElement = (selector: string) => {
-    return new Promise(resolve => {
-      if (document.getElementById(selector)) {
-        return resolve(document.getElementById(selector));
+  // Wait for element to appear in DOM with timeout
+  const waitForElement = (selector: string, timeout = 10000): Promise<HTMLElement | null> => {
+    log.debug(`waitForElement: waiting for #${selector}`)
+    return new Promise((resolve) => {
+      const element = document.getElementById(selector)
+      if (element) {
+        log.debug(`waitForElement: #${selector} found immediately`)
+        return resolve(element)
       }
+
       const observer = new MutationObserver(() => {
-        if (document.getElementById(selector)) {
-          observer.disconnect();
-          resolve(document.getElementById(selector));
+        const el = document.getElementById(selector)
+        if (el) {
+          observer.disconnect()
+          clearTimeout(timeoutId)
+          log.debug(`waitForElement: #${selector} found via observer`)
+          resolve(el)
         }
-      });
+      })
+
       observer.observe(document.body, {
         childList: true,
         subtree: true
-      });
-    });
-  };
+      })
+
+      // Timeout to prevent infinite waiting
+      const timeoutId = setTimeout(() => {
+        observer.disconnect()
+        log.warn(`waitForElement: #${selector} not found within ${timeout}ms`)
+        resolve(null)
+      }, timeout)
+    })
+  }
 
   const modelEditEnabled = ref(false)
   watch(modelEditEnabled, (enabled) => {
@@ -432,24 +470,39 @@
   };
 
   watchEffect(() => {
+    log.debug('watchEffect triggered', {
+      isLoadingProject: isLoadingProject.value,
+      projectExists: projectExists.value,
+      hasProjectAccess: hasProjectAccess.value
+    })
     if (!isLoadingProject.value && projectExists.value && hasProjectAccess.value) {
+      log.info('Conditions met, initializing map')
       nextTick(async () => {
-        await waitForElement('mapContainer');
-        initializeMap();
-      });
+        const container = await waitForElement('mapContainer')
+        if (container) {
+          initializeMap()
+        } else {
+          log.error('Map container not found after waiting')
+        }
+      })
     }
-  });
+  })
 
   // Initialize map
   const initializeMap = async() => {
-    if (map) return;
-    const mapContainer = document.getElementById('mapContainer');
+    log.mapInit('initializeMap called')
+    if (map) {
+      log.debug('Map already initialized, skipping')
+      return
+    }
+    const mapContainer = document.getElementById('mapContainer')
     if (!mapContainer) {
-      console.error('Map container not found');
-      return;
+      log.error('Map container not found')
+      return
     }
     try {
-      mapboxgl.accessToken = mapAccessToken;
+      log.mapInit('Creating Mapbox instance')
+      mapboxgl.accessToken = mapAccessToken
       // Cast runtime config value to the expected Mapbox style type to satisfy TypeScript
       const initialStyle = (isOnline ? onlineStyle : offlineStyle) as string | mapboxgl.StyleSpecification | undefined
 
@@ -465,16 +518,18 @@
         center: mapCenter.value,
         zoom: mapZoom,
         pitch: mapPitch,
-      });
-      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }));
-      map.addControl(new mapboxgl.ScaleControl());
+      })
+      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }))
+      map.addControl(new mapboxgl.ScaleControl())
       map?.on('style.load', () => {
-        load3DModel();
-      });
+        log.mapInit('Map style loaded, loading 3D model')
+        load3DModel()
+      })
+      log.mapInit('Map initialized successfully')
     } catch (error) {
-      console.error('Error initializing map:', error);
+      log.error('Error initializing map', { error })
     }
-  };
+  }
 
   const heatmapEnabled = ref(false)
   const HeatmapTypeEnum = {
@@ -511,15 +566,21 @@
   function updateHeatmap() {
     lastUpdatedTime.value = new Date().toISOString().slice(0, 10)
   }
+  onMounted(() => {
+    log.lifecycle('mounted', { projectId: projectId.value })
+  })
+
   onUnmounted(() => {
+    log.lifecycle('unmounting', { projectId: projectId.value })
     if (map) {
-      map.remove();
-      map = null;
+      map.remove()
+      map = null
     }
     if (window.tb) {
-      window.tb = null;
+      window.tb = null
     }
-  });
+    log.lifecycle('unmounted')
+  })
 </script>
 
 <style scoped>

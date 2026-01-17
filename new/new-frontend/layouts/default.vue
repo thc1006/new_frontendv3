@@ -97,10 +97,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
+  import { ref, computed, watch, onMounted } from 'vue'
   import { useUserStore } from '~/stores/user'
   import { useRoute, useRouter } from 'vue-router'
   import { navigateTo } from 'nuxt/app'
+  import { createModuleLogger } from '~/utils/logger'
+
+  const log = createModuleLogger('Layout')
 
   const config = useRuntimeConfig()
   const logoStyle = config.public.logoStyle
@@ -109,22 +112,25 @@
   const userStore = useUserStore()
   const route = useRoute()
   const router = useRouter()
-  
+  const isNavigating = ref(false)
+
   const projectId = ref(route.params.projectId ? Number(route.params.projectId) : null)
   const isLoggedIn = computed(() => !!userStore.user)
   const showAssistant = ref(false)
-  
+
   const isInProjectContext = computed(() => {
-    return route.path.startsWith('/projects/') && 
-      route.path !== '/projects/create' && 
+    return route.path.startsWith('/projects/') &&
+      route.path !== '/projects/create' &&
       !!route.params.projectId
   })
 
+  log.lifecycle('setup:start', { path: route.path })
   await userStore.fetchUser()
-  
+  log.lifecycle('setup:userFetched', { user: userStore.user?.account })
 
   watch(() => route.params.projectId, (newVal) => {
     projectId.value = newVal ? Number(newVal) : null
+    log.debug('projectId changed', { projectId: projectId.value })
   })
 
   const mainMenu = [
@@ -133,9 +139,6 @@
     { title: 'User List', to: '/users', requiredRole: 'ADMIN' },
     { title: 'Brands', to: '/brands', requiredRole: 'ADMIN' },
     { title: 'AI Models', to: '/ai-models', requiredRole: 'ADMIN'},
-    /*{ title: 'Upload AI Model', to: '/upload' },
-    { title: 'Scenario', to: '/scenario' },
-    { title: 'Unapproved Model', to: '/unapproved-model', requiredRole: 'ADMIN' },*/
   ]
 
   const userRole = computed(() => userStore.user?.role ?? '')
@@ -171,10 +174,20 @@
     { title: 'Projects List', to: '/' }
   ])
 
-  router.afterEach((to) => {
-    if (to.name ==='overviews' || to.path.includes('/overviews')){
-      window.location.reload()
-    }
+  // Navigation logging - removed window.location.reload() to fix blank page issue
+  router.beforeEach((to, from) => {
+    log.info(`Navigation starting: ${from.path} → ${to.path}`)
+    isNavigating.value = true
+  })
+
+  router.afterEach((to, from) => {
+    log.info(`Navigation completed: ${from.path} → ${to.path}`)
+    isNavigating.value = false
+  })
+
+  router.onError((error) => {
+    log.error('Navigation error', { error: error.message })
+    isNavigating.value = false
   })
 
   const currentMenu = computed(() => {
@@ -190,7 +203,7 @@
       route.path === '/register'
     )
   })
-  
+
   function gotoTFN() {
     window.open('https://www.twmsolution.com/internet/index.html', '_blank')
   }
@@ -203,32 +216,44 @@
   function toggleDrawer() {
     if (!isSidebarDisabled.value) {
       drawer.value = !drawer.value
+      log.debug('Drawer toggled', { open: drawer.value })
     }
   }
 
   // Handle AI assistant
   async function openAssistant() {
-    console.log('啟動小幫手')
+    log.info('Opening AI assistant')
     showAssistant.value = true
   }
 
   // Handle user logout and redirect to login page
   async function logout() {
+    log.info('Logout initiated')
     try {
       await userStore.logout()
-    } 
-    catch {
-    // neglect error
-    } 
-    finally {
-      router.push('/login')
-      window.location.reload()
+      log.info('Logout successful')
+    } catch (error) {
+      log.error('Logout error', { error })
+    } finally {
+      // Use Vue router navigation instead of window.location.reload()
+      await navigateTo('/login', { replace: true })
     }
   }
 
-  function menuNavigate(to: string) {
-    navigateTo(to)
+  // Menu navigation with proper async handling
+  async function menuNavigate(to: string) {
+    log.info(`Menu navigate to: ${to}`)
+    drawer.value = false
+    try {
+      await navigateTo(to)
+    } catch (error) {
+      log.error('Navigation failed', { to, error })
+    }
   }
+
+  onMounted(() => {
+    log.lifecycle('mounted', { path: route.path })
+  })
 </script>
 
 <style scoped>

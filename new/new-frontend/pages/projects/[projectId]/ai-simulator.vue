@@ -887,6 +887,9 @@
     Legend,
     LineController
   } from 'chart.js'
+  import { createModuleLogger } from '~/utils/logger'
+
+  const log = createModuleLogger('AISimulator')
 
   // 註冊 Chart.js 組件
   Chart.register(
@@ -900,6 +903,7 @@
     LineController
   )
 
+  log.lifecycle('setup:start')
   const config = useRuntimeConfig()
   const isOnline = config.public?.isOnline
 
@@ -1559,8 +1563,8 @@
     }
   }
 
-  // 更新模型
-  function updateModel() {
+  // 更新模型 (供未來使用)
+  function _updateModel() {
     snackbar.value = {
       show: true,
       text: 'Update 功能尚未實作 (需後端 API: POST /ai-simulator/pretrain/update)',
@@ -1676,25 +1680,25 @@
     let spread = 0.001
 
     switch (scenario) {
-      case '上班':
-        count = 12
-        spread = 0.002
-        break
-      case '下班':
-        count = 15
-        spread = 0.0025
-        break
-      case '上課1/隨機':
-        count = 8
-        spread = 0.0015
-        break
-      case '上課2/同步':
-        count = 10
-        spread = 0.0018
-        break
-      default:
-        count = 10
-        spread = 0.002
+    case '上班':
+      count = 12
+      spread = 0.002
+      break
+    case '下班':
+      count = 15
+      spread = 0.0025
+      break
+    case '上課1/隨機':
+      count = 8
+      spread = 0.0015
+      break
+    case '上課2/同步':
+      count = 10
+      spread = 0.0018
+      break
+    default:
+      count = 10
+      spread = 0.002
     }
 
     for (let i = 0; i < count; i++) {
@@ -2708,10 +2712,13 @@
   })
 
   onMounted(() => {
+    log.lifecycle('mounted')
+    log.mapInit('Initializing main map')
     initializeMap()
   })
 
   onUnmounted(() => {
+    log.lifecycle('unmounting')
     if (map) {
       map.remove()
       map = null
@@ -2746,6 +2753,7 @@
     }
     destroyCharts()
     destroyNesFinetuneCharts()
+    log.lifecycle('unmounted')
   })
 </script>
 
@@ -2832,29 +2840,30 @@
 .nes-controls {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  flex: 1;
+  gap: 12px;
+  padding: 16px 20px;
 }
 
 /* Positioning 控制面板 */
 .positioning-controls {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  flex: 1;
+  gap: 12px;
+  padding: 16px 20px;
 }
 
 .model-select {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  max-width: 200px;
+  flex-shrink: 0;
 }
 
 .control-btn {
-  height: 50px;
+  height: 44px;
   border-radius: 50px !important;
-  font-size: 18px !important;
+  font-size: 16px !important;
   text-transform: none;
+  max-width: 200px;
 }
 
 .panel-actions {
@@ -2862,11 +2871,14 @@
   gap: 12px;
   padding: 20px;
   justify-content: center;
+  margin-top: auto;
 }
 
 .action-btn {
   flex: 1;
   height: 40px;
+  min-width: 80px;
+  max-width: 100px;
   border-radius: 50px !important;
   text-transform: none;
 }
