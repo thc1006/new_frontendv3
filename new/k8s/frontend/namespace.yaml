@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: wisdon
+  name: wisdon-frontend
   labels:
-    app: wisdon
+    app: wisdon-frontend
     environment: production

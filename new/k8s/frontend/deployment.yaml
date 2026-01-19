@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wisdon-frontend
-  namespace: wisdon
+  name: frontend
+  namespace: wisdon-frontend
   labels:
-    app: wisdon-frontend
+    app: frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: wisdon-frontend
+      app: frontend
   template:
     metadata:
       labels:
-        app: wisdon-frontend
+        app: frontend
     spec:
       containers:
         - name: frontend
-          image: wisdon-frontend:latest
+          image: localhost/wisdon-frontend:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
