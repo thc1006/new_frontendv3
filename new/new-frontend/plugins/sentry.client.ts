@@ -18,7 +18,9 @@
 
 import * as Sentry from '@sentry/vue'
 
-export default defineNuxtPlugin((nuxtApp) => {
+type SentryInstance = typeof Sentry | null
+
+export default defineNuxtPlugin<{ sentry: SentryInstance }>((nuxtApp) => {
   const config = useRuntimeConfig()
   const router = useRouter()
 
