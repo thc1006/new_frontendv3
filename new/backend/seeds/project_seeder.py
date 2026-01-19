@@ -20,6 +20,7 @@ namedict = {
     1: "Nanzih",
     2: "Tianliao",
     3: "Kaohsiung_firestation",
+    4: "工程四館",  # Engineering Building 4 - NCTU/NYCU INDOOR project
 }
 
 class ProjectSeeder(Seeder):
@@ -29,8 +30,13 @@ class ProjectSeeder(Seeder):
         self.priority = 1
 
     def run(self):
-        coor = ((22.735392934997535, 120.3299527377498),(22.825272535366096, 120.40562628812211),(22.593318429467317, 120.30714867018781))
-        for i in range(3):
+        coor = (
+            (22.735392934997535, 120.3299527377498),    # Nanzih
+            (22.825272535366096, 120.40562628812211),   # Tianliao
+            (22.593318429467317, 120.30714867018781),   # Kaohsiung_firestation
+            (24.7875, 120.9960),                         # 工程四館 (Engineering Building 4, NCTU/NYCU)
+        )
+        for i in range(4):
             data = {
                 "title": namedict.get(i+1),
                 "date": (date.today() - timedelta(days=i)).isoformat(),

@@ -574,17 +574,32 @@
   font-size: 15px;
 }
 
-/* 自訂 marker 樣式 */
+/* 自訂 marker 樣式 - 使用 CSS filter 和 width/height 避免覆蓋 mapbox transform */
 :global(.custom-marker) {
   cursor: pointer;
-  transition: transform 0.2s ease;
-  transform-origin: bottom center;
+  width: 32px;
+  height: 42px;
+  z-index: 1;
+}
+
+:global(.custom-marker svg) {
+  width: 100%;
+  height: 100%;
+  transition: filter 0.2s ease, width 0.2s ease, height 0.2s ease;
 }
 
 :global(.custom-marker:hover),
 :global(.custom-marker.marker-hovered) {
-  transform: scale(1.2);
-  z-index: 100;
+  z-index: 100 !important;
+  width: 38px;
+  height: 50px;
+  margin-left: -3px;
+  margin-top: -8px;
+}
+
+:global(.custom-marker:hover svg),
+:global(.custom-marker.marker-hovered svg) {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 /* RWD 響應式 */
