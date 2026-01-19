@@ -13,3 +13,5 @@ data:
   NUXT_PUBLIC_OFFLINE_MAPBOX_GL_JS_URL: "http://127.0.0.1/tiles/styles/basic-preview/style.json"
   NODE_ENV: "production"
   NUXT_TELEMETRY_DISABLED: "1"
+  # Sentry Error Tracking (optional - set DSN to enable)
+  NUXT_PUBLIC_SENTRY_DSN: ""
