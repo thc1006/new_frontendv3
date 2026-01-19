@@ -88,9 +88,16 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Capture Vue errors
   nuxtApp.vueApp.config.errorHandler = (error, instance, info) => {
+    // Get component name (works with both Options API and Composition API)
+    const componentName = instance?.$options?.name ||
+                          instance?.$options?.__name ||
+                          instance?.$.type?.name ||
+                          instance?.$.type?.__name ||
+                          'UnknownComponent'
+
     Sentry.captureException(error, {
       extra: {
-        componentName: instance?.$options?.name,
+        componentName,
         info,
       },
     })
@@ -108,6 +115,9 @@ export default defineNuxtPlugin((nuxtApp) => {
       })
     })
   }
+
+  // Expose Sentry on window for use by logger utility
+  (window as unknown as { $sentry: typeof Sentry }).$sentry = Sentry
 
   console.log('[Sentry] Initialized successfully')
 
