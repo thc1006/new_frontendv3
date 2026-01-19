@@ -1,0 +1,19 @@
+name: "WiSDON Frontend CodeQL Config"
+
+# Paths to analyze
+paths:
+  - new/new-frontend
+
+# Paths to exclude from analysis
+paths-ignore:
+  - new/new-frontend/node_modules
+  - new/new-frontend/.nuxt
+  - new/new-frontend/.output
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/tests/**"
+
+# Use extended security queries
+queries:
+  - uses: security-extended
+  - uses: security-and-quality

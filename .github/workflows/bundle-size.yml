@@ -60,6 +60,9 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           clean: false
 
+      - name: Clean PR build output
+        run: rm -rf .output .nuxt
+
       - name: Install base dependencies
         run: npm ci
 

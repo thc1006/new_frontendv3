@@ -32,16 +32,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-          queries: security-extended,security-and-quality
-          config: |
-            paths:
-              - new/new-frontend
-            paths-ignore:
-              - new/new-frontend/node_modules
-              - new/new-frontend/.nuxt
-              - new/new-frontend/.output
-              - '**/*.test.ts'
-              - '**/*.spec.ts'
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
