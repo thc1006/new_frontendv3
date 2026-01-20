@@ -22,7 +22,7 @@
         <div>{{ brand.tx_power }}</div>
         <div>
           <v-btn color="primary" @click.stop="showBrandDetail(brand)">詳細</v-btn>
-          <v-btn color="error" style="margin-left:8px;" :disabled="!brand.brand_id" @click.stop="openDeleteDialog(brand.brand_id!)">刪除</v-btn>
+          <v-btn color="error" style="margin-left:8px;" :disabled="brand.brand_id == null" @click.stop="openDeleteDialog(brand.brand_id!)">刪除</v-btn>
         </div>
       </div>
     </div>
@@ -208,7 +208,7 @@
   }
 
   function openDeleteDialog(brandId: number): void {
-    if (brandId == null || Number.isNaN(brandId)) return
+    if (brandId == null) return
     deleteTargetId.value = brandId
     confirmDeleteDialog.value = true
   }

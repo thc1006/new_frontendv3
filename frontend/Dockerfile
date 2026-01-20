@@ -4,8 +4,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10 --activate
+# Install pnpm (pinned to specific version for reproducible builds)
+RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 
 # Install OS deps only if you need native modules (e.g., sharp)
 # RUN apk add --no-cache python3 make g++ libc6-compat

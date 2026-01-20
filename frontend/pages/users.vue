@@ -27,7 +27,7 @@
         <div @click.stop>
           <v-btn
             color="error"
-            :disabled="user.role === 'ADMIN' || !user.user_id"
+            :disabled="user.role === 'ADMIN' || user.user_id == null"
             class="delete-btn"
             @click="deleteUser(user.user_id!)"
           >刪除</v-btn>

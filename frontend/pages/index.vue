@@ -178,7 +178,7 @@
   // TODO: 後端目前無 category 欄位，暫時使用 project_id 奇偶數模擬分類
   const outdoorProjects = computed(() => {
     if (!projects.value) return []
-    return projects.value.filter((p: Project) => {
+    return projects.value.filter(p => {
       const id = getProjectId(p)
       return id > 0 && id % 2 === 1
     })
@@ -186,7 +186,7 @@
 
   const indoorProjects = computed(() => {
     if (!projects.value) return []
-    return projects.value.filter((p: Project) => {
+    return projects.value.filter(p => {
       const id = getProjectId(p)
       return id > 0 && id % 2 === 0
     })
@@ -241,7 +241,7 @@
     // 建立新的 markers
     const coords: [number, number][] = []
 
-    projects.value?.forEach((project: Project) => {
+    projects.value?.forEach(project => {
       const projectCoords = getProjectCoords(project)
       if (!projectCoords) return
 
