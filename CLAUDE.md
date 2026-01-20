@@ -14,23 +14,21 @@ HPA 要 mongoDB
 
 ---
 
-## 待處理任務 (Pending Tasks)
+## 已完成任務 (Completed Tasks)
 
-### ⏳ 資料夾重整 (Folder Restructuring) - 未完成
+### ✅ 資料夾重整 (Folder Restructuring) - 已完成
 
-**目標：** 依照軟體工程最佳實踐重新命名資料夾並歸納檔案
+**完成於：** PR #33, #34, #35
 
-**待執行項目：**
-- [ ] 評估 `frontend` 是否應該重命名為 `frontend` 或扁平化結構
-- [ ] 檢查所有 import 路徑的相依性
-- [ ] 確保 K8s 部署配置中的路徑正確
-- [ ] 更新所有相關的 CI/CD 配置
-- [ ] 驗證所有功能在重整後正常運作
-
-**注意事項：**
-- 移動檔案前必須確保相依性問題已解決
-- 確保路徑不受影響，所有 function 仍可正常呼叫
-- 需要全面測試以確認無破壞性變更
+**已執行項目：**
+- [x] 扁平化資料夾結構 (`new/new-frontend` → `frontend`)
+- [x] 檢查並更新所有 import 路徑的相依性
+- [x] 確保 K8s 部署配置中的路徑正確
+- [x] 更新所有相關的 CI/CD 配置
+- [x] 驗證所有功能在重整後正常運作
+- [x] TypeScript 遷移完成
+- [x] MongoDB HPA 配置優化 (maxReplicas: 1 防止資料損毀)
+- [x] 安全性強化 (readOnlyRootFilesystem)
 
 ---
 
