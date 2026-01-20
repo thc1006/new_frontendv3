@@ -32,20 +32,9 @@ export const useAssistantStore = defineStore('assistant', () => {
   const userStore = useUserStore()
   const { $apiClient } = useNuxtApp();
 
-  /**
-   * Chat sessions indexed by string ID.
-   *
-   * Design Decision: We use string keys even though the backend returns numeric IDs because:
-   * 1. JavaScript object keys are internally strings anyway
-   * 2. Record<string, T> is idiomatic for object dictionaries in TypeScript
-   * 3. Consistent conversion at API boundaries (String() in, Number() out)
-   *
-   * Conversion pattern:
-   * - API → Store: String(numericId) at lines where we receive data
-   * - Store → API: Number(stringId) at lines where we call API methods
-   */
-  const chats = ref<Record<string, ChatSession>>({})
-  const activeChatId = ref<string>('')
+  // Use Map with numeric keys to match backend ID type (eliminates String/Number conversions)
+  const chats = ref<Map<number, ChatSession>>(new Map())
+  const activeChatId = ref<number | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -57,11 +46,10 @@ export const useAssistantStore = defineStore('assistant', () => {
 
     const newTitle = `${userStore.user?.user_id}_${projectId}_chat_${Date.now()}`
     const response = await $apiClient.chat.chatSessionsCreate(projectId, { title: newTitle })
-    const chatId = String((response.data as CreateChatResponse)['new chat session id'])
+    const chatId = (response.data as CreateChatResponse)['new chat session id']
 
-    chats.value[chatId] = { title: newTitle, message: [] }
+    chats.value.set(chatId, { title: newTitle, message: [] })
     activeChatId.value = chatId
-
   }
 
   async function loadChatSessions(projectId: number) {
@@ -70,88 +58,94 @@ export const useAssistantStore = defineStore('assistant', () => {
       const response = await $apiClient.chat.chatSessionsList(projectId)
       const sessions = response.data as ChatSessionListItem[]
 
-      chats.value = {}
+      chats.value.clear()
       sessions.forEach(session => {
-        const id = String(session['chat session id'])
-        chats.value[id] = {
+        const id = session['chat session id']
+        chats.value.set(id, {
           title: session['chat session title'],
           message: []
-        }
+        })
       })
-    } catch (error) {
-      console.error('載入聊天室列表錯誤', error)
-      throw error
+    } catch (err) {
+      console.error('載入聊天室列表錯誤', err)
+      throw err
     } finally {
       isLoading.value = false
     }
   }
 
-  async function loadChatMessages(chatId: string) {
-    if (!chats.value[chatId]) return
-    
+  async function loadChatMessages(chatId: number) {
+    if (!chats.value.has(chatId)) return
+
     try {
-      const response = await $apiClient.chat.messagesList(Number(chatId))
+      const response = await $apiClient.chat.messagesList(chatId)
       const messages = response.data as ChatMessageResponse[]
 
-      chats.value[chatId].message = messages.map(msg => ({
-        role: msg['chat message role'],
-        content: msg['chat message content'],
-        time: msg['chat message created_at']
-      }))
-    } catch (error) {
-      console.error('載入聊天訊息失敗:', error)
-      throw error
-    }
-  }
-
-  async function deleteChat(chatId: string){
-    if(!chats.value[chatId]) return
-    
-    try {
-      await $apiClient.chat.chatSessionsDelete(Number(chatId))
-      Reflect.deleteProperty(chats.value, chatId)
-      if (activeChatId.value === chatId) {
-        activeChatId.value = ''
+      const chat = chats.value.get(chatId)
+      if (chat) {
+        chat.message = messages.map(msg => ({
+          role: msg['chat message role'],
+          content: msg['chat message content'],
+          time: msg['chat message created_at']
+        }))
       }
-    } catch (error) {
-      console.error('刪除聊天室失敗:', error)
-      throw error
+    } catch (err) {
+      console.error('載入聊天訊息失敗:', err)
+      throw err
     }
   }
 
-  async function switchChat(chatId: string){
-    if(chats.value[chatId]){
+  async function deleteChat(chatId: number) {
+    if (!chats.value.has(chatId)) return
+
+    try {
+      await $apiClient.chat.chatSessionsDelete(chatId)
+      chats.value.delete(chatId)
+      if (activeChatId.value === chatId) {
+        activeChatId.value = null
+      }
+    } catch (err) {
+      console.error('刪除聊天室失敗:', err)
+      throw err
+    }
+  }
+
+  async function switchChat(chatId: number) {
+    if (chats.value.has(chatId)) {
       activeChatId.value = chatId
       // Load messages if not already loaded
-      if (chats.value[chatId].message.length === 0) {
+      const chat = chats.value.get(chatId)
+      if (chat && chat.message.length === 0) {
         await loadChatMessages(chatId)
       }
     }
   }
 
   async function sendMessage(messageText: string) {
-    if(!activeChatId.value || !messageText.trim()) return
+    if (activeChatId.value === null || !messageText.trim()) return
 
     const chatId = activeChatId.value
+    const chat = chats.value.get(chatId)
+    if (!chat) return
+
     const userMessage: ChatMessage = {
       role: 'USER',
       content: messageText,
       time: new Date().toISOString()
     }
-    
-    chats.value[chatId].message.push(userMessage)
+
+    chat.message.push(userMessage)
     isLoading.value = true
     error.value = null
 
     try {
       // Send user message to API
-      const response = await $apiClient.chat.messagesCreate(Number(chatId), {
+      const response = await $apiClient.chat.messagesCreate(chatId, {
         role: 'USER',
         content: messageText,
         time: new Date().toISOString()
       })
 
-      
       // Add assistant response
       const responseData = response.data as SendMessageResponse
       const assistantMessage: ChatMessage = {
@@ -160,41 +154,51 @@ export const useAssistantStore = defineStore('assistant', () => {
         time: new Date().toISOString()
       }
 
-      chats.value[chatId].message.push(assistantMessage)
+      chat.message.push(assistantMessage)
 
     } catch (err: unknown) {
       console.error('發送訊息失敗:', err)
       error.value = err instanceof Error ? err.message : '發送訊息失敗'
-      
+
       // Add error response
       const errorMessage: ChatMessage = {
         role: 'ASSISTANT',
         content: '抱歉，我現在無法回答您的問題。請稍後再試或聯繫系統管理員。',
         time: new Date().toISOString()
       }
-      chats.value[chatId].message.push(errorMessage)
+      chat.message.push(errorMessage)
     } finally {
       isLoading.value = false
     }
   }
 
-  async function updateChatTitle(chatId: string, newTitle: string) {
-    if (!chats.value[chatId]) {
+  async function updateChatTitle(chatId: number, newTitle: string) {
+    const chat = chats.value.get(chatId)
+    if (!chat) {
       console.error('無法更新標題，聊天會話不存在');
       return;
     }
 
     try {
-      await $apiClient.chat.chatSessionsUpdate(Number(chatId), { title: newTitle });
-      chats.value[chatId].title = newTitle;
-    } catch (error) {
-      console.error('更新聊天標題失敗:', error);
-      throw error;
+      await $apiClient.chat.chatSessionsUpdate(chatId, { title: newTitle });
+      chat.title = newTitle;
+    } catch (err) {
+      console.error('更新聊天標題失敗:', err);
+      throw err;
     }
   }
 
   function clearError() {
     error.value = null
+  }
+
+  // Helper to get chat list as array for template iteration
+  function getChatList(): Array<{ id: number; title: string; message: ChatMessage[] }> {
+    return Array.from(chats.value.entries()).map(([id, session]) => ({
+      id,
+      title: session.title,
+      message: session.message
+    }))
   }
 
   return {
@@ -209,6 +213,7 @@ export const useAssistantStore = defineStore('assistant', () => {
     deleteChat,
     switchChat,
     updateChatTitle,
-    clearError
+    clearError,
+    getChatList
   }
 })
