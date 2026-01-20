@@ -12,7 +12,7 @@
 ### 1.1 背景
 本專案有兩個版本：
 - `legacy/`：第一版本（舊版）
-- `new/new-frontend/`：第二版本（上線中，未來主線）
+- `frontend/`：第二版本（上線中，未來主線）
 
 設計團隊提供了權威設計規範於 `new_design/` 目錄，包含 Figma 匯出的設計稿和 Nuxt 骨架頁面。需要將設計規範與現有前端進行對齊修復。
 
@@ -92,11 +92,11 @@
 ### 3.2 已完成功能
 
 #### Login UI (100%)
-- 路徑：`new/new-frontend/pages/login.vue`
+- 路徑：`frontend/pages/login.vue`
 - 測試：`tests/e2e/login.spec.ts` (4 個測試)
 
 #### AI Models 頁面 (Phase 1 完成)
-- 路徑：`new/new-frontend/pages/ai-models.vue`
+- 路徑：`frontend/pages/ai-models.vue`
 - 按鈕狀態：
 
 | 按鈕 | 前端 UI | 後端 API | 狀態 |
@@ -121,13 +121,13 @@
 - 測試：`tests/e2e/performance.spec.ts` (10 個測試)
 
 #### Profile 頁面 (Phase 3 完成)
-- 路徑：`new/new-frontend/pages/profile.vue`
+- 路徑：`frontend/pages/profile.vue`
 - 顯示用戶資訊：帳號、電子郵件、角色、建立日期
 - 修改密碼功能：含驗證（密碼長度、密碼一致性）
 - 測試：`tests/e2e/profile.spec.ts` (9 個測試)
 
 #### 導航選單 (Phase 4 完成)
-- 路徑：`new/new-frontend/layouts/default.vue`
+- 路徑：`frontend/layouts/default.vue`
 - Performance 子選單新增：AI Model Performance、RAN Slice Performance
 - 測試：`tests/e2e/navigation.spec.ts` (9 個測試)
 
@@ -315,8 +315,8 @@ POST  /primitive_ai_models/{id}/retrain  → 重新訓練
 **任務 5.1：建立頁面骨架與路由**
 - 目的：建立 AI Model Evaluation 頁面的基本結構
 - 檔案：
-  - 新增 `new/new-frontend/pages/projects/[projectId]/ai-model-evaluation.vue`
-  - 修改 `new/new-frontend/layouts/default.vue` (新增選單項目)
+  - 新增 `frontend/pages/projects/[projectId]/ai-model-evaluation.vue`
+  - 修改 `frontend/layouts/default.vue` (新增選單項目)
 - 測試策略：頁面可訪問、標題顯示正確
 - 驗收條件：瀏覽 `/projects/:id/ai-model-evaluation` 顯示頁面骨架
 - 回滾方式：刪除新檔案、還原選單修改
@@ -389,7 +389,7 @@ GET /projects/{projectId}/ai-model-evaluation/inference
 
 **設計來源**: `new_design/wisdON-nuxt-admin-pages/pages/admin/projects-list.vue`
 
-**目前實作**: `new/new-frontend/pages/index.vue`
+**目前實作**: `frontend/pages/index.vue`
 - 簡單的專案卡片列表
 - 無 INDOOR/OUTDOOR 分類
 - 無地圖背景
@@ -406,7 +406,7 @@ GET /projects/{projectId}/ai-model-evaluation/inference
 
 **任務 6.1：新增專案分類標籤**
 - 目的：顯示 OUTDOOR/INDOOR 分類標籤
-- 檔案：修改 `new/new-frontend/pages/index.vue`
+- 檔案：修改 `frontend/pages/index.vue`
 - UI 元素：
   - OUTDOOR 標籤 (圓角藥丸, 深灰底 rgba(55,54,72,0.48))
   - INDOOR 標籤 (同上)
@@ -416,7 +416,7 @@ GET /projects/{projectId}/ai-model-evaluation/inference
 
 **任務 6.2：升級專案卡片樣式**
 - 目的：對齊 Figma 設計的卡片外觀
-- 檔案：修改 `new/new-frontend/pages/index.vue`
+- 檔案：修改 `frontend/pages/index.vue`
 - 樣式變更：
   - 圓角 10px
   - 日期標籤 (藍色藥丸 #006ab5)
@@ -428,7 +428,7 @@ GET /projects/{projectId}/ai-model-evaluation/inference
 
 **任務 6.3：新增地圖背景 (可選)**
 - 目的：左側顯示地圖視覺元素
-- 檔案：修改 `new/new-frontend/pages/index.vue`
+- 檔案：修改 `frontend/pages/index.vue`
 - 實作選項：
   - A) 使用靜態圖片 (最簡單)
   - B) 使用 Mapbox 嵌入 (需評估效能)
@@ -438,7 +438,7 @@ GET /projects/{projectId}/ai-model-evaluation/inference
 
 **任務 6.4：新增建立專案按鈕**
 - 目的：藍色 "+ CREATE NEW PROJECT" 按鈕
-- 檔案：修改 `new/new-frontend/pages/index.vue`
+- 檔案：修改 `frontend/pages/index.vue`
 - UI 元素：
   - 藍底白字按鈕 (#006ab5)
   - 點擊導向 `/projects/create`
@@ -512,7 +512,7 @@ interface Project {
 
 ```bash
 # 1. TypeScript 類型檢查
-cd new/new-frontend && npx nuxi typecheck
+cd frontend && npx nuxi typecheck
 
 # 2. ESLint 檢查
 npm run lint
@@ -529,7 +529,7 @@ npm run build
 ## 7. 檔案結構參考（現有專案）
 
 ```
-new/new-frontend/
+frontend/
 ├── pages/
 │   ├── login.vue              # 登入（對齊 ✅）
 │   ├── register.vue           # 註冊（對齊 ✅）
@@ -598,7 +598,7 @@ new/new-frontend/
 
 ### 9.2 重要檔案路徑
 - 設計權威來源：`new_design/`
-- 現有前端：`new/new-frontend/`
+- 現有前端：`frontend/`
 - 專案規範：`CLAUDE.md`
 - 軟體工程規範：`專案軟體工程.md`、`過早抽象錯誤.md`
 

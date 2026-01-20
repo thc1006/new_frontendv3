@@ -3,7 +3,11 @@
 
 frontend:
   - changed-files:
-      - any-glob-to-any-file: 'new/new-frontend/**/*'
+      - any-glob-to-any-file: 'frontend/**/*'
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file: 'backend/**/*'
 
 ci:
   - changed-files:
@@ -11,7 +15,7 @@ ci:
 
 k8s:
   - changed-files:
-      - any-glob-to-any-file: 'new/k8s/**/*'
+      - any-glob-to-any-file: 'k8s/**/*'
 
 documentation:
   - changed-files:
@@ -22,7 +26,7 @@ documentation:
 tests:
   - changed-files:
       - any-glob-to-any-file:
-          - 'new/new-frontend/tests/**/*'
+          - 'frontend/tests/**/*'
           - '**/*.spec.ts'
           - '**/*.test.ts'
 
@@ -30,7 +34,7 @@ dependencies:
   - changed-files:
       - any-glob-to-any-file:
           - '**/package.json'
-          - '**/package-lock.json'
+          - '**/pnpm-lock.yaml'
 
 security:
   - changed-files:
@@ -41,11 +45,11 @@ security:
 
 components:
   - changed-files:
-      - any-glob-to-any-file: 'new/new-frontend/components/**/*'
+      - any-glob-to-any-file: 'frontend/components/**/*'
 
 pages:
   - changed-files:
-      - any-glob-to-any-file: 'new/new-frontend/pages/**/*'
+      - any-glob-to-any-file: 'frontend/pages/**/*'
 
 config:
   - changed-files:

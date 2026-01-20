@@ -87,8 +87,8 @@ new/
 #### @new/ 目前怎麼做、缺口是什麼
 
 **檔案位置：**
-- `/new/new-frontend/pages/login.vue`
-- `/new/new-frontend/pages/register.vue`
+- `/frontend/pages/login.vue`
+- `/frontend/pages/register.vue`
 
 **已實現：**
 - 登入：帳號/密碼 + Vue Query mutation + Snackbar 錯誤反饋
@@ -138,7 +138,7 @@ new/
 #### @new/ 目前怎麼做、缺口是什麼
 
 **檔案位置：**
-- `/new/new-frontend/pages/ai-models.vue`
+- `/frontend/pages/ai-models.vue`
 
 **已實現：**
 - 模型列表（表格顯示 + hover 效果）
@@ -251,13 +251,13 @@ new/
 ### @new/ 關鍵檔案
 
 **Login 系統：**
-- `/new/new-frontend/pages/login.vue` - 登入頁面 (140 行)
-- `/new/new-frontend/pages/register.vue` - 註冊頁面 (138 行)
-- `/new/new-frontend/stores/user.ts` - 使用者狀態
-- `/new/new-frontend/middleware/auth.global.ts` - 認證中介軟體
+- `/frontend/pages/login.vue` - 登入頁面 (140 行)
+- `/frontend/pages/register.vue` - 註冊頁面 (138 行)
+- `/frontend/stores/user.ts` - 使用者狀態
+- `/frontend/middleware/auth.global.ts` - 認證中介軟體
 
 **AI Models：**
-- `/new/new-frontend/pages/ai-models.vue` - AI 模型頁面 (265 行)
+- `/frontend/pages/ai-models.vue` - AI 模型頁面 (265 行)
 - `/new/backend/controllers/PrimitiveAIModel.py` - RESTful API
 
 **效能（待新增）：**

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Sentry Error Tracking Plugin for Nuxt 3
  *

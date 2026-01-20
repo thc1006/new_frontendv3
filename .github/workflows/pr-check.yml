@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
-      - 'new/new-frontend/**'
+      - 'frontend/**'
       - '.github/workflows/pr-check.yml'
 
 concurrency:
@@ -14,7 +14,7 @@ concurrency:
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '10'
-  WORKING_DIR: ./new/new-frontend
+  WORKING_DIR: ./frontend
 
 jobs:
   # ============================================
@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -72,7 +72,7 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: new/new-frontend/eslint-results.sarif
+          sarif_file: frontend/eslint-results.sarif
           category: "eslint"
           wait-for-processing: true
 
@@ -113,7 +113,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -146,7 +146,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -167,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nuxt-build
-          path: new/new-frontend/.output
+          path: frontend/.output
           retention-days: 1
 
   # ============================================

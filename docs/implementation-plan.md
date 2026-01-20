@@ -39,7 +39,7 @@
 
 ### 已完成 - AI Models 按鈕
 
-以下功能已在 `/new/new-frontend/pages/ai-models.vue` 實作完成：
+以下功能已在 `/frontend/pages/ai-models.vue` 實作完成：
 
 | 按鈕 | 狀態 | 說明 |
 |------|------|------|
@@ -75,9 +75,9 @@
 **目的：** 將硬編碼的 Grafana URL 移至環境變數
 
 **修改檔案：**
-- `/new/new-frontend/pages/performance/nes.vue`
-- `/new/new-frontend/pages/performance/mro.vue`
-- `/new/new-frontend/.env.example`（若存在）
+- `/frontend/pages/performance/nes.vue`
+- `/frontend/pages/performance/mro.vue`
+- `/frontend/.env.example`（若存在）
 
 **實作內容：**
 1. 在 `nuxt.config.ts` 或 `.env` 新增環境變數
@@ -109,7 +109,7 @@ git revert <commit-hash>
 **前置條件：** 後端完成 `GET /auth/check-account?account={account}`
 
 **修改檔案：**
-- `/new/new-frontend/pages/register.vue`
+- `/frontend/pages/register.vue`
 
 **實作內容：**
 1. 將 `checkAccountExists` 函數從 placeholder 改為實際 API 呼叫
@@ -122,7 +122,7 @@ git revert <commit-hash>
 **前置條件：** 後端完成 `GET /auth/check-email?email={email}`
 
 **修改檔案：**
-- `/new/new-frontend/pages/register.vue`
+- `/frontend/pages/register.vue`
 
 **實作內容：**
 1. 將 `checkEmailExists` 函數從 placeholder 改為實際 API 呼叫
@@ -135,7 +135,7 @@ git revert <commit-hash>
 **前置條件：** 後端完成 `PATCH /primitive_ai_models/{id}/enable`
 
 **修改檔案：**
-- `/new/new-frontend/pages/ai-models.vue`
+- `/frontend/pages/ai-models.vue`
 
 **實作內容：**
 1. 將 `handleToggleEnable` 函數從 placeholder 改為實際 API 呼叫
@@ -148,7 +148,7 @@ git revert <commit-hash>
 **前置條件：** 後端完成 `POST /primitive_ai_models/{id}/pretrain`
 
 **修改檔案：**
-- `/new/new-frontend/pages/ai-models.vue`
+- `/frontend/pages/ai-models.vue`
 
 **實作內容：**
 1. 將 `handlePretrain` 函數從 placeholder 改為實際 API 呼叫
@@ -161,7 +161,7 @@ git revert <commit-hash>
 **前置條件：** 後端完成 `GET /primitive_ai_models/{id}/preview`
 
 **修改檔案：**
-- `/new/new-frontend/pages/ai-models.vue`
+- `/frontend/pages/ai-models.vue`
 
 **實作內容：**
 1. 將 `handlePreview` 函數從 placeholder 改為實際 API 呼叫
@@ -174,7 +174,7 @@ git revert <commit-hash>
 **前置條件：** 後端完成 `POST /primitive_ai_models/{id}/retrain`
 
 **修改檔案：**
-- `/new/new-frontend/pages/ai-models.vue`
+- `/frontend/pages/ai-models.vue`
 
 **實作內容：**
 1. 將 `confirmRetrain` 函數從 placeholder 改為實際 API 呼叫
