@@ -21,7 +21,7 @@
           <div class="register-card">
             <!-- Logo -->
             <div class="logo-container">
-              <img src="/wisdon.png" alt="WiSDON logo" class="logo" />
+              <img src="/wisdon.png" alt="WiSDON logo" class="logo" >
             </div>
 
             <!-- 標題 -->
@@ -41,7 +41,7 @@
                   required
                   aria-required="true"
                   @input="debouncedCheckAccount(form.account)"
-                />
+                >
               </div>
 
               <!-- Email 欄位 -->
@@ -57,7 +57,7 @@
                   required
                   aria-required="true"
                   @input="debouncedCheckEmail(form.email)"
-                />
+                >
               </div>
 
               <!-- Password 欄位 -->
@@ -73,7 +73,7 @@
                     placeholder="Password"
                     required
                     aria-required="true"
-                  />
+                  >
                   <button
                     type="button"
                     class="password-toggle"
@@ -98,7 +98,7 @@
                     placeholder="Confirm Password"
                     required
                     aria-required="true"
-                  />
+                  >
                   <button
                     type="button"
                     class="password-toggle"
@@ -167,187 +167,187 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import type { RegisterRequest } from '~/apis/Api'
-import { navigateTo } from '#app'
+  import { ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { useMutation, useQueryClient } from '@tanstack/vue-query'
+  import type { RegisterRequest } from '~/apis/Api'
+  import { navigateTo } from '#app'
 
-// 表單欄位
-const form = ref<RegisterRequest>({ account: '', email: '', password: '' })
-const confirmPassword = ref('')
-const valid = ref(false)
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const formRef = ref<any>(null)
-const showSuccessDialog = ref(false)
+  // 表單欄位
+  const form = ref<RegisterRequest>({ account: '', email: '', password: '' })
+  const confirmPassword = ref('')
+  const valid = ref(false)
+  const showPassword = ref(false)
+  const showConfirmPassword = ref(false)
+  const formRef = ref<any>(null)
+  const showSuccessDialog = ref(false)
 
-// 錯誤與提示
-const errorMessage = ref('')
-const showError = ref(false)
-const showSuccess = ref(false)
-const popupMessage = ref('')
+  // 錯誤與提示
+  const errorMessage = ref('')
+  const showError = ref(false)
+  const showSuccess = ref(false)
+  const popupMessage = ref('')
 
-// 即時檢查狀態
-const accountCheckStatus = ref<string>('idle')
-const emailCheckStatus = ref<string>('idle')
+  // 即時檢查狀態
+  const accountCheckStatus = ref<string>('idle')
+  const emailCheckStatus = ref<string>('idle')
 
-// debounce timer
-let accountCheckTimer: ReturnType<typeof setTimeout> | null = null
-let emailCheckTimer: ReturnType<typeof setTimeout> | null = null
+  // debounce timer
+  let accountCheckTimer: ReturnType<typeof setTimeout> | null = null
+  let emailCheckTimer: ReturnType<typeof setTimeout> | null = null
 
-// 帳號存在性檢查 (placeholder)
-async function checkAccountExists(account: string): Promise<boolean> {
-  // TODO: 後端需新增 GET /auth/check-account?account={account}
-  await new Promise(resolve => setTimeout(resolve, 300))
-  return false
-}
-
-// 信箱存在性檢查 (placeholder)
-async function checkEmailExists(email: string): Promise<boolean> {
-  // TODO: 後端需新增 GET /auth/check-email?email={email}
-  await new Promise(resolve => setTimeout(resolve, 300))
-  return false
-}
-
-// debounced 帳號檢查
-function debouncedCheckAccount(value: string) {
-  if (accountCheckTimer) clearTimeout(accountCheckTimer)
-  if (!value) {
-    accountCheckStatus.value = 'idle'
-    return
-  }
-  accountCheckStatus.value = 'checking'
-  accountCheckTimer = setTimeout(async () => {
-    const exists = await checkAccountExists(value)
-    accountCheckStatus.value = exists ? 'taken' : 'available'
-  }, 500)
-}
-
-// debounced 信箱檢查
-function debouncedCheckEmail(value: string) {
-  if (emailCheckTimer) clearTimeout(emailCheckTimer)
-  if (!value || !/.+@.+\..+/.test(value)) {
-    emailCheckStatus.value = 'idle'
-    return
-  }
-  emailCheckStatus.value = 'checking'
-  emailCheckTimer = setTimeout(async () => {
-    const exists = await checkEmailExists(value)
-    emailCheckStatus.value = exists ? 'taken' : 'available'
-  }, 500)
-}
-
-// 驗證 email 格式
-function isValidEmail(emailStr: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(emailStr)
-}
-
-// 返回登入頁
-function goBack() {
-  navigateTo('/login')
-}
-
-// 表單驗證
-function validateForm(): boolean {
-  errorMessage.value = ''
-
-  if (!form.value.account.trim()) {
-    errorMessage.value = 'Account is required'
+  // 帳號存在性檢查 (placeholder)
+  async function checkAccountExists(_account: string): Promise<boolean> {
+    // TODO: 後端需新增 GET /auth/check-account?account={account}
+    await new Promise(resolve => setTimeout(resolve, 300))
     return false
   }
 
-  if (accountCheckStatus.value === 'taken') {
-    errorMessage.value = 'This account is already taken'
+  // 信箱存在性檢查 (placeholder)
+  async function checkEmailExists(_email: string): Promise<boolean> {
+    // TODO: 後端需新增 GET /auth/check-email?email={email}
+    await new Promise(resolve => setTimeout(resolve, 300))
     return false
   }
 
-  if (!form.value.email.trim()) {
-    errorMessage.value = 'Email is required'
-    return false
+  // debounced 帳號檢查
+  function debouncedCheckAccount(value: string) {
+    if (accountCheckTimer) clearTimeout(accountCheckTimer)
+    if (!value) {
+      accountCheckStatus.value = 'idle'
+      return
+    }
+    accountCheckStatus.value = 'checking'
+    accountCheckTimer = setTimeout(async () => {
+      const exists = await checkAccountExists(value)
+      accountCheckStatus.value = exists ? 'taken' : 'available'
+    }, 500)
   }
 
-  if (!isValidEmail(form.value.email)) {
-    errorMessage.value = 'Please enter a valid email address'
-    return false
+  // debounced 信箱檢查
+  function debouncedCheckEmail(value: string) {
+    if (emailCheckTimer) clearTimeout(emailCheckTimer)
+    if (!value || !/.+@.+\..+/.test(value)) {
+      emailCheckStatus.value = 'idle'
+      return
+    }
+    emailCheckStatus.value = 'checking'
+    emailCheckTimer = setTimeout(async () => {
+      const exists = await checkEmailExists(value)
+      emailCheckStatus.value = exists ? 'taken' : 'available'
+    }, 500)
   }
 
-  if (emailCheckStatus.value === 'taken') {
-    errorMessage.value = 'This email is already registered'
-    return false
+  // 驗證 email 格式
+  function isValidEmail(emailStr: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(emailStr)
   }
 
-  if (!form.value.password) {
-    errorMessage.value = 'Password is required'
-    return false
+  // 返回登入頁
+  function goBack() {
+    navigateTo('/login')
   }
 
-  if (form.value.password.length < 6) {
-    errorMessage.value = 'Password must be at least 6 characters'
-    return false
-  }
+  // 表單驗證
+  function validateForm(): boolean {
+    errorMessage.value = ''
 
-  if (!confirmPassword.value) {
-    errorMessage.value = 'Please confirm your password'
-    return false
-  }
-
-  if (form.value.password !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match'
-    return false
-  }
-
-  return true
-}
-
-// Register mutation
-function useRegisterMutation() {
-  const { $apiClient } = useNuxtApp()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (requestParameters: RegisterRequest) =>
-      $apiClient.auth.registerCreate(requestParameters),
-    onSettled: () => {
-      queryClient.invalidateQueries()
-    },
-  })
-}
-
-const { mutateAsync, isPending } = useRegisterMutation()
-const router = useRouter()
-
-// 導航到登入頁
-function navigateToLogin() {
-  showSuccessDialog.value = false
-  router.push('/login')
-}
-
-// 提交註冊
-async function onSubmit() {
-  if (!validateForm()) {
-    return
-  }
-
-  errorMessage.value = ''
-
-  try {
-    await mutateAsync(form.value)
-    showSuccessDialog.value = true
-  } catch (err: any) {
-    const status = err?.response?.status
-    let message = 'Registration failed. Please try again later.'
-
-    if (status === 409) {
-      message = 'Account or email has already been registered.'
-    } else if (status === 400) {
-      message = 'Please check the input data format.'
+    if (!form.value.account.trim()) {
+      errorMessage.value = 'Account is required'
+      return false
     }
 
-    popupMessage.value = message
-    showError.value = true
+    if (accountCheckStatus.value === 'taken') {
+      errorMessage.value = 'This account is already taken'
+      return false
+    }
+
+    if (!form.value.email.trim()) {
+      errorMessage.value = 'Email is required'
+      return false
+    }
+
+    if (!isValidEmail(form.value.email)) {
+      errorMessage.value = 'Please enter a valid email address'
+      return false
+    }
+
+    if (emailCheckStatus.value === 'taken') {
+      errorMessage.value = 'This email is already registered'
+      return false
+    }
+
+    if (!form.value.password) {
+      errorMessage.value = 'Password is required'
+      return false
+    }
+
+    if (form.value.password.length < 6) {
+      errorMessage.value = 'Password must be at least 6 characters'
+      return false
+    }
+
+    if (!confirmPassword.value) {
+      errorMessage.value = 'Please confirm your password'
+      return false
+    }
+
+    if (form.value.password !== confirmPassword.value) {
+      errorMessage.value = 'Passwords do not match'
+      return false
+    }
+
+    return true
   }
-}
+
+  // Register mutation
+  function useRegisterMutation() {
+    const { $apiClient } = useNuxtApp()
+    const queryClient = useQueryClient()
+    return useMutation({
+      mutationFn: (requestParameters: RegisterRequest) =>
+        $apiClient.auth.registerCreate(requestParameters),
+      onSettled: () => {
+        queryClient.invalidateQueries()
+      },
+    })
+  }
+
+  const { mutateAsync, isPending } = useRegisterMutation()
+  const router = useRouter()
+
+  // 導航到登入頁
+  function navigateToLogin() {
+    showSuccessDialog.value = false
+    router.push('/login')
+  }
+
+  // 提交註冊
+  async function onSubmit() {
+    if (!validateForm()) {
+      return
+    }
+
+    errorMessage.value = ''
+
+    try {
+      await mutateAsync(form.value)
+      showSuccessDialog.value = true
+    } catch (err: any) {
+      const status = err?.response?.status
+      let message = 'Registration failed. Please try again later.'
+
+      if (status === 409) {
+        message = 'Account or email has already been registered.'
+      } else if (status === 400) {
+        message = 'Please check the input data format.'
+      }
+
+      popupMessage.value = message
+      showError.value = true
+    }
+  }
 </script>
 
 <style lang="scss" scoped>

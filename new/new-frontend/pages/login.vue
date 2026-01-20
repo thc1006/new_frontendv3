@@ -29,7 +29,7 @@
                 class="field-input"
                 required
                 aria-required="true"
-              />
+              >
             </div>
             <!-- Password 欄位 -->
             <div class="form-row">
@@ -42,7 +42,7 @@
                   class="field-input"
                   required
                   aria-required="true"
-                />
+                >
                 <button
                   type="button"
                   class="password-toggle"
@@ -113,11 +113,11 @@
   const showSuccess = ref(false)
   const popupMessage = ref('')
 
-  const rules = {
+  const _rules = {
     required: (value: string) => !!value || '必填欄位',
   }
 
-  function handleRegister() {
+  function _handleRegister() {
     navigateTo('/register')
   }
 
