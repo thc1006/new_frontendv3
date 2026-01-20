@@ -69,8 +69,8 @@
     }
   }
 
-  // 預留 projectId 使用
-  console.log('Performance AI Model - Project ID:', projectId)
+  // projectId reserved for future dashboard filtering
+  void projectId
 </script>
 
 <style scoped>

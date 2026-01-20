@@ -171,12 +171,14 @@
 <script setup lang="ts">
 
   import 'mapbox-gl/dist/mapbox-gl.css'
-  
+
   import { onMounted, computed, ref, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import mapboxgl from 'mapbox-gl'
   import * as turf from '@turf/turf'
+  import { createModuleLogger } from '~/utils/logger'
 
+  const log = createModuleLogger('ProjectCreate')
   const { $apiClient } = useNuxtApp()
   const router = useRouter()
 
@@ -355,7 +357,7 @@
     }
     // placeholder: 後端 API 尚未實作
     alert('上傳功能尚未接上後端 API')
-    console.log('TODO: 上傳地圖檔案', mapFile.value[0]?.name)
+    log.debug('TODO: 上傳地圖檔案', mapFile.value[0]?.name)
   }
 
   async function create() {

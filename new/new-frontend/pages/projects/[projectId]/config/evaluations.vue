@@ -267,6 +267,9 @@
   import { useUserStore } from '~/stores/user'
   import * as THREE from 'three'
   import type { RU } from '~/apis/Api'
+  import { createModuleLogger } from '~/utils/logger'
+
+  const log = createModuleLogger('Evaluations')
 
   // --- Grouped constants ---
   const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
@@ -690,7 +693,7 @@
       };
       try {
         await $apiClient.ruCache.rucachesCreate(ruCachePayload);
-        console.log('Saved RU to cache:', ruCachePayload);
+        log.debug('Saved RU to cache:', ruCachePayload);
       } catch (err) {
         console.warn('Failed to save RU to cache:', ruCachePayload, err);
       }
@@ -723,7 +726,7 @@
       ruMarkers.value = [];
 
       projectRUs.forEach((ru, _, arr) => addRUFromCache(ru, arr));
-      console.log('Loaded RU caches:', ruMarkers.value);
+      log.debug('Loaded RU caches:', ruMarkers.value);
     } catch (err) {
       console.warn('Failed to load RU caches:', err);
     }
@@ -926,15 +929,15 @@
       }
 
       // --- Step 3: Start throughput workflow ---
-      console.log('Starting throughput workflow with payload:', payload);
+      log.debug('Starting throughput workflow with payload:', payload);
       try {
         const throughputResult = await $apiClient.aodt.workflowThroughputCreate(payload);
-        console.log('Throughput workflow result:', throughputResult);
+        log.debug('Throughput workflow result:', throughputResult);
         if (throughputResult.data?.success === false) {
           console.error('Throughput workflow failed:', throughputResult.data);
           return;
         }
-        console.log('Throughput workflow started successfully');
+        log.debug('Throughput workflow started successfully');
       } catch (e: unknown) {
         console.error('Failed to start throughput workflow:', e);
         return;
@@ -943,15 +946,15 @@
       // --- Step 3b: Start netDT workflow ---
       let netDTSuccess = false;
       try {
-        console.log('Starting netDT workflow for evaluation ID:', evaluationId);
+        log.debug('Starting netDT workflow for evaluation ID:', evaluationId);
         const netDTRes = await $apiClient.dtAiModel.netDtCreate(evaluationId!);
-        console.log('NetDT workflow result:', netDTRes);
+        log.debug('NetDT workflow result:', netDTRes);
         // Accept either .success === true or .message contains "netDT started successfully"
         netDTSuccess =
           netDTRes.data?.success === true ||
           (typeof netDTRes.data?.message === 'string' &&
             netDTRes.data.message.includes('netDT started successfully'));
-        console.log('NetDT workflow initial succeeded:', netDTSuccess);
+        log.debug('NetDT workflow initial succeeded:', netDTSuccess);
 
         // --- Poll for rsrp_dt_status === "success" ---
         let rsrpDtStatus = '';
@@ -979,36 +982,36 @@
         if (pollError) {
           console.error(pollError);
         }
-        console.log('NetDT workflow succeeded after rsrp_dt_status polling:', netDTSuccess);
+        log.debug('NetDT workflow succeeded after rsrp_dt_status polling:', netDTSuccess);
       } catch (e: unknown) {
         console.error('Failed to start netDT workflow:', e);
         netDTSuccess = false;
       }
-      console.log('NetDT workflow succeeded:', netDTSuccess);
+      log.debug('NetDT workflow succeeded:', netDTSuccess);
 
       // --- Step 4: Start ranDT workflow if netDT succeeded ---
       if (netDTSuccess) {
         try {
-          console.log('Starting ranDT workflow for evaluation ID:', evaluationId);
+          log.debug('Starting ranDT workflow for evaluation ID:', evaluationId);
           await $apiClient.dtAiModel.ranDtCreate(evaluationId!, {
             ue_start_end_pt: ue_start_end_pt
           });
-          console.log('ranDT workflow started successfully');
+          log.debug('ranDT workflow started successfully');
         } catch (e: any) {
           console.error('Failed to start ranDT workflow:', e);
         }
-        console.log('ranDT workflow succeeded:', netDTSuccess);
+        log.debug('ranDT workflow succeeded:', netDTSuccess);
       }
-      console.log('All workflows completed');
+      log.debug('All workflows completed');
     } catch (error: any) {
       console.error('Error occurred during evaluation:', error);
     }
-    console.log('Evaluation process completed');
+    log.debug('Evaluation process completed');
   };
 
   // Apply config function - stub that can be expanded with actual logic
   const applyConfig = () => {
-    console.log('Applying configuration for project:', projectId.value);
+    log.debug('Applying configuration for project:', projectId.value);
   };
 
   let RUmodelBase64: string | null = null;
@@ -1752,7 +1755,7 @@
       heatmapData = heatmapJson;
     }
 
-    console.log('Heatmap data loaded:', heatmapData);
+    log.debug('Heatmap data loaded:', heatmapData);
 
     // Prepare original points with ms_x/ms_y converted to lon/lat and value
     const originalPoints: Array<{ lon: number; lat: number; value: number }> = [];
@@ -2051,7 +2054,7 @@
   function applySimConfig() {
     // TODO: 待後端實作 API
     // PATCH /projects/{id}/simulation-config
-    console.log('Apply Simulation Config (placeholder):', simConfig);
+    log.debug('Apply Simulation Config (placeholder):', simConfig);
     simConfigDialog.value = false;
   }
 

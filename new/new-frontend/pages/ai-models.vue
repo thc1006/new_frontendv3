@@ -328,6 +328,9 @@
 
 <script setup>
   import { ref, onMounted } from 'vue'
+  import { createModuleLogger } from '~/utils/logger'
+
+  const log = createModuleLogger('AIModels')
   const { $apiClient } = useNuxtApp()
 
   const aiList = ref([])
@@ -391,7 +394,7 @@
     } catch (e) {
       loadError.value = '載入模型列表失敗'
       snackbar.value = { show: true, text: '載入模型列表失敗', color: 'error' }
-      console.error('Failed to fetch AI models:', e)
+      log.error('Failed to fetch AI models', e)
     } finally {
       isLoading.value = false
     }
@@ -460,7 +463,7 @@
       await fetchAIs()
     } catch (e) {
       snackbar.value = { show: true, text: '刪除失敗', color: 'error' }
-      console.log(e)
+      log.error('Failed to delete AI model', e)
     } finally {
       isDeleting.value = false
     }
@@ -492,7 +495,7 @@
       await fetchAIs()
     } catch (e) {
       snackbar.value = { show: true, text: '更新失敗', color: 'error' }
-      console.log(e)
+      log.error('Failed to update AI model', e)
     } finally {
       isUpdating.value = false
     }
@@ -625,7 +628,7 @@
       await fetchAIs()
     } catch (e) {
       snackbar.value = { show: true, text: '新增失敗', color: 'error' }
-      console.log(e)
+      log.error('Failed to add AI model', e)
     }
   }
 </script>
