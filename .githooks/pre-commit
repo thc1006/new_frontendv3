@@ -5,7 +5,7 @@
 set -e
 
 # Get the frontend directory
-FRONTEND_DIR="new/new-frontend"
+FRONTEND_DIR="frontend"
 
 # Check if we have staged .vue, .ts, or .js files in the frontend
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "^$FRONTEND_DIR/.*\.(vue|ts|js)$" || true)

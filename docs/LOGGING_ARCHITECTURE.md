@@ -133,13 +133,13 @@ def setup_logging(app):
 **新增 K8s manifests：**
 
 ```yaml
-# new/k8s/logging/namespace.yaml
+# k8s/logging/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: logging
 ---
-# new/k8s/logging/loki.yaml
+# k8s/logging/loki.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -194,7 +194,7 @@ spec:
 ```
 
 ```yaml
-# new/k8s/logging/fluent-bit.yaml
+# k8s/logging/fluent-bit.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

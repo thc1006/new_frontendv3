@@ -258,7 +258,7 @@ new/
 
 **AI Models：**
 - `/frontend/pages/ai-models.vue` - AI 模型頁面 (265 行)
-- `/new/backend/controllers/PrimitiveAIModel.py` - RESTful API
+- `/backend/controllers/PrimitiveAIModel.py` - RESTful API
 
 **效能（待新增）：**
 - 目前無對應檔案
