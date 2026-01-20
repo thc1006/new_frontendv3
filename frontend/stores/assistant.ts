@@ -32,6 +32,18 @@ export const useAssistantStore = defineStore('assistant', () => {
   const userStore = useUserStore()
   const { $apiClient } = useNuxtApp();
 
+  /**
+   * Chat sessions indexed by string ID.
+   *
+   * Design Decision: We use string keys even though the backend returns numeric IDs because:
+   * 1. JavaScript object keys are internally strings anyway
+   * 2. Record<string, T> is idiomatic for object dictionaries in TypeScript
+   * 3. Consistent conversion at API boundaries (String() in, Number() out)
+   *
+   * Conversion pattern:
+   * - API → Store: String(numericId) at lines where we receive data
+   * - Store → API: Number(stringId) at lines where we call API methods
+   */
   const chats = ref<Record<string, ChatSession>>({})
   const activeChatId = ref<string>('')
   const isLoading = ref(false)
