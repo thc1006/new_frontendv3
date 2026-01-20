@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Centralized logging utility for debugging navigation and page lifecycle issues
  *
