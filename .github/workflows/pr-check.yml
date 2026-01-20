@@ -190,8 +190,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
+          # No cache needed - pnpm audit only reads lockfile
 
       - name: Run pnpm audit
         run: pnpm audit --audit-level=high
