@@ -212,6 +212,22 @@
     map.on('load', () => {
       updateMarkers()
     })
+
+    // 統一使用 movestart/moveend 來處理所有地圖移動（拖動、縮放、旋轉等）
+    // 這比分散的 dragstart/zoomstart 更可靠
+    map.on('movestart', () => {
+      document.querySelectorAll('.custom-marker').forEach(el => {
+        el.classList.add('map-moving')
+      })
+    })
+    map.on('moveend', () => {
+      // 延遲移除，確保 Mapbox 完成所有定位更新
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.custom-marker').forEach(el => {
+          el.classList.remove('map-moving')
+        })
+      })
+    })
   }
 
   // 更新地圖上的 markers
@@ -574,17 +590,54 @@
   font-size: 15px;
 }
 
-/* 自訂 marker 樣式 */
+/* 自訂 marker 樣式 - 容器固定大小，所有效果只在 SVG 上 */
 :global(.custom-marker) {
   cursor: pointer;
-  transition: transform 0.2s ease;
-  transform-origin: bottom center;
+  /* 固定容器大小，絕不改變 - 避免干擾 Mapbox 定位 */
+  width: 32px;
+  height: 42px;
+  z-index: 1;
+  /* 禁用容器上的 pointer-events 以防止拖動干擾 */
+  pointer-events: none;
+  /* 隔離布局，防止內部變化影響 Mapbox 定位計算 */
+  contain: layout style;
+}
+
+:global(.custom-marker svg) {
+  /* 使用固定尺寸，不使用 transform 來縮放 */
+  display: block;
+  width: 32px;
+  height: 42px;
+  /* 啟用 pointer-events */
+  pointer-events: auto;
+}
+
+/* 只在地圖靜止時才允許過渡效果 */
+:global(.custom-marker:not(.map-moving) svg) {
+  transition: width 0.12s ease-out, height 0.12s ease-out, filter 0.12s ease-out;
+}
+
+/* 地圖移動時完全禁用所有動畫和過渡 */
+:global(.custom-marker.map-moving),
+:global(.custom-marker.map-moving svg) {
+  transition: none !important;
+  animation: none !important;
 }
 
 :global(.custom-marker:hover),
 :global(.custom-marker.marker-hovered) {
-  transform: scale(1.2);
-  z-index: 100;
+  z-index: 100 !important;
+}
+
+/* hover 時改變 SVG 尺寸（而非 transform），避免與 Mapbox 內部定位衝突 */
+:global(.custom-marker:not(.map-moving):hover svg),
+:global(.custom-marker:not(.map-moving).marker-hovered svg) {
+  width: 38px;
+  height: 50px;
+  /* 向上偏移以保持圖釘尖端位置不變 */
+  margin-top: -8px;
+  margin-left: -3px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
 }
 
 /* RWD 響應式 */

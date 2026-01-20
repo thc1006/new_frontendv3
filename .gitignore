@@ -64,3 +64,4 @@ new_design/
 Thumbs.db
 screenshot.jpg
 *.log
+new/k8s/backend-secrets.yaml

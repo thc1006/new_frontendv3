@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: wisdon-frontend
+data:
+  NUXT_PUBLIC_API_BASE: "/api"
+  NUXT_PUBLIC_LOGO_STYLE: "WiSDON"
+  NUXT_PUBLIC_NOMINATIM_API_URL: "https://nominatim.openstreetmap.org/search"
+  NUXT_PUBLIC_IS_ONLINE: "true"
+  NUXT_PUBLIC_OFFLINE_MAPBOX_GL_JS_URL: "http://127.0.0.1/tiles/styles/basic-preview/style.json"

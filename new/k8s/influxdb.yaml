@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  namespace: wisdon-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+        - name: influxdb
+          image: influxdb:1.8
+          env:
+            - name: INFLUXDB_DB
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: INFLUXDB_DB
+            - name: INFLUXDB_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: INFLUXDB_ADMIN_USER
+            - name: INFLUXDB_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: INFLUXDB_ADMIN_PASSWORD
+            - name: INFLUXDB_HTTP_AUTH_ENABLED
+              value: "true"
+          ports:
+            - containerPort: 8086
+          volumeMounts:
+            - name: influxdb-data
+              mountPath: /var/lib/influxdb
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8086
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8086
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: influxdb-data
+          hostPath:
+            path: /data/wisdon/influxdb
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: wisdon-frontend
+spec:
+  selector:
+    app: influxdb
+  ports:
+    - port: 8086
+      targetPort: 8086

@@ -1,0 +1,15 @@
+# Default owners for everything in the repo
+* @thc1006
+
+# Frontend code ownership
+/new/new-frontend/ @thc1006
+
+# CI/CD configuration
+/.github/ @thc1006
+
+# K8s deployment configuration
+/new/k8s/ @thc1006
+
+# Documentation
+/docs/ @thc1006
+*.md @thc1006

@@ -56,38 +56,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+  import { ref } from 'vue'
+  import { useRoute } from 'vue-router'
 
-const route = useRoute()
-const projectId = route.params.projectId
+  const route = useRoute()
+  const projectId = route.params.projectId
 
-// 切換開關狀態
-const nesEnabled = ref(false)
-const positioningEnabled = ref(false)
+  // 切換開關狀態
+  const nesEnabled = ref(false)
+  const positioningEnabled = ref(false)
 
-// Snackbar 狀態
-const snackbar = ref({ show: false, text: '', color: 'warning' })
+  // Snackbar 狀態
+  const snackbar = ref({ show: false, text: '', color: 'warning' })
 
-// TODO: 待接入 GET /projects/{projectId}/ai-model-evaluation/inference
-// Query params: model_type ("NES" | "Positioning"), enabled (boolean)
-function onNesToggle(value) {
-  console.log(`[TODO] NES toggled: ${value}, projectId: ${projectId}`)
-  snackbar.value = {
-    show: true,
-    text: 'NES 模型推斷功能尚未接上後端',
-    color: 'warning'
+  // TODO: 待接入 GET /projects/{projectId}/ai-model-evaluation/inference
+  // Query params: model_type ("NES" | "Positioning"), enabled (boolean)
+  function onNesToggle(value) {
+    console.log(`[TODO] NES toggled: ${value}, projectId: ${projectId}`)
+    snackbar.value = {
+      show: true,
+      text: 'NES 模型推斷功能尚未接上後端',
+      color: 'warning'
+    }
   }
-}
 
-function onPositioningToggle(value) {
-  console.log(`[TODO] Positioning toggled: ${value}, projectId: ${projectId}`)
-  snackbar.value = {
-    show: true,
-    text: 'Positioning 模型推斷功能尚未接上後端',
-    color: 'warning'
+  function onPositioningToggle(value) {
+    console.log(`[TODO] Positioning toggled: ${value}, projectId: ${projectId}`)
+    snackbar.value = {
+      show: true,
+      text: 'Positioning 模型推斷功能尚未接上後端',
+      color: 'warning'
+    }
   }
-}
 </script>
 
 <style scoped>

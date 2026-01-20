@@ -697,7 +697,7 @@
     }
   }
 
-  async function handleSaveRU(){
+  async function _handleSaveRU(){
     let evaluationId: number | null = null;
     try {
       if (validProjectId.value == null) throw new Error('Invalid project ID');

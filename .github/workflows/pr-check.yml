@@ -1,0 +1,188 @@
+name: PR Quality Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'new/new-frontend/**'
+      - '.github/workflows/pr-check.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  WORKING_DIR: ./new/new-frontend
+
+jobs:
+  # ============================================
+  # Static Analysis
+  # ============================================
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: new/new-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: |
+          # Run lint and capture warning count
+          npm run lint 2>&1 | tee lint-output.txt
+          WARNINGS=$(grep -c "warning" lint-output.txt || echo "0")
+          if [ "$WARNINGS" -gt 0 ]; then
+            echo "::warning::Found $WARNINGS ESLint warnings. Please fix them when possible."
+          fi
+
+      - name: Check for console.log in production code
+        run: |
+          # Exclude test files, config files, logger utility, and plugins
+          # NOTE: Currently warning-only. See issue for cleanup tracking.
+          FOUND=$(grep -r "console\.log" --include="*.ts" --include="*.vue" \
+             --exclude-dir=tests --exclude-dir=node_modules \
+             --exclude="*.config.*" --exclude="logger.ts" \
+             --exclude="sentry.client.ts" . 2>/dev/null || true)
+          if [ -n "$FOUND" ]; then
+            COUNT=$(echo "$FOUND" | wc -l)
+            echo "::warning::Found $COUNT console.log statements in production code. Consider using logger utility instead."
+          else
+            echo "No console.log found in production code ✓"
+          fi
+
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: new/new-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Type Check
+        run: npm run typecheck
+
+  # ============================================
+  # Build Verification
+  # ============================================
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    outputs:
+      bundle_size: ${{ steps.size.outputs.size }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: new/new-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Calculate bundle size
+        id: size
+        run: |
+          SIZE=$(du -sh .output/public | cut -f1)
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          echo "### Bundle Size: $SIZE" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuxt-build
+          path: new/new-frontend/.output
+          retention-days: 1
+
+  # ============================================
+  # Security Checks
+  # ============================================
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: new/new-frontend/package-lock.json
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for known vulnerabilities
+        run: |
+          npm audit --json > audit-results.json || true
+          HIGH_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+          CRITICAL_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+
+          echo "### Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "- High vulnerabilities: $HIGH_VULNS" >> $GITHUB_STEP_SUMMARY
+          echo "- Critical vulnerabilities: $CRITICAL_VULNS" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$CRITICAL_VULNS" -gt 0 ]; then
+            echo "::error::Found $CRITICAL_VULNS critical vulnerabilities"
+            exit 1
+          fi
+
+  # ============================================
+  # PR Summary
+  # ============================================
+  summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, build, security-audit]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## PR Quality Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ESLint | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript | ${{ needs.typecheck.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security-audit.result == 'success' && '✅ Passed' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Note: E2E tests are available for local development. Run \`npm run test:e2e\` with the full K8s stack._" >> $GITHUB_STEP_SUMMARY

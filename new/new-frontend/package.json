@@ -24,6 +24,7 @@
     "@hebilicious/vue-query-nuxt": "^0.3.0",
     "@mapbox/mapbox-gl-geocoder": "^5.0.3",
     "@pinia/nuxt": "^0.11.1",
+    "@sentry/vue": "^10.35.0",
     "@studiometa/vue-mapbox-gl": "^2.7.2",
     "@tanstack/vue-query": "^5.81.5",
     "@tanstack/vue-query-devtools": "^5.81.5",
@@ -41,7 +42,7 @@
     "vue-chartjs": "^5.3.3",
     "vue-router": "^4.5.1",
     "vuetify": "^3.8.12",
-    "vuetify-nuxt-module": "^0.18.7"
+    "vuetify-nuxt-module": "^0.19.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.4.1",

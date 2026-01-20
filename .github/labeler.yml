@@ -1,0 +1,55 @@
+# Auto-labeler configuration
+# https://github.com/actions/labeler
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: 'new/new-frontend/**/*'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**/*'
+
+k8s:
+  - changed-files:
+      - any-glob-to-any-file: 'new/k8s/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**/*'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'new/new-frontend/tests/**/*'
+          - '**/*.spec.ts'
+          - '**/*.test.ts'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/package.json'
+          - '**/package-lock.json'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/auth/**/*'
+          - '**/*sentry*'
+          - '**/*security*'
+
+components:
+  - changed-files:
+      - any-glob-to-any-file: 'new/new-frontend/components/**/*'
+
+pages:
+  - changed-files:
+      - any-glob-to-any-file: 'new/new-frontend/pages/**/*'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.config.ts'
+          - '**/*.config.js'
+          - '**/*.config.mjs'

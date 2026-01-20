@@ -228,6 +228,15 @@ class Logger {
 
   error(module: string, message: string, data?: unknown): void {
     this.formatMessage('error', module, message, data)
+
+    // Send error to Sentry if available
+    if (typeof window !== 'undefined' && (window as any).$sentry) {
+      (window as any).$sentry.captureMessage(message, {
+        level: 'error',
+        tags: { module },
+        extra: { data, sessionId: this.sessionId }
+      })
+    }
   }
 
   // Navigation specific logging
