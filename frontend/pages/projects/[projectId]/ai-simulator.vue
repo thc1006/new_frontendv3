@@ -2797,111 +2797,112 @@
   min-height: 700px;
 }
 
-/* 左側面板 */
+/* 左側面板 - 與 ai-ran 保持一致 */
 .left-panel {
-  width: 246px;
+  width: 180px;
   flex-shrink: 0;
   background: #fff;
-  border: 1px solid #000;
-  border-radius: 20px;
-  box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.25);
+  border: 2px solid #000;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .panel-header {
-  background: #c7c7c7;
-  padding: 12px 20px;
-  font-size: 40px;
-  font-weight: 500;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 16px;
+  color: #333;
 }
 
 .model-buttons {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 20px;
-  flex: 1;
 }
 
 .model-btn {
-  height: 55px;
-  border-radius: 50px !important;
-  font-size: 32px !important;
+  width: 100%;
+  height: 44px;
+  font-size: 14px !important;
+  font-weight: 500;
   text-transform: none;
+  border-radius: 20px !important;
 }
 
-/* NES 控制面板 */
-.nes-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px;
-}
-
-/* Positioning 控制面板 */
+/* NES 控制面板 - 與 ai-ran 保持一致 */
+.nes-controls,
 .positioning-controls {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 12px 16px;
 }
 
 .model-select {
   margin-bottom: 4px;
-  max-width: 200px;
+  max-width: 180px;
   flex-shrink: 0;
 }
 
 .control-btn {
-  height: 44px;
-  border-radius: 50px !important;
-  font-size: 16px !important;
+  max-width: 180px;
+  height: 40px;
+  font-size: 13px !important;
+  font-weight: 500;
   text-transform: none;
-  max-width: 200px;
+  border-radius: 20px !important;
+}
+
+.retrain-btn {
+  border: 2px solid #1976d2;
+  background: transparent !important;
+  color: #1976d2 !important;
 }
 
 .panel-actions {
   display: flex;
-  gap: 12px;
-  padding: 20px;
-  justify-content: center;
+  gap: 8px;
   margin-top: auto;
+  padding-top: 16px;
 }
 
 .action-btn {
   flex: 1;
-  height: 40px;
-  min-width: 80px;
-  max-width: 100px;
-  border-radius: 50px !important;
+  height: 36px;
+  min-width: 70px;
+  max-width: 90px;
+  font-size: 12px !important;
   text-transform: none;
+  border-radius: 18px !important;
 }
 
-/* Placeholder 內容 */
+.start-btn {
+  background: #333 !important;
+}
+
+/* Placeholder 內容 - 與 ai-ran 保持一致 */
 .placeholder-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  padding: 40px;
+  color: #999;
 }
 
-/* 右側面板 */
+/* 右側面板 - 與 ai-ran 保持一致 */
 .right-panel {
   flex: 1;
   background: #fff;
   border: 2px solid #000;
-  border-radius: 20px;
-  overflow: hidden;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* 地圖容器 */

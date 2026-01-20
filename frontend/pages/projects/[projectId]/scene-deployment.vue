@@ -638,18 +638,34 @@
   }
 
   // 當專案載入完成後初始化地圖
-  watchEffect(() => {
-    if (!isLoadingProject.value && projectExists.value && hasProjectAccess.value) {
-      nextTick(async () => {
-        await waitForElement('sceneMapContainer')
-        initializeMap()
-      })
-    }
-  })
+  // 使用 watch 而非 watchEffect，確保在條件滿足時正確初始化
+  const mapInitialized = ref(false)
+
+  watch(
+    [() => isLoadingProject.value, () => projectExists.value, () => hasProjectAccess.value],
+    ([loading, exists, access]) => {
+      if (!loading && exists && access && !mapInitialized.value) {
+        nextTick(async () => {
+          await waitForElement('sceneMapContainer')
+          initializeMap()
+          mapInitialized.value = true
+        })
+      }
+    },
+    { immediate: true }
+  )
 
   // Lifecycle hooks with logging
   onMounted(() => {
     log.lifecycle('mounted', { projectId: projectId.value })
+    // 如果條件已滿足但地圖未初始化，在 mounted 時重試
+    if (!isLoadingProject.value && projectExists.value && hasProjectAccess.value && !mapInitialized.value) {
+      nextTick(async () => {
+        await waitForElement('sceneMapContainer')
+        initializeMap()
+        mapInitialized.value = true
+      })
+    }
   })
 
   // 清理資源
