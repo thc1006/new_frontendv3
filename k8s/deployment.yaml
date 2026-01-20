@@ -17,33 +17,60 @@ spec:
       labels:
         app: frontend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: frontend
           image: localhost/wisdon-frontend:latest
           imagePullPolicy: Never
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3000
-              protocol: TCP
+              name: http
           envFrom:
             - configMapRef:
                 name: frontend-config
           resources:
             requests:
               memory: "256Mi"
-              cpu: "200m"
+              cpu: "100m"
             limits:
-              memory: "1Gi"
-              cpu: "1000m"
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            # Nitro needs /tmp for worker sockets
+            - name: tmp
+              mountPath: /tmp
+            # Nitro KV storage directory
+            - name: data
+              mountPath: /app/.data
           livenessProbe:
             httpGet:
               path: /
               port: 3000
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        # Ephemeral volumes for writable directories
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
       restartPolicy: Always

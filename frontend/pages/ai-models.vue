@@ -40,7 +40,7 @@
         <div>{{ ai.ai_metrics?.length ?? 0 }}</div>
         <div @click.stop>
           <v-select
-            v-model="selectedVersions[ai.model_id]"
+            v-model="selectedVersions[getModelKey(ai)]"
             :items="getVersionList(ai)"
             class="version-select"
             density="compact"
@@ -52,21 +52,21 @@
         <div class="enable-switch-container" @click.stop>
           <v-switch
             :model-value="ai.enabled ?? false"
-            :disabled="btnLoading[ai.model_id]?.enable"
+            :disabled="getBtnLoading(ai, 'enable')"
             hide-details
             density="compact"
             color="success"
             @update:model-value="handleToggleEnable(ai, $event)"
           />
-          <div v-if="btnLoading[ai.model_id]?.enable" class="switch-loading">
+          <div v-if="getBtnLoading(ai, 'enable')" class="switch-loading">
             <v-progress-circular size="16" width="2" indeterminate />
           </div>
         </div>
         <div class="action-btns" @click.stop>
           <v-btn color="primary" size="small" @click="showAIDetail(ai)">詳細</v-btn>
           <v-btn color="warning" size="small" @click="openEditDialog(ai)">編輯</v-btn>
-          <v-btn color="info" size="small" :loading="btnLoading[ai.model_id]?.preview" @click="handlePreview(ai)">預覽</v-btn>
-          <v-btn color="secondary" size="small" :loading="btnLoading[ai.model_id]?.pretrain" @click="handlePretrain(ai)">Pretrain</v-btn>
+          <v-btn color="info" size="small" :loading="getBtnLoading(ai, 'preview')" @click="handlePreview(ai)">預覽</v-btn>
+          <v-btn color="secondary" size="small" :loading="getBtnLoading(ai, 'pretrain')" @click="handlePretrain(ai)">Pretrain</v-btn>
           <v-btn color="purple" size="small" @click="openRetrainDialog(ai)">Retrain</v-btn>
           <v-btn color="error" size="small" @click="openDeleteDialog(ai)">刪除</v-btn>
         </div>
@@ -258,7 +258,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label">當前版本</span>
-                <span class="info-value">{{ selectedVersions[previewTarget?.model_id] || 'v1' }}</span>
+                <span class="info-value">{{ previewTarget ? selectedVersions[getModelKey(previewTarget)] || 'v1' : 'v1' }}</span>
               </div>
             </div>
           </div>
@@ -326,69 +326,125 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { createModuleLogger } from '~/utils/logger'
+  import type { PrimitiveAIModel as BasePrimitiveAIModel, AIMetricsRequest } from '~/apis/Api'
+
+  // Extended PrimitiveAIModel with additional frontend properties
+  interface PrimitiveAIModel extends BasePrimitiveAIModel {
+    enabled?: boolean
+  }
+
+  // Types
+  interface SnackbarState {
+    show: boolean
+    text: string
+    color: 'success' | 'error' | 'warning' | 'info'
+  }
+
+  interface EditForm {
+    model_id: number | null
+    model_name: string
+  }
+
+  interface RetrainConfig {
+    round: number
+    epochs: number
+  }
+
+  interface MetricInput {
+    name: string
+    description: string
+    type: string
+    interval: string
+    operator: string
+    unit: string
+  }
+
+  interface SelectableMetric {
+    abstract_metrics_id: number
+    display_name: string
+    selected: boolean
+    input: MetricInput
+  }
+
+  interface BtnLoadingState {
+    enable?: boolean
+    preview?: boolean
+    pretrain?: boolean
+  }
 
   const log = createModuleLogger('AIModels')
   const { $apiClient } = useNuxtApp()
 
-  const aiList = ref([])
+  const aiList = ref<PrimitiveAIModel[]>([])
   const detailDialog = ref(false)
-  const selectedAI = ref(null)
+  const selectedAI = ref<PrimitiveAIModel | null>(null)
   const confirmDeleteDialog = ref(false)
-  const deleteTarget = ref(null)
+  const deleteTarget = ref<PrimitiveAIModel | null>(null)
   const isDeleting = ref(false)
-  const snackbar = ref({ show: false, text: '', color: 'success' })
+  const snackbar = ref<SnackbarState>({ show: false, text: '', color: 'success' })
   const addDialog = ref(false)
   const newAI = ref({ model_name: '' })
-  const allMetrics = ref([])
+  const allMetrics = ref<SelectableMetric[]>([])
 
   // 編輯相關狀態
   const editDialog = ref(false)
-  const editForm = ref({ model_id: null, model_name: '' })
+  const editForm = ref<EditForm>({ model_id: null, model_name: '' })
   const isUpdating = ref(false)
 
   // Retrain 相關狀態
   const retrainDialog = ref(false)
-  const retrainTarget = ref(null)
-  const retrainConfig = ref({ round: 10, epochs: 5 })
+  const retrainTarget = ref<PrimitiveAIModel | null>(null)
+  const retrainConfig = ref<RetrainConfig>({ round: 10, epochs: 5 })
   const isRetraining = ref(false)
 
   // Pretrain Result 相關狀態
   const pretrainResultDialog = ref(false)
-  const pretrainResultTarget = ref(null)
+  const pretrainResultTarget = ref<PrimitiveAIModel | null>(null)
 
   // Preview 相關狀態
   const previewDialog = ref(false)
-  const previewTarget = ref(null)
+  const previewTarget = ref<PrimitiveAIModel | null>(null)
 
-  // 版本選擇器狀態
-  const selectedVersions = ref({})
+  // 版本選擇器狀態 (using string keys for template compatibility)
+  const selectedVersions = ref<Record<string, string>>({})
 
   // 頁面載入狀態
   const isLoading = ref(true)
-  const loadError = ref(null)
+  const loadError = ref<string | null>(null)
 
-  // 各按鈕的 loading 狀態（per model）
-  const btnLoading = ref({})
+  // 各按鈕的 loading 狀態（per model, using string keys for template compatibility）
+  const btnLoading = ref<Record<string, BtnLoadingState>>({})
+
+  // Helper functions for safe property access in templates
+  function getModelKey(ai: PrimitiveAIModel): string {
+    return String(ai.model_id ?? 0)
+  }
+
+  function getBtnLoading(ai: PrimitiveAIModel, btnType: keyof BtnLoadingState): boolean {
+    const key = getModelKey(ai)
+    return btnLoading.value[key]?.[btnType] ?? false
+  }
 
   onMounted(async () => {
     await fetchAIs()
     await fetchAllMetrics()
   })
 
-  async function fetchAIs () {
+  async function fetchAIs (): Promise<void> {
     isLoading.value = true
     loadError.value = null
     try {
       const res = await $apiClient.primitiveAiModel.primitiveAiModelsList()
-      aiList.value = res.data.sort((a, b) => a.model_id - b.model_id)
+      aiList.value = res.data.sort((a, b) => (a.model_id ?? 0) - (b.model_id ?? 0))
       // 初始化各模型的版本選擇
       aiList.value.forEach(ai => {
-        if (!selectedVersions.value[ai.model_id]) {
+        const key = getModelKey(ai)
+        if (!selectedVersions.value[key]) {
           const versions = getVersionList(ai)
-          selectedVersions.value[ai.model_id] = versions[0] || 'v1'
+          selectedVersions.value[key] = versions[0] || 'v1'
         }
       })
     } catch (e) {
@@ -402,14 +458,14 @@
 
   // 取得模型的可用版本清單
   // TODO: 待後端提供版本 API 後，改為從 ai 物件讀取
-  function getVersionList(_ai) {
+  function getVersionList(_ai: PrimitiveAIModel): string[] {
     // 暫時用假資料，未來會從 _ai 物件讀取實際版本
     const baseVersions = ['v1', 'v2', 'v3']
     return baseVersions
   }
 
   // 版本切換處理 (placeholder)
-  function handleVersionChange(ai, newVersion) {
+  function handleVersionChange(ai: PrimitiveAIModel, newVersion: string): void {
     // TODO: 後端需新增 PATCH /primitive_ai_models/{id}/version
     // 預期請求：{ version: string }
     // 預期回應：{ model_id, current_version }
@@ -426,35 +482,37 @@
   }
 
   // 只取 abstract metrics 的 display_name 與 id，並初始化一組 input 欄位
-  async function fetchAllMetrics () {
+  async function fetchAllMetrics (): Promise<void> {
     const res = await $apiClient.abstractMetrics.abstractMetricsList()
-    allMetrics.value = res.data.map(m => ({
-      abstract_metrics_id: m.id,
-      display_name: m.display_name,
-      selected: false,
-      input: {
-        name: '',
-        description: '',
-        type: '',
-        interval: '',
-        operator: '',
-        unit: '',
-      }
-    }))
+    allMetrics.value = res.data
+      .filter(m => m.id !== undefined)
+      .map(m => ({
+        abstract_metrics_id: m.id!,
+        display_name: m.display_name ?? '',
+        selected: false,
+        input: {
+          name: '',
+          description: '',
+          type: '',
+          interval: '',
+          operator: '',
+          unit: '',
+        }
+      }))
   }
 
-  function showAIDetail(ai) {
+  function showAIDetail(ai: PrimitiveAIModel): void {
     selectedAI.value = ai
     detailDialog.value = true
   }
 
-  function openDeleteDialog(ai) {
+  function openDeleteDialog(ai: PrimitiveAIModel): void {
     deleteTarget.value = ai
     confirmDeleteDialog.value = true
   }
 
-  async function confirmDelete() {
-    if (!deleteTarget.value) return
+  async function confirmDelete(): Promise<void> {
+    if (!deleteTarget.value || deleteTarget.value.model_id === undefined) return
     isDeleting.value = true
     try {
       await $apiClient.primitiveAiModel.primitiveAiModelsDelete(deleteTarget.value.model_id)
@@ -470,18 +528,22 @@
   }
 
   // 開啟編輯對話框
-  function openEditDialog(ai) {
+  function openEditDialog(ai: PrimitiveAIModel): void {
     editForm.value = {
-      model_id: ai.model_id,
-      model_name: ai.model_name
+      model_id: ai.model_id ?? null,
+      model_name: ai.model_name ?? ''
     }
     editDialog.value = true
   }
 
   // 確認更新
-  async function confirmUpdate() {
+  async function confirmUpdate(): Promise<void> {
     if (!editForm.value.model_name.trim()) {
       snackbar.value = { show: true, text: '模型名稱不可為空', color: 'error' }
+      return
+    }
+    if (editForm.value.model_id === null) {
+      snackbar.value = { show: true, text: '模型 ID 無效', color: 'error' }
       return
     }
     isUpdating.value = true
@@ -502,15 +564,17 @@
   }
 
   // 設定按鈕 loading 狀態的輔助函式
-  function setBtnLoading(modelId, btnType, value) {
-    if (!btnLoading.value[modelId]) {
-      btnLoading.value[modelId] = {}
+  function setBtnLoading(modelId: number | undefined, btnType: keyof BtnLoadingState, value: boolean): void {
+    if (modelId === undefined) return
+    const key = String(modelId)
+    if (!btnLoading.value[key]) {
+      btnLoading.value[key] = {}
     }
-    btnLoading.value[modelId][btnType] = value
+    btnLoading.value[key][btnType] = value
   }
 
   // Enable/Disable 切換 (placeholder)
-  function handleToggleEnable(ai, newState) {
+  function handleToggleEnable(ai: PrimitiveAIModel, newState: boolean | null): void {
     // TODO: 後端需新增 PATCH /primitive_ai_models/{id}/enable
     // 預期請求：{ enabled: boolean }
     // 預期回應：{ model_id, enabled }
@@ -531,7 +595,7 @@
   }
 
   // Preview (placeholder) - 顯示模型預覽對話框
-  function handlePreview(ai) {
+  function handlePreview(ai: PrimitiveAIModel): void {
     // TODO: 後端需新增 GET /primitive_ai_models/{id}/preview
     // 預期回應：{ preview_data, metrics_summary }
     // TODO: 實際流程應該要呼叫 API 取得真正的預覽資料
@@ -549,7 +613,7 @@
   }
 
   // Pretrain (placeholder) - 顯示模擬結果對話框
-  function handlePretrain(ai) {
+  function handlePretrain(ai: PrimitiveAIModel): void {
     // TODO: 後端需新增 POST /primitive_ai_models/{id}/pretrain
     // 預期請求：{ config?: PretrainConfig }
     // 預期回應：{ job_id, status: 'queued' }
@@ -568,14 +632,14 @@
   }
 
   // 開啟 Retrain 對話框
-  function openRetrainDialog(ai) {
+  function openRetrainDialog(ai: PrimitiveAIModel): void {
     retrainTarget.value = ai
     retrainConfig.value = { round: 10, epochs: 5 }
     retrainDialog.value = true
   }
 
   // 確認 Retrain (placeholder)
-  function confirmRetrain() {
+  function confirmRetrain(): void {
     // TODO: 後端需新增 POST /primitive_ai_models/{id}/retrain
     // 預期請求：{ round: number, epochs: number }
     // 預期回應：{ job_id, status: 'queued' }
@@ -596,23 +660,23 @@
     }, 500)
   }
 
-  async function confirmAdd() {
+  async function confirmAdd(): Promise<void> {
     if (!newAI.value.model_name.trim()) {
       snackbar.value = { show: true, text: '模型名稱不可為空', color: 'error' }
       return
     }
 
     // 組合 ai_metrics
-    const selectedMetrics = []
+    const selectedMetrics: AIMetricsRequest[] = []
     allMetrics.value.forEach(metric => {
       if (metric.selected && metric.input.name.trim()) {
         selectedMetrics.push({
           abstract_metrics_id: metric.abstract_metrics_id,
-          description: metric.input.description,
-          interval: Number(metric.input.interval) || 0,
+          description: metric.input.description || null,
+          interval: Number(metric.input.interval) || null,
           name: metric.input.name,
-          operator: metric.input.operator || '=',
-          type: metric.input.type || null,
+          operator: metric.input.operator || null,
+          type: metric.input.type || '',
           unit: metric.input.unit || null
         })
       }

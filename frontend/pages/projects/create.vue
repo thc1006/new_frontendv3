@@ -372,7 +372,8 @@
     }
     try {
       const response = await $apiClient.project.projectsCreate(data)
-      const projectId = (response.data as any).details.project.project_id
+      const responseData = response.data as { details?: { project?: { project_id?: number } } }
+      const projectId = responseData.details?.project?.project_id
 
       alert(`Project: ${projectName.value} created!`)
       await nextTick()

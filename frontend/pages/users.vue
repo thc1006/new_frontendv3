@@ -15,8 +15,6 @@
         v-for="user in userList"
         :key="user.user_id"
         class="user-list-row"
-        style="cursor:pointer"
-        @click="showUserProjects(user.user_id)"
       >
         <div>{{ user.account }}</div>
         <div>{{ user.email }}</div>
@@ -29,9 +27,9 @@
         <div @click.stop>
           <v-btn
             color="error"
-            :disabled="user.role === 'ADMIN'"
+            :disabled="user.role === 'ADMIN' || user.user_id == null"
             class="delete-btn"
-            @click="deleteUser(user.user_id)"
+            @click="deleteUser(user.user_id!)"
           >刪除</v-btn>
         </div>
       </div>
@@ -39,24 +37,26 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
   import { ref, onMounted } from 'vue'
+  import type { User } from '~/apis/Api'
+
   const { $apiClient } = useNuxtApp()
 
-  const userList = ref([])
+  const userList = ref<User[]>([])
 
-  async function fetchUsers () {
+  async function fetchUsers(): Promise<void> {
     const res = await $apiClient.user.usersList()
     userList.value = res.data
   }
 
-  async function deleteUser(userId) {
+  async function deleteUser(userId: number): Promise<void> {
+    if (!Number.isFinite(userId) || userId <= 0) return
     if (confirm('確定要刪除此使用者嗎？')) {
       await $apiClient.user.usersDelete(userId)
       userList.value = userList.value.filter(u => u.user_id !== userId)
     }
   }
-
 
   onMounted(fetchUsers)
 </script>

@@ -4,11 +4,39 @@ kind: Kustomization
 namespace: wisdon-frontend
 
 resources:
+  # Namespace
   - namespace.yaml
+
+  # ConfigMaps
   - configmap.yaml
+  - nginx-config.yaml
+
+  # Core Application
   - deployment.yaml
   - service.yaml
+  - backend.yaml
 
-commonLabels:
-  project: wisdon
-  managed-by: kustomize
+  # Databases
+  - mysql.yaml
+  - mongodb.yaml
+  - redis.yaml
+  - influxdb.yaml
+
+  # Object Storage
+  - minio.yaml
+
+  # Monitoring
+  - grafana.yaml
+
+  # Reverse Proxy
+  - nginx.yaml
+
+labels:
+  - pairs:
+      project: wisdon
+      managed-by: kustomize
+      environment: production
+
+# Note: Secrets should be applied separately
+# kubectl apply -f k8s/secrets.yaml
+# See secrets.yaml.example for the template

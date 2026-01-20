@@ -20,40 +20,40 @@
               </div>
               <v-list nav dense class="chat-list">
                 <v-list-item
-                  v-for="(chat, id) in chats"
-                  :key="id"
-                  :value="id"
-                  :active="id === activeChatId"
+                  v-for="chat in chatList"
+                  :key="chat.id"
+                  :value="chat.id"
+                  :active="chat.id === activeChatId"
                   class="chat-item"
                 >
-                  <v-list-item-title class="chat-title" @click="switchChat(id)">
-                    <span v-if="!editingChatId || editingChatId !== id">{{ chat.title }}</span>
+                  <v-list-item-title class="chat-title" @click="switchChat(chat.id)">
+                    <span v-if="!editingChatId || editingChatId !== chat.id">{{ chat.title }}</span>
                     <v-text-field
                       v-else
                       v-model="editingTitle"
                       dense
                       outlined
                       hide-details
-                      @keyup.enter="saveChatTitle(id)"
+                      @keyup.enter="saveChatTitle(chat.id)"
                       @blur="cancelEditChatTitle"
                     />
                   </v-list-item-title>
                   <template #append>
-                    <v-btn 
-                      icon 
-                      size="x-small" 
+                    <v-btn
+                      icon
+                      size="x-small"
                       variant="text"
                       class="edit-btn"
-                      @click.stop="startEditChatTitle(id, chat.title)"
+                      @click.stop="startEditChatTitle(chat.id, chat.title)"
                     >
                       <v-icon size="16">mdi-pencil</v-icon>
                     </v-btn>
-                    <v-btn 
-                      icon 
-                      size="x-small" 
+                    <v-btn
+                      icon
+                      size="x-small"
                       variant="text"
                       class="delete-btn"
-                      @click.stop="deleteChat(id)"
+                      @click.stop="deleteChat(chat.id)"
                     >
                       <v-icon size="16">mdi-close</v-icon>
                     </v-btn>
@@ -65,8 +65,8 @@
 
           <!-- 右側聊天區 -->
           <v-col cols="9" class="d-flex flex-column pa-0" style="height: 75vh;">
-            <!-- 對話訊息 -->  
-            <template v-if="!activeChatId">
+            <!-- 對話訊息 -->
+            <template v-if="activeChatId === null">
               <div class="empty-message">
                 請先選擇聊天室或點擊左上角的 + 號開啟新的聊天室，再輸入問題
               </div>
@@ -87,7 +87,7 @@
                       <v-icon>mdi-robot</v-icon>
                     </v-avatar>
                     <div class="message-bubble assistant-bubble">
-                      <div v-html="formatMessage(message.content)" />
+                      <div class="message-content">{{ message.content }}</div>
                       <div class="message-time">{{ message.time }}</div>
                     </div>
                   </template>
@@ -186,23 +186,26 @@
     '用戶連線數量？'
   ]
 
-  // 從 store 獲取狀態
-  const chats = computed(() => assistantStore.chats)
-  const activeChatId = computed(()=>assistantStore.activeChatId)
-  const activeMessages = computed(()=>chats.value[activeChatId.value]||[])
+  // 從 store 獲取狀態 (使用 Map<number, ChatSession>)
+  const chatList = computed(() => assistantStore.getChatList())
+  const activeChatId = computed(() => assistantStore.activeChatId)
+  const activeMessages = computed(() => {
+    if (activeChatId.value === null) return { message: [] }
+    return assistantStore.chats.get(activeChatId.value) || { message: [] }
+  })
   const isLoading = computed(() => assistantStore.isLoading)
 
   const projectId = ref(route.params.projectId ? Number(route.params.projectId) : null)
 
-  const editingChatId = ref<string | null>(null);
+  const editingChatId = ref<number | null>(null);
   const editingTitle = ref<string>('');
 
-  function startEditChatTitle(chatId: string, currentTitle: string) {
+  function startEditChatTitle(chatId: number, currentTitle: string) {
     editingChatId.value = chatId;
     editingTitle.value = currentTitle;
   }
 
-  async function saveChatTitle(chatId: string) {
+  async function saveChatTitle(chatId: number) {
     if (!editingTitle.value.trim()) {
       console.error('標題不可為空');
       return;
@@ -242,17 +245,17 @@
     dialogVisible.value = false
   }
 
-  function switchChat(id:string){
+  function switchChat(id: number) {
     assistantStore.switchChat(id)
     assistantStore.loadChatMessages(id)
-    nextTick(()=>scrollToBottom())
+    nextTick(() => scrollToBottom())
   }
 
   async function createChat(id: number) {
     await assistantStore.createChat(id)
   }
 
-  function deleteChat(id: string){
+  function deleteChat(id: number) {
     assistantStore.deleteChat(id)
   }
 
@@ -283,20 +286,6 @@
     }
   }
 
-
-  function escapeHTML(text: string){
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function formatMessage(text: string) {
-    const escaped = escapeHTML(text);
-    return escaped.replace(/\n/g, '<br>');
-  }
 
   // 監聽對話框開啟，滾動到底部
   watch(dialogVisible, (newVal) => {
@@ -411,6 +400,10 @@
   border-radius: 16px;
   position: relative;
   word-wrap: break-word;
+}
+
+.message-content {
+  white-space: pre-wrap;
 }
 
 .assistant-message {

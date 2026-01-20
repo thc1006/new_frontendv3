@@ -231,8 +231,9 @@ class Logger {
     this.formatMessage('error', module, message, data)
 
     // Send error to Sentry if available
-    if (typeof window !== 'undefined' && (window as any).$sentry) {
-      (window as any).$sentry.captureMessage(message, {
+    const windowWithSentry = window as Window & { $sentry?: { captureMessage: (message: string, options: Record<string, unknown>) => void } }
+    if (typeof window !== 'undefined' && windowWithSentry.$sentry) {
+      windowWithSentry.$sentry.captureMessage(message, {
         level: 'error',
         tags: { module },
         extra: { data, sessionId: this.sessionId }

@@ -1,15 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// Ambient module declaration for threebox-plugin
+// This file must NOT have any exports to work as an ambient declaration
 declare module 'threebox-plugin' {
-  // Basic Threebox class
+  // Threebox library doesn't have proper TypeScript definitions
+  // Using any for flexibility with the dynamic model objects
   export class Threebox {
-    constructor(map: any, glContext: any, options: any);
-    
-    // Common methods
+    constructor(map: any, glContext: WebGLRenderingContext, options?: any);
     update(): void;
-    add(obj: any): any;
+    add(obj: any): void;
+    remove(obj: any): void;
     loadObj(options: any, callback: (model: any) => void): void;
-    
-    // Add additional method declarations as needed
+    camera: any;
+    scene: any;
   }
-  
-  // Export any other classes, functions, or variables from the module
 }

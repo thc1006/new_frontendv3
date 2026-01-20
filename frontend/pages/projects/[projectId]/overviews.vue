@@ -124,12 +124,6 @@
 
   const log = createModuleLogger('Overviews')
 
-  declare global {
-    interface Window {
-      tb: any
-    }
-  }
-
   const route = useRoute()
   const router = useRouter()
   const projectId = ref('')
@@ -202,8 +196,9 @@
         }
 
         return response.data
-      } catch (err: any) {
-        if (err.response?.status === 404) {
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { status?: number } }
+        if (axiosError.response?.status === 404) {
           errorMessage.value = `Project with ID ${projectId.value} not found.`
           errorDialog.value = true
           projectExists.value = false
@@ -332,6 +327,7 @@
   })
   const modelLon = ref<number | null>(null)
   const modelLat = ref<number | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let threeboxModel: any = null
 
   function handleKeyMove(e: KeyboardEvent) {
@@ -410,25 +406,27 @@
               rotation: { x: 0, y: 0, z: 180 },
               anchor: 'center'
             };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tb.loadObj(options, (model: any) => {
-              model.setCoords(mapCenter.value);
-      
-              let boundingBox: any = null;
+              model.setCoords?.(mapCenter.value);
+
+              let boundingBox: THREE.Box3 | null = null;
               const traverseTarget = model.object3d || model;
               let computedSideLength = 1;
               if (traverseTarget && typeof traverseTarget.traverse === 'function') {
-                traverseTarget.traverse((child: any) => {
-                  if (child.isMesh && child.geometry) {
-                    child.geometry.computeBoundingBox();
+                traverseTarget.traverse((child: THREE.Object3D) => {
+                  const mesh = child as THREE.Mesh
+                  if (mesh.isMesh && mesh.geometry) {
+                    mesh.geometry.computeBoundingBox();
                     if (!boundingBox) {
-                      boundingBox = child.geometry.boundingBox.clone();
-                    } else {
-                      boundingBox.union(child.geometry.boundingBox);
+                      boundingBox = mesh.geometry.boundingBox?.clone() ?? null;
+                    } else if (mesh.geometry.boundingBox) {
+                      boundingBox.union(mesh.geometry.boundingBox);
                     }
                   }
                 });
                 if (boundingBox) {
-                  const size = boundingBox.getSize(new THREE.Vector3());
+                  const size = (boundingBox as THREE.Box3).getSize(new THREE.Vector3());
                   computedSideLength = Math.max(size.x, size.y);
                 }
               }
