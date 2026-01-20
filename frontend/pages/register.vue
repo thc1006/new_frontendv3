@@ -179,7 +179,7 @@
   const valid = ref(false)
   const showPassword = ref(false)
   const showConfirmPassword = ref(false)
-  const formRef = ref<any>(null)
+  const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
   const showSuccessDialog = ref(false)
 
   // 錯誤與提示
@@ -334,8 +334,9 @@
     try {
       await mutateAsync(form.value)
       showSuccessDialog.value = true
-    } catch (err: any) {
-      const status = err?.response?.status
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number } }
+      const status = axiosError?.response?.status
       let message = 'Registration failed. Please try again later.'
 
       if (status === 409) {

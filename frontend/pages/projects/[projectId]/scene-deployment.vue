@@ -267,9 +267,15 @@
 
   const log = createModuleLogger('SceneDeployment')
 
+  interface ThreeboxInstance {
+    loadObj: (options: Record<string, unknown>, callback: (model: THREE.Object3D & { setCoords?: (coords: [number, number]) => void }) => void) => void
+    add: (model: THREE.Object3D) => void
+    update: () => void
+  }
+
   declare global {
     interface Window {
-      tb: any
+      tb: ThreeboxInstance
     }
   }
 
@@ -340,8 +346,9 @@
         projectLon.value = response.data.lon ? Number(response.data.lon) : null
         projectMargin.value = response.data.margin ? Number(response.data.margin) : null
         return response.data
-      } catch (err: any) {
-        if (err.response?.status === 404) {
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { status?: number } }
+        if (axiosError.response?.status === 404) {
           errorMessage.value = `Project with ID ${projectId.value} not found.`
           errorDialog.value = true
           projectExists.value = false
@@ -623,8 +630,8 @@
               rotation: { x: 0, y: 0, z: 180 },
               anchor: 'center'
             }
-            tb.loadObj(options, (model: any) => {
-              model.setCoords(mapCenter.value)
+            tb.loadObj(options, (model) => {
+              model.setCoords?.(mapCenter.value)
               tb.add(model)
             })
           },

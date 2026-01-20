@@ -87,7 +87,7 @@
                       <v-icon>mdi-robot</v-icon>
                     </v-avatar>
                     <div class="message-bubble assistant-bubble">
-                      <div v-html="formatMessage(message.content)" />
+                      <div class="message-content">{{ message.content }}</div>
                       <div class="message-time">{{ message.time }}</div>
                     </div>
                   </template>
@@ -284,20 +284,6 @@
   }
 
 
-  function escapeHTML(text: string){
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function formatMessage(text: string) {
-    const escaped = escapeHTML(text);
-    return escaped.replace(/\n/g, '<br>');
-  }
-
   // 監聽對話框開啟，滾動到底部
   watch(dialogVisible, (newVal) => {
     if (newVal) {
@@ -411,6 +397,10 @@
   border-radius: 16px;
   position: relative;
   word-wrap: break-word;
+}
+
+.message-content {
+  white-space: pre-wrap;
 }
 
 .assistant-message {

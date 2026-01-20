@@ -314,7 +314,7 @@
     rotation: 0,
     tilt: 0,
     z: 0,
-    marker: null as any,
+    marker: null as ThreeboxModel | null,
     coordinates: { lng: 0, lat: 0 }
   })
 
@@ -359,10 +359,16 @@
     }
   })
 
+  // Threebox model type with common methods
+  interface ThreeboxModel extends THREE.Object3D {
+    setCoords?: (coords: [number, number] | [number, number, number]) => void
+    remove?: () => void
+  }
+
   // Enhanced RU markers with configuration
   interface RUMarker {
     id: number
-    marker: any
+    marker: ThreeboxModel | null
     coordinates: { lng: number; lat: number }
     brand_id: number
     bandwidth: number
@@ -374,7 +380,7 @@
 
   interface UEMarker {
     id: number
-    marker: any
+    marker: mapboxgl.Marker | null
     coordinates: { lng: number; lat: number }
     throughput: number | null
   }
@@ -397,7 +403,7 @@
   const modelRotateOffset = ref<number | null>(null)
   const modelScalingOffset = ref<number | null>(null)
   
-  let threeboxModel: any = null
+  let threeboxModel: THREE.Object3D | null = null
   const projectMargin = ref<number | null>(null)
 
   // First query: Check if the project exists and get lat/lon
@@ -422,9 +428,10 @@
         modelScalingOffset.value = response.data.scale ? Number(response.data.scale) : null;
         
         return response.data
-      } catch (err: any) {
+      } catch (err: unknown) {
         // If the project is not found (404), handle it
-        if (err.response?.status === 404) {
+        const axiosError = err as { response?: { status?: number } }
+        if (axiosError.response?.status === 404) {
           errorMessage.value = `Project with ID ${projectId.value} not found.`
           errorDialog.value = true
           projectExists.value = false
@@ -585,21 +592,22 @@
               anchor: 'center'
             };
 
-            tb.loadObj(options, (model: any) => {
-              model.setCoords(mapCenter.value);
+            tb.loadObj(options, (model: THREE.Object3D & { setCoords?: (coords: [number, number]) => void; object3d?: THREE.Object3D }) => {
+              model.setCoords?.(mapCenter.value);
 
               // --- Compute side length of the square model ---
-              let boundingBox: any = null;
+              let boundingBox: THREE.Box3 | null = null;
               const traverseTarget = model.object3d || model;
               let computedSideLength = 1;
               if (traverseTarget && typeof traverseTarget.traverse === 'function') {
-                traverseTarget.traverse((child: any) => {
-                  if (child.isMesh && child.geometry) {
-                    child.geometry.computeBoundingBox();
+                traverseTarget.traverse((child: THREE.Object3D) => {
+                  const mesh = child as THREE.Mesh
+                  if (mesh.isMesh && mesh.geometry) {
+                    mesh.geometry.computeBoundingBox();
                     if (!boundingBox) {
-                      boundingBox = child.geometry.boundingBox.clone();
-                    } else {
-                      boundingBox.union(child.geometry.boundingBox);
+                      boundingBox = mesh.geometry.boundingBox?.clone() ?? null;
+                    } else if (mesh.geometry.boundingBox) {
+                      boundingBox.union(mesh.geometry.boundingBox);
                     }
                   }
                 });
@@ -843,7 +851,7 @@
 
       const fileName = 'NYCU_API_TEST_cli.usd';
 
-      const simCfg: any = {
+      const simCfg: { is_full: boolean; mode: number; duration: number; interval: number } = {
         is_full: false,
         mode: 0,
         duration: 10,
@@ -851,7 +859,7 @@
       };
 
       // --- UEs payload by mode ---
-      let uesPayload: any = {};
+      let uesPayload: Record<string, number> = {};
       if (ues.mode === 1) {
         uesPayload = {
           ue_cnt: Number(ues.ue_cnt),
@@ -917,8 +925,9 @@
             pollError = 'RSRP heatmap failed';
             break;
           }
-        } catch (e: any) {
-          pollError = 'Failed to poll RSRP status: ' + (e?.message || e);
+        } catch (e: unknown) {
+          const errorMessage = e instanceof Error ? e.message : String(e)
+          pollError = 'Failed to poll RSRP status: ' + errorMessage;
           break;
         }
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -972,8 +981,9 @@
               netDTSuccess = false;
               break;
             }
-          } catch (e: any) {
-            pollError = 'Failed to poll RSRP DT status: ' + (e?.message || e);
+          } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e)
+            pollError = 'Failed to poll RSRP DT status: ' + errorMessage;
             netDTSuccess = false;
             break;
           }
@@ -997,13 +1007,13 @@
             ue_start_end_pt: ue_start_end_pt
           });
           log.debug('ranDT workflow started successfully');
-        } catch (e: any) {
+        } catch (e: unknown) {
           console.error('Failed to start ranDT workflow:', e);
         }
         log.debug('ranDT workflow succeeded:', netDTSuccess);
       }
       log.debug('All workflows completed');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error occurred during evaluation:', error);
     }
     log.debug('Evaluation process completed');
@@ -1082,8 +1092,8 @@
       anchor: "center",
     };
 
-    window.tb.loadObj(options, (model: any) => {
-      model.setCoords([ru.coordinates.lng, ru.coordinates.lat, ru.z]);
+    window.tb.loadObj(options, (model: ThreeboxModel) => {
+      model.setCoords?.([ru.coordinates.lng, ru.coordinates.lat, ru.z]);
       const mirrorRotation = (360 - ru.rotation) % 360;
       const rotationZradians = mirrorRotation * (Math.PI / 180);
       model.rotation.z = rotationZradians;
@@ -1681,7 +1691,7 @@
   };
 
   // Utility: Get max value among all RU fields for a point (ignoring "N/A") (new format)
-  function getMaxRUValue(point: Record<string, any>, _ruKeys: string[]): number|null {
+  function getMaxRUValue(point: Record<string, unknown>, _ruKeys: string[]): number|null {
     if (!Array.isArray(point.rus)) return null;
     const values = point.rus
       .map(v => (typeof v === 'number' && !isNaN(v)) ? v : null)
@@ -1779,7 +1789,7 @@
     } else {
       // Other formats: use max RU value
       const allRUKeys: string[] = Array.from(
-        new Set(heatmapData.flatMap((point: { rus: any[] }) => point.rus?.map((_, idx) => idx.toString()) ?? []))
+        new Set(heatmapData.flatMap((point: { rus?: unknown[] }) => point.rus?.map((_, idx) => idx.toString()) ?? []))
       ) as string[];
       for (const pt of heatmapData) {
         const maxRU = getMaxRUValue(pt, allRUKeys);
@@ -2062,7 +2072,7 @@
   async function fetchRuPosition() {
     let tries = 0;
     const RU_POSITION_MAX_TRIES = 256;
-    let gnbData: any[] = [];
+    let gnbData: Array<{ id: number; lat: number | null; lon: number | null }> = [];
     while (tries < RU_POSITION_MAX_TRIES) {
       try {
         const res = await $apiClient.gnb.gnbStatusList();
@@ -2123,14 +2133,16 @@
       z: number;
     }
     function hasLocationProperty(obj: unknown): obj is { location: Location } {
+      if (typeof obj !== 'object' || obj === null || !('location' in obj)) {
+        return false
+      }
+      const loc = (obj as { location: unknown }).location
       return (
-        typeof obj === 'object' &&
-        obj !== null &&
-        'location' in obj &&
-        typeof (obj as any).location === 'object' &&
-        typeof (obj as any).location.lon === 'number' &&
-        typeof (obj as any).location.lat === 'number' &&
-        typeof (obj as any).location.z === 'number'
+        typeof loc === 'object' &&
+        loc !== null &&
+        'lon' in loc && typeof (loc as Location).lon === 'number' &&
+        'lat' in loc && typeof (loc as Location).lat === 'number' &&
+        'z' in loc && typeof (loc as Location).z === 'number'
       );
     }
     const location: Location = hasLocationProperty(value)
