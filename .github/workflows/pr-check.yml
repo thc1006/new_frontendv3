@@ -22,6 +22,10 @@ jobs:
   lint:
     name: ESLint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -38,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install SARIF formatter
+        run: npm install @microsoft/eslint-formatter-sarif@3.1.0 --save-dev
+
       - name: Run ESLint
         run: |
           # Run lint and capture warning count
@@ -46,6 +53,22 @@ jobs:
           if [ "$WARNINGS" -gt 0 ]; then
             echo "::warning::Found $WARNINGS ESLint warnings. Please fix them when possible."
           fi
+
+      - name: Generate ESLint SARIF report
+        if: always()
+        run: |
+          npx eslint . \
+            --ext .js,.ts,.vue \
+            --format @microsoft/eslint-formatter-sarif \
+            --output-file eslint-results.sarif || true
+
+      - name: Upload ESLint SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: new/new-frontend/eslint-results.sarif
+          category: "eslint"
+          wait-for-processing: true
 
       - name: Check for console.log in production code
         run: |
@@ -65,6 +88,7 @@ jobs:
   typecheck:
     name: TypeScript Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -90,6 +114,7 @@ jobs:
   build:
     name: Production Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -133,6 +158,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
@@ -171,6 +197,7 @@ jobs:
   summary:
     name: PR Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [lint, typecheck, build, security-audit]
     if: always()
     steps:
