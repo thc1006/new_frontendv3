@@ -153,6 +153,9 @@ jobs:
             }
 
             // Fail if bundle size increased significantly (> 500KB)
-            if (prTotal - baseTotal > 500000) {
+            // Skip check if base build failed (baseTotal = 0)
+            if (baseTotal > 0 && prTotal - baseTotal > 500000) {
               core.setFailed('Bundle size increased by more than 500KB');
+            } else if (baseTotal === 0) {
+              core.info('Base build failed or is new - skipping size comparison');
             }
