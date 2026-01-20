@@ -55,7 +55,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
   import { ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { createModuleLogger } from '~/utils/logger'
@@ -73,7 +73,7 @@
 
   // TODO: 待接入 GET /projects/{projectId}/ai-model-evaluation/inference
   // Query params: model_type ("NES" | "Positioning"), enabled (boolean)
-  function onNesToggle(value: boolean) {
+  function onNesToggle(value: boolean | null) {
     log.debug(`[TODO] NES toggled: ${value}, projectId: ${projectId}`)
     snackbar.value = {
       show: true,
@@ -82,7 +82,7 @@
     }
   }
 
-  function onPositioningToggle(value: boolean) {
+  function onPositioningToggle(value: boolean | null) {
     log.debug(`[TODO] Positioning toggled: ${value}, projectId: ${projectId}`)
     snackbar.value = {
       show: true,
