@@ -18,8 +18,8 @@ pip install -r requirements.txt
 
 如果openapi有更新，要在`/backend`底下執行以下指令，更新前端使用的api function：
 ```bash
-# 你最好檢查一下你的改動在`/new-frontend/apis/Api.ts`底面看起來是不是正常的，如果function的名字有動，幫前端換一下，如果行為有改要通知前端幫忙修。
-npx swagger-typescript-api generate -p ./openapi.yml -o ../new-frontend/apis --axios --module-name-first-tag
+# 你最好檢查一下你的改動在`/frontend/apis/Api.ts`底面看起來是不是正常的，如果function的名字有動，幫前端換一下，如果行為有改要通知前端幫忙修。
+npx swagger-typescript-api generate -p ./openapi.yml -o ../frontend/apis --axios --module-name-first-tag
 ```
 
 ### OSS-fetcher
@@ -28,7 +28,7 @@ npx swagger-typescript-api generate -p ./openapi.yml -o ../new-frontend/apis --a
 
 ### Frontend (Nuxt.js)
 
-讓Intelisense可以動，請先安裝VSCode的Vue的插件，含後進入`/new-frontend`資料夾，然後執行以下指令：
+讓Intelisense可以動，請先安裝VSCode的Vue的插件，含後進入`/frontend`資料夾，然後執行以下指令：
 
 ```bash
 npm install
@@ -49,7 +49,7 @@ linting可以統一大家的格式，避免在git compare的時候因為格式�
 在commit之前請確保跑過了下面的指令：
 Frontend:
 ```
-npm run lint # 在 /new-frontend 資料夾下
+npm run lint # 在 /frontend 資料夾下
 ```
 
 Backend:

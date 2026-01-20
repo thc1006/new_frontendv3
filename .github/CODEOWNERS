@@ -2,13 +2,16 @@
 * @thc1006
 
 # Frontend code ownership
-/new/new-frontend/ @thc1006
+/frontend/ @thc1006
+
+# Backend code ownership
+/backend/ @thc1006
 
 # CI/CD configuration
 /.github/ @thc1006
 
 # K8s deployment configuration
-/new/k8s/ @thc1006
+/k8s/ @thc1006
 
 # Documentation
 /docs/ @thc1006
