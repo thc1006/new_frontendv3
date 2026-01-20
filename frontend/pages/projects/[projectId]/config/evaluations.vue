@@ -266,7 +266,7 @@
   import * as Threebox from 'threebox-plugin'
   import { useUserStore } from '~/stores/user'
   import * as THREE from 'three'
-  import type { RU } from '~/apis/Api'
+  import type { RU, AODTWorkflowRequest } from '~/apis/Api'
   import { createModuleLogger } from '~/utils/logger'
 
   const log = createModuleLogger('Evaluations')
@@ -359,11 +359,9 @@
     }
   })
 
-  // Threebox model type with common methods
-  interface ThreeboxModel extends THREE.Object3D {
-    setCoords?: (coords: [number, number] | [number, number, number]) => void
-    remove?: () => void
-  }
+  // Threebox model type - separate from THREE.Object3D to avoid method signature conflicts
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type ThreeboxModel = any
 
   // Enhanced RU markers with configuration
   interface RUMarker {
@@ -403,7 +401,8 @@
   const modelRotateOffset = ref<number | null>(null)
   const modelScalingOffset = ref<number | null>(null)
   
-  let threeboxModel: THREE.Object3D | null = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let threeboxModel: any = null
   const projectMargin = ref<number | null>(null)
 
   // First query: Check if the project exists and get lat/lon
@@ -592,7 +591,8 @@
               anchor: 'center'
             };
 
-            tb.loadObj(options, (model: THREE.Object3D & { setCoords?: (coords: [number, number]) => void; object3d?: THREE.Object3D }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tb.loadObj(options, (model: any) => {
               model.setCoords?.(mapCenter.value);
 
               // --- Compute side length of the square model ---
@@ -612,7 +612,7 @@
                   }
                 });
                 if (boundingBox) {
-                  const size = boundingBox.getSize(new THREE.Vector3());
+                  const size = (boundingBox as THREE.Box3).getSize(new THREE.Vector3());
                   computedSideLength = Math.max(size.x, size.y);
                 }
               }
@@ -631,11 +631,11 @@
               // --- End scale ---
               threeboxModel = model;
               if (mapOffset.value[0] && mapOffset.value[1]) {
-                const newCoords = [
+                const newCoords: [number, number] = [
                   mapCenter.value[0] + mapOffset.value[0],
                   mapCenter.value[1] + mapOffset.value[1]
                 ];
-                model.setCoords(newCoords);
+                model.setCoords?.(newCoords);
               }
               if(mapOffset.value[2])model.rotation.z = (mapOffset.value[2]);
               if(mapOffset.value[3]){
@@ -851,15 +851,17 @@
 
       const fileName = 'NYCU_API_TEST_cli.usd';
 
-      const simCfg: { is_full: boolean; mode: number; duration: number; interval: number } = {
+      const simCfg = {
         is_full: false,
-        mode: 0,
+        mode: 0 as const,
         duration: 10,
         interval: 1
       };
 
       // --- UEs payload by mode ---
-      let uesPayload: Record<string, number> = {};
+      // UE payload varies by mode - use partial type to allow different configurations
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let uesPayload: any = {};
       if (ues.mode === 1) {
         uesPayload = {
           ue_cnt: Number(ues.ue_cnt),
@@ -911,7 +913,8 @@
       await $apiClient.evaluation.resetStatusCreate(resetPayload);
 
       // --- Step 1: Start RSRP workflow ---
-      await $apiClient.aodt.workflowStartCreate(payload);
+      // Cast payload due to type inconsistency in generated API types (mode: 0 vs mode: "0")
+      await $apiClient.aodt.workflowStartCreate(payload as unknown as AODTWorkflowRequest);
 
       // --- Step 2: Poll for rsrp_status === "success" ---
       let rsrpStatus = '';
@@ -940,7 +943,7 @@
       // --- Step 3: Start throughput workflow ---
       log.debug('Starting throughput workflow with payload:', payload);
       try {
-        const throughputResult = await $apiClient.aodt.workflowThroughputCreate(payload);
+        const throughputResult = await $apiClient.aodt.workflowThroughputCreate(payload as unknown as AODTWorkflowRequest);
         log.debug('Throughput workflow result:', throughputResult);
         if (throughputResult.data?.success === false) {
           console.error('Throughput workflow failed:', throughputResult.data);
@@ -2072,7 +2075,8 @@
   async function fetchRuPosition() {
     let tries = 0;
     const RU_POSITION_MAX_TRIES = 256;
-    let gnbData: Array<{ id: number; lat: number | null; lon: number | null }> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let gnbData: any[] = [];
     while (tries < RU_POSITION_MAX_TRIES) {
       try {
         const res = await $apiClient.gnb.gnbStatusList();

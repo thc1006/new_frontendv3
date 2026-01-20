@@ -124,18 +124,6 @@
 
   const log = createModuleLogger('Overviews')
 
-  interface ThreeboxInstance {
-    loadObj: (options: Record<string, unknown>, callback: (model: THREE.Object3D & { setCoords?: (coords: [number, number]) => void; object3d?: THREE.Object3D; coordinates?: [number, number] }) => void) => void
-    add: (model: THREE.Object3D) => void
-    remove: (model: THREE.Object3D) => void
-  }
-
-  declare global {
-    interface Window {
-      tb: ThreeboxInstance
-    }
-  }
-
   const route = useRoute()
   const router = useRouter()
   const projectId = ref('')
@@ -339,7 +327,8 @@
   })
   const modelLon = ref<number | null>(null)
   const modelLat = ref<number | null>(null)
-  let threeboxModel: (THREE.Object3D & { coordinates?: [number, number]; setCoords?: (coords: [number, number]) => void; object3d?: THREE.Object3D }) | null = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let threeboxModel: any = null
 
   function handleKeyMove(e: KeyboardEvent) {
     if (!modelEditEnabled.value || !threeboxModel) return;
@@ -417,7 +406,8 @@
               rotation: { x: 0, y: 0, z: 180 },
               anchor: 'center'
             };
-            tb.loadObj(options, (model) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tb.loadObj(options, (model: any) => {
               model.setCoords?.(mapCenter.value);
 
               let boundingBox: THREE.Box3 | null = null;
@@ -436,7 +426,7 @@
                   }
                 });
                 if (boundingBox) {
-                  const size = boundingBox.getSize(new THREE.Vector3());
+                  const size = (boundingBox as THREE.Box3).getSize(new THREE.Vector3());
                   computedSideLength = Math.max(size.x, size.y);
                 }
               }

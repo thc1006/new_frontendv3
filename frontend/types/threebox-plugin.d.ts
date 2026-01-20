@@ -1,42 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// Ambient module declaration for threebox-plugin
+// This file must NOT have any exports to work as an ambient declaration
 declare module 'threebox-plugin' {
-  import type { Map as MapboxMap } from 'mapbox-gl'
-  import type { Object3D } from 'three'
-
-  interface ThreeboxOptions {
-    defaultLights?: boolean
-    enableSelectingObjects?: boolean
-    enableDraggingObjects?: boolean
-    enableRotatingObjects?: boolean
-    enableTooltips?: boolean
-  }
-
-  interface LoadObjOptions {
-    obj: string
-    type: string
-    scale?: { x: number; y: number; z: number }
-    units?: string
-    rotation?: { x: number; y: number; z: number }
-    anchor?: string
-  }
-
-  interface ThreeboxModel extends Object3D {
-    setCoords?: (coords: [number, number] | [number, number, number]) => void
-    coordinates?: [number, number]
-    object3d?: Object3D
-  }
-
-  // Basic Threebox class
+  // Threebox library doesn't have proper TypeScript definitions
+  // Using any for flexibility with the dynamic model objects
   export class Threebox {
-    constructor(map: MapboxMap, glContext: WebGLRenderingContext, options?: ThreeboxOptions);
-
-    // Common methods
+    constructor(map: any, glContext: WebGLRenderingContext, options?: any);
     update(): void;
-    add(obj: Object3D): void;
-    remove(obj: Object3D): void;
-    loadObj(options: LoadObjOptions, callback: (model: ThreeboxModel) => void): void;
-
-    // Add additional method declarations as needed
+    add(obj: any): void;
+    remove(obj: any): void;
+    loadObj(options: any, callback: (model: any) => void): void;
+    camera: any;
+    scene: any;
   }
-
-  // Export any other classes, functions, or variables from the module
 }

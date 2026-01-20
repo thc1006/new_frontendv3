@@ -267,18 +267,6 @@
 
   const log = createModuleLogger('SceneDeployment')
 
-  interface ThreeboxInstance {
-    loadObj: (options: Record<string, unknown>, callback: (model: THREE.Object3D & { setCoords?: (coords: [number, number]) => void }) => void) => void
-    add: (model: THREE.Object3D) => void
-    update: () => void
-  }
-
-  declare global {
-    interface Window {
-      tb: ThreeboxInstance
-    }
-  }
-
   log.lifecycle('setup:start')
   const route = useRoute()
   const _router = useRouter()
@@ -630,7 +618,8 @@
               rotation: { x: 0, y: 0, z: 180 },
               anchor: 'center'
             }
-            tb.loadObj(options, (model) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tb.loadObj(options, (model: any) => {
               model.setCoords?.(mapCenter.value)
               tb.add(model)
             })
