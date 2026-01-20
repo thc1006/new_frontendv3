@@ -27,7 +27,7 @@ spec:
           imagePullPolicy: Never
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -44,6 +44,13 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          volumeMounts:
+            # Nitro needs /tmp for worker sockets
+            - name: tmp
+              mountPath: /tmp
+            # Nitro KV storage directory
+            - name: data
+              mountPath: /app/.data
           livenessProbe:
             httpGet:
               path: /
@@ -60,4 +67,10 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+      volumes:
+        # Ephemeral volumes for writable directories
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
       restartPolicy: Always
