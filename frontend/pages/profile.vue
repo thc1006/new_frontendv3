@@ -98,25 +98,37 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
   import { useUserStore } from '~/stores/user'
 
+  // Local interface definitions
+  interface SnackbarState {
+    show: boolean
+    text: string
+    color: 'success' | 'error' | 'warning' | 'info'
+  }
+
+  interface PasswordForm {
+    newPassword: string
+    confirmPassword: string
+  }
+
   const userStore = useUserStore()
 
-  const isLoading = ref(true)
-  const passwordDialog = ref(false)
-  const isChangingPassword = ref(false)
-  const snackbar = ref({ show: false, text: '', color: 'success' })
+  const isLoading = ref<boolean>(true)
+  const passwordDialog = ref<boolean>(false)
+  const isChangingPassword = ref<boolean>(false)
+  const snackbar = ref<SnackbarState>({ show: false, text: '', color: 'success' })
 
   // TODO: 後端 API 實作後，需加入舊密碼欄位以提升安全性
-  const passwordForm = ref({
+  const passwordForm = ref<PasswordForm>({
     newPassword: '',
     confirmPassword: ''
   })
 
   // 密碼不一致錯誤訊息
-  const passwordMismatchError = computed(() => {
+  const passwordMismatchError = computed<string>(() => {
     if (passwordForm.value.confirmPassword &&
       passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
       return '密碼不一致'
@@ -145,22 +157,22 @@
     }
   })
 
-  function formatDate(dateStr) {
+  function formatDate(dateStr: string | undefined | null): string {
     if (!dateStr) return '-'
     return new Date(dateStr).toLocaleDateString('zh-TW')
   }
 
-  function openPasswordDialog() {
+  function openPasswordDialog(): void {
     passwordForm.value = { newPassword: '', confirmPassword: '' }
     passwordDialog.value = true
   }
 
-  function closePasswordDialog() {
+  function closePasswordDialog(): void {
     passwordDialog.value = false
     passwordForm.value = { newPassword: '', confirmPassword: '' }
   }
 
-  async function confirmChangePassword() {
+  async function confirmChangePassword(): Promise<void> {
     // 驗證密碼
     if (!passwordForm.value.newPassword || passwordForm.value.newPassword.length < 6) {
       snackbar.value = { show: true, text: '密碼至少 6 個字元', color: 'error' }

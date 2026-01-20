@@ -3,6 +3,26 @@ import { ref } from 'vue'
 import type { ChatMessage } from '~/apis/Api'
 import { useUserStore } from '~/stores/user'
 
+// API Response interfaces (based on actual backend response structure)
+interface CreateChatResponse {
+  'new chat session id': number
+}
+
+interface ChatSessionListItem {
+  'chat session id': number
+  'chat session title': string
+}
+
+interface ChatMessageResponse {
+  'chat message role': 'USER' | 'ASSISTANT'
+  'chat message content': string
+  'chat message created_at': string
+}
+
+interface SendMessageResponse {
+  'chat message content': string
+}
+
 interface ChatSession {
   title: string
   message: ChatMessage[]
@@ -25,7 +45,7 @@ export const useAssistantStore = defineStore('assistant', () => {
 
     const newTitle = `${userStore.user?.user_id}_${projectId}_chat_${Date.now()}`
     const response = await $apiClient.chat.chatSessionsCreate(projectId, { title: newTitle })
-    const chatId = (response.data as any)["new chat session id"]
+    const chatId = String((response.data as CreateChatResponse)['new chat session id'])
 
     chats.value[chatId] = { title: newTitle, message: [] }
     activeChatId.value = chatId
@@ -36,14 +56,14 @@ export const useAssistantStore = defineStore('assistant', () => {
     isLoading.value = true
     try {
       const response = await $apiClient.chat.chatSessionsList(projectId)
-      const sessions = response.data as Array<any>
+      const sessions = response.data as ChatSessionListItem[]
 
       chats.value = {}
-      sessions.forEach(session => {
-        const id = String(session["chat session id"])
+      sessions.forEach((session: ChatSessionListItem) => {
+        const id = String(session['chat session id'])
         chats.value[id] = {
-          title: session["chat session title"],
-          message: []  
+          title: session['chat session title'],
+          message: []
         }
       })
     } catch (error) {
@@ -59,12 +79,12 @@ export const useAssistantStore = defineStore('assistant', () => {
     
     try {
       const response = await $apiClient.chat.messagesList(Number(chatId))
-      const messages = response.data as Array<any>
-      
-      chats.value[chatId].message = messages.map(msg => ({
-        role: msg['chat message role'] as 'USER' | 'ASSISTANT',
+      const messages = response.data as ChatMessageResponse[]
+
+      chats.value[chatId].message = messages.map((msg: ChatMessageResponse) => ({
+        role: msg['chat message role'],
         content: msg['chat message content'],
-        time: msg['chat message created_at'] 
+        time: msg['chat message created_at']
       }))
     } catch (error) {
       console.error('載入聊天訊息失敗:', error)
@@ -121,19 +141,18 @@ export const useAssistantStore = defineStore('assistant', () => {
 
       
       // Add assistant response
+      const responseData = response.data as SendMessageResponse
       const assistantMessage: ChatMessage = {
         role: 'ASSISTANT',
-        content: (response.data as any)["chat message content"]|| '抱歉，我現在無法回答您的問題。',
+        content: responseData['chat message content'] || '抱歉，我現在無法回答您的問題。',
         time: new Date().toISOString()
       }
 
       chats.value[chatId].message.push(assistantMessage)
 
-      
-
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('發送訊息失敗:', err)
-      error.value = err.message || '發送訊息失敗'
+      error.value = err instanceof Error ? err.message : '發送訊息失敗'
       
       // Add error response
       const errorMessage: ChatMessage = {

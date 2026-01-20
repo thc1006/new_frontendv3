@@ -22,7 +22,7 @@
         <div>{{ brand.tx_power }}</div>
         <div>
           <v-btn color="primary" @click.stop="showBrandDetail(brand)">詳細</v-btn>
-          <v-btn color="error" style="margin-left:8px;" @click.stop="openDeleteDialog(brand.brand_id)" >刪除</v-btn>
+          <v-btn color="error" style="margin-left:8px;" :disabled="!brand.brand_id" @click.stop="openDeleteDialog(brand.brand_id!)">刪除</v-btn>
         </div>
       </div>
     </div>
@@ -125,39 +125,70 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { createModuleLogger } from '~/utils/logger'
+  import type { Brand, BrandMetrics, BrandMetricsRequest, AbstractMetrics } from '~/apis/Api'
+
+  // Local interface definitions
+  interface SnackbarState {
+    show: boolean
+    text: string
+    color: 'success' | 'error' | 'warning' | 'info'
+  }
+
+  interface MetricInput {
+    name: string
+    description: string
+    api_source: string
+    type: string
+    interval: string | number
+    operator: string
+    unit: string
+  }
+
+  interface SelectableMetric {
+    abstract_metrics_id: number
+    display_name: string
+    selected: boolean
+    input: MetricInput
+  }
+
+  interface NewBrandForm {
+    brand_name: string
+    bandwidth: string
+    tx_power: string
+  }
 
   const log = createModuleLogger('Brands')
   const { $apiClient } = useNuxtApp()
 
-  const brandList = ref([])
-  const detailDialog = ref(false)
-  const selectedBrand = ref(null)
-  const confirmDeleteDialog = ref(false)
-  const deleteTargetId = ref(null)
-  const snackbar = ref({ show: false, text: '', color: 'success' })
-  const addDialog = ref(false)
-  const newBrand = ref({ brand_name: '', bandwidth: '', tx_power: '' })
-  const allMetrics = ref([])
+  const brandList = ref<Brand[]>([])
+  const detailDialog = ref<boolean>(false)
+  const selectedBrand = ref<Brand | null>(null)
+  const confirmDeleteDialog = ref<boolean>(false)
+  const deleteTargetId = ref<number | null>(null)
+  const snackbar = ref<SnackbarState>({ show: false, text: '', color: 'success' })
+  const addDialog = ref<boolean>(false)
+  const newBrand = ref<NewBrandForm>({ brand_name: '', bandwidth: '', tx_power: '' })
+  const allMetrics = ref<SelectableMetric[]>([])
 
   onMounted(async () => {
     await fetchBrands()
     await fetchAllMetrics()
   })
 
-  async function fetchBrands () {
+  async function fetchBrands(): Promise<void> {
     const res = await $apiClient.brand.brandsList()
     brandList.value = res.data
   }
 
   // 只取 abstract metrics 的 display_name 與 id，並初始化一組 input 欄位
-  async function fetchAllMetrics () {
+  async function fetchAllMetrics(): Promise<void> {
     const res = await $apiClient.abstractMetrics.abstractMetricsList()
-    allMetrics.value = res.data.map(m => ({
-      abstract_metrics_id: m.id,
-      display_name: m.display_name,
+    allMetrics.value = res.data.map((m: AbstractMetrics) => ({
+      abstract_metrics_id: m.id ?? 0,
+      display_name: m.display_name ?? '',
       selected: false,
       input: {
         name: '',
@@ -171,18 +202,19 @@
     }))
   }
 
-  function showBrandDetail(brand) {
+  function showBrandDetail(brand: Brand): void {
     selectedBrand.value = brand
     detailDialog.value = true
   }
 
-  function openDeleteDialog(brandId) {
+  function openDeleteDialog(brandId: number): void {
     deleteTargetId.value = brandId
     confirmDeleteDialog.value = true
   }
 
-  async function confirmDelete() {
+  async function confirmDelete(): Promise<void> {
     confirmDeleteDialog.value = false
+    if (deleteTargetId.value === null) return
     try {
       await $apiClient.brand.brandsDelete(deleteTargetId.value)
       snackbar.value = { show: true, text: '刪除成功', color: 'success' }
@@ -193,27 +225,27 @@
     }
   }
 
-  async function confirmAdd() {
+  async function confirmAdd(): Promise<void> {
     if (!newBrand.value.brand_name.trim()) {
       snackbar.value = { show: true, text: '品牌名稱不可為空', color: 'error' }
       return
     }
-    const bandwidth = newBrand.value.bandwidth?.toString().trim() ? newBrand.value.bandwidth : '5'
-    const tx_power = newBrand.value.tx_power?.toString().trim() ? newBrand.value.tx_power : '5'
+    const bandwidth = newBrand.value.bandwidth?.toString().trim() ? Number(newBrand.value.bandwidth) : 5
+    const tx_power = newBrand.value.tx_power?.toString().trim() ? Number(newBrand.value.tx_power) : 5
 
     // 組合 brand_metrics（只取勾選且填寫的 metrics，且不含 id）
-    const selectedMetrics = []
-    allMetrics.value.forEach(metric => {
+    const selectedMetrics: BrandMetricsRequest[] = []
+    allMetrics.value.forEach((metric: SelectableMetric) => {
       if (metric.selected && metric.input.name.trim()) {
         selectedMetrics.push({
           abstract_metrics_id: metric.abstract_metrics_id,
-          api_source: metric.input.api_source,
-          description: metric.input.description,
-          interval: metric.input.interval,
+          api_source: metric.input.api_source || null,
+          description: metric.input.description || null,
+          interval: metric.input.interval ? Number(metric.input.interval) : null,
           name: metric.input.name,
-          operator: metric.input.operator,
+          operator: metric.input.operator || null,
           type: metric.input.type,
-          unit: metric.input.unit
+          unit: metric.input.unit || null
         })
       }
     })
@@ -235,18 +267,18 @@
   }
 
   // 新增：開啟新增品牌表單時，填入 metrics 預設值
-  function openAddDialog() {
+  function openAddDialog(): void {
     // 先填品牌基本資料（如需）
     newBrand.value = { brand_name: '', bandwidth: '', tx_power: '' }
     // 取得第一個品牌的 metrics
-    let firstMetrics = []
+    let firstMetrics: BrandMetrics[] = []
     if (brandList.value.length > 0 && Array.isArray(brandList.value[0].brand_metrics)) {
       firstMetrics = brandList.value[0].brand_metrics
     }
     // 依照 allMetrics，把第一個品牌的 metrics 填入 input
-    allMetrics.value.forEach(metric => {
+    allMetrics.value.forEach((metric: SelectableMetric) => {
       // 找到同 abstract_metrics_id 的 metric
-      const found = firstMetrics.find(m => m.abstract_metrics_id === metric.abstract_metrics_id)
+      const found = firstMetrics.find((m: BrandMetrics) => m.abstract_metrics_id === metric.abstract_metrics_id)
       if (found) {
         metric.selected = true
         metric.input = {
@@ -254,7 +286,7 @@
           description: found.description || '',
           api_source: found.api_source || '',
           type: found.type || '',
-          interval: found.interval || '',
+          interval: found.interval ?? '',
           operator: found.operator || '',
           unit: found.unit || ''
         }

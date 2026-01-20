@@ -4,23 +4,23 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install OS deps only if你需要原生模組（例如 sharp）
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@10 --activate
+
+# Install OS deps only if you need native modules (e.g., sharp)
 # RUN apk add --no-cache python3 make g++ libc6-compat
 
-# 先只複製依賴檔，利用快取
-COPY package*.json ./
-# 使用 ci 保證可重現安裝；要 dev 依賴來進行 build
-RUN npm ci
+# Copy dependency files first for better caching
+COPY package.json pnpm-lock.yaml ./
+# Use frozen-lockfile for reproducible installs
+RUN pnpm install --frozen-lockfile
 
-# 再複製原始碼並進行編譯
+# Copy source code and build
 COPY . .
-# 關掉 Nuxt 遠端遙測
+# Disable Nuxt telemetry
 ENV NUXT_TELEMETRY_DISABLED=1
-# 正式編譯輸出到 .output（Nitro）
-RUN npm run build
-
-# 如果你的 Nitro 設定有 external deps（少數情況），在這裡移除 dev 依賴
-# RUN npm prune --omit=dev
+# Build for production
+RUN pnpm run build
 
 
 ########## 2) Runtime stage ##########

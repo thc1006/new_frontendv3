@@ -1,10 +1,10 @@
-<script setup>
+<script setup lang="ts">
   import { ref } from 'vue'
 
-  const clickCount = ref(0)
-  const showCapyengineer = ref(false)
+  const clickCount = ref<number>(0)
+  const showCapyengineer = ref<boolean>(false)
 
-  const handleClick = () => {
+  const handleClick = (): void => {
     clickCount.value++
     if (clickCount.value > 10) {
       showCapyengineer.value = true
