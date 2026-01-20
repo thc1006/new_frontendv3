@@ -128,7 +128,7 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { createModuleLogger } from '~/utils/logger'
-  import type { Brand, BrandMetrics, BrandMetricsRequest, AbstractMetrics } from '~/apis/Api'
+  import type { Brand, BrandMetrics, BrandMetricsRequest } from '~/apis/Api'
 
   // Local interface definitions
   interface SnackbarState {

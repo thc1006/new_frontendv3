@@ -329,7 +329,7 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { createModuleLogger } from '~/utils/logger'
-  import type { PrimitiveAIModel as BasePrimitiveAIModel, AbstractMetrics, AIMetricsRequest } from '~/apis/Api'
+  import type { PrimitiveAIModel as BasePrimitiveAIModel, AIMetricsRequest } from '~/apis/Api'
 
   // Extended PrimitiveAIModel with additional frontend properties
   interface PrimitiveAIModel extends BasePrimitiveAIModel {
