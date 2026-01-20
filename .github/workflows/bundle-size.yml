@@ -12,6 +12,10 @@ permissions:
   pull-requests: write
   contents: read
 
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+
 jobs:
   analyze:
     name: Analyze Bundle Size
@@ -24,18 +28,23 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: new/new-frontend/package-lock.json
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build PR branch
-        run: npm run build
+        run: pnpm build
         env:
           NODE_ENV: production
 
@@ -64,10 +73,11 @@ jobs:
         run: rm -rf .output .nuxt
 
       - name: Install base dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
+        continue-on-error: true
 
       - name: Build base branch
-        run: npm run build
+        run: pnpm build
         env:
           NODE_ENV: production
         continue-on-error: true

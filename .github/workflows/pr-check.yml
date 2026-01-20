@@ -13,6 +13,7 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
+  PNPM_VERSION: '10'
   WORKING_DIR: ./new/new-frontend
 
 jobs:
@@ -32,23 +33,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: new/new-frontend/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install SARIF formatter
-        run: npm install @microsoft/eslint-formatter-sarif@3.1.0 --save-dev
+        run: pnpm add -D @microsoft/eslint-formatter-sarif@3.1.0
 
       - name: Run ESLint
         run: |
           # Run lint and capture warning count
-          npm run lint 2>&1 | tee lint-output.txt
+          pnpm lint 2>&1 | tee lint-output.txt
           WARNINGS=$(grep -c "warning" lint-output.txt || echo "0")
           if [ "$WARNINGS" -gt 0 ]; then
             echo "::warning::Found $WARNINGS ESLint warnings. Please fix them when possible."
@@ -95,18 +101,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: new/new-frontend/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run Type Check
-        run: npm run typecheck
+        run: pnpm typecheck
 
   # ============================================
   # Build Verification
@@ -123,18 +134,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: new/new-frontend/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: pnpm build
         env:
           NODE_ENV: production
 
@@ -165,20 +181,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: new/new-frontend/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: new/new-frontend/pnpm-lock.yaml
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level=high
         continue-on-error: true
 
       - name: Check for known vulnerabilities
         run: |
-          npm audit --json > audit-results.json || true
+          pnpm audit --json > audit-results.json || true
           HIGH_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
           CRITICAL_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
 
@@ -212,4 +233,4 @@ jobs:
           echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security | ${{ needs.security-audit.result == 'success' && '✅ Passed' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "_Note: E2E tests are available for local development. Run \`npm run test:e2e\` with the full K8s stack._" >> $GITHUB_STEP_SUMMARY
+          echo "_Note: E2E tests are available for local development. Run \`pnpm test:e2e\` with the full K8s stack._" >> $GITHUB_STEP_SUMMARY
