@@ -127,6 +127,9 @@
 
 <script setup>
   import { ref, onMounted } from 'vue'
+  import { createModuleLogger } from '~/utils/logger'
+
+  const log = createModuleLogger('Brands')
   const { $apiClient } = useNuxtApp()
 
   const brandList = ref([])
@@ -186,7 +189,7 @@
       await fetchBrands()
     } catch (e) {
       snackbar.value = { show: true, text: '刪除失敗', color: 'error' }
-      console.log(e)
+      log.error('Failed to delete brand', e)
     }
   }
 
@@ -227,7 +230,7 @@
       await fetchBrands()
     } catch (e) {
       snackbar.value = { show: true, text: '新增失敗', color: 'error' }
-      console.log(e)
+      log.error('Failed to add brand', e)
     }
   }
 

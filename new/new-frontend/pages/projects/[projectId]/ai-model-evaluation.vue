@@ -58,7 +58,9 @@
 <script setup>
   import { ref } from 'vue'
   import { useRoute } from 'vue-router'
+  import { createModuleLogger } from '~/utils/logger'
 
+  const log = createModuleLogger('AIModelEval')
   const route = useRoute()
   const projectId = route.params.projectId
 
@@ -71,8 +73,8 @@
 
   // TODO: 待接入 GET /projects/{projectId}/ai-model-evaluation/inference
   // Query params: model_type ("NES" | "Positioning"), enabled (boolean)
-  function onNesToggle(value) {
-    console.log(`[TODO] NES toggled: ${value}, projectId: ${projectId}`)
+  function onNesToggle(value: boolean) {
+    log.debug(`[TODO] NES toggled: ${value}, projectId: ${projectId}`)
     snackbar.value = {
       show: true,
       text: 'NES 模型推斷功能尚未接上後端',
@@ -80,8 +82,8 @@
     }
   }
 
-  function onPositioningToggle(value) {
-    console.log(`[TODO] Positioning toggled: ${value}, projectId: ${projectId}`)
+  function onPositioningToggle(value: boolean) {
+    log.debug(`[TODO] Positioning toggled: ${value}, projectId: ${projectId}`)
     snackbar.value = {
       show: true,
       text: 'Positioning 模型推斷功能尚未接上後端',

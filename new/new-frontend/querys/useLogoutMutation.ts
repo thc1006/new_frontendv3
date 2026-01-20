@@ -1,4 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { createModuleLogger } from '~/utils/logger'
+
+const log = createModuleLogger('Auth')
 
 export default function useLogoutMutation() {
   const { $apiClient } = useNuxtApp()
@@ -9,7 +12,7 @@ export default function useLogoutMutation() {
     mutationFn: () => $apiClient.auth.logoutCreate(),
     onSettled: () => {
       queryClient.removeQueries()
-      console.log('Logout mutation settled, invalidating queries')
+      log.debug('Logout mutation settled, invalidating queries')
     },
   })
 }

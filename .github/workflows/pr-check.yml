@@ -79,14 +79,16 @@ jobs:
       - name: Check for console.log in production code
         run: |
           # Exclude test files, config files, logger utility, and plugins
-          # NOTE: Currently warning-only. See issue for cleanup tracking.
+          # This check enforces no console.log in production code
           FOUND=$(grep -r "console\.log" --include="*.ts" --include="*.vue" \
              --exclude-dir=tests --exclude-dir=node_modules \
              --exclude="*.config.*" --exclude="logger.ts" \
              --exclude="sentry.client.ts" . 2>/dev/null || true)
           if [ -n "$FOUND" ]; then
             COUNT=$(echo "$FOUND" | wc -l)
-            echo "::warning::Found $COUNT console.log statements in production code. Consider using logger utility instead."
+            echo "::error::Found $COUNT console.log statements in production code. Use logger utility instead."
+            echo "$FOUND"
+            exit 1
           else
             echo "No console.log found in production code ✓"
           fi

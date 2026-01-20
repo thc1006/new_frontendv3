@@ -18,7 +18,8 @@ export default withNuxt(
       'vue/html-indent': ['error', 2],
       'vue/script-indent': ['error', 2, { baseIndent: 1 }],
       '@typescript-eslint/no-explicit-any': 'warn',
-      indent: ['error', 2]
+      indent: ['error', 2],
+      'no-console': ['error', { allow: ['warn', 'error'] }]
     }
   },
   {

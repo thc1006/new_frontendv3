@@ -152,7 +152,9 @@
 
 <script setup>
   import { ref, computed, onMounted, watch } from 'vue'
+  import { createModuleLogger } from '~/utils/logger'
 
+  const log = createModuleLogger('GnbConfig')
   const { $apiClient } = useNuxtApp()
   const route = useRoute()
 
@@ -197,14 +199,14 @@
 
   // 監聽選擇變化
   watch(selectedRuKey, (newKey, oldKey) => {
-    console.log('selectedRuKey 變化:', { from: oldKey, to: newKey })
+    log.debug('selectedRuKey 變化:', { from: oldKey, to: newKey })
   
     // 添加詳細的資料調試
     if (newKey) {
       const selectedRU = ruList.value.find(ru => ru.RU_id === newKey)
       if (selectedRU) {
-        console.log('選中的 RU 完整資料:', selectedRU)
-        console.log('座標資料檢查:', {
+        log.debug('選中的 RU 完整資料:', selectedRU)
+        log.debug('座標資料檢查:', {
           lat: selectedRU.lat,
           lat_type: typeof selectedRU.lat,
           lon: selectedRU.lon, 
@@ -222,11 +224,11 @@
     selectedRuKey.value = null
   
     try {
-      console.log(`載入專案 ${currentProjectId.value} 的 RU 資料...`)
+      log.debug(`載入專案 ${currentProjectId.value} 的 RU 資料...`)
     
       // 調用 RU API
       const response = await $apiClient.ru.getRUs()
-      console.log('API 回應:', response)
+      log.debug('API 回應:', response)
     
       // 檢查回應資料結構
       let apiData = []
@@ -250,17 +252,17 @@
       })
     
       ruList.value = validRUs
-      console.log('所有 RU 資料:', ruList.value)
+      log.debug('所有 RU 資料:', ruList.value)
     
       // 詳細檢查第一筆資料的結構
       if (validRUs.length > 0) {
-        console.log('第一筆 RU 資料詳細檢查:', validRUs[0])
-        console.log('第一筆資料的所有 key:', Object.keys(validRUs[0]))
-        console.log('location 物件內容:', validRUs[0].location)
+        log.debug('第一筆 RU 資料詳細檢查:', validRUs[0])
+        log.debug('第一筆資料的所有 key:', Object.keys(validRUs[0]))
+        log.debug('location 物件內容:', validRUs[0].location)
         if (validRUs[0].location) {
-          console.log('location 物件的 keys:', Object.keys(validRUs[0].location))
+          log.debug('location 物件的 keys:', Object.keys(validRUs[0].location))
         }
-        console.log('座標相關欄位檢查:', {
+        log.debug('座標相關欄位檢查:', {
           'lat存在': 'lat' in validRUs[0],
           'lat值': validRUs[0].lat,
           'lat類型': typeof validRUs[0].lat,
@@ -310,7 +312,7 @@
   }
 
   function onRuSelect(ruId) {
-    console.log('RU 選擇事件:', ruId)
+    log.debug('RU 選擇事件:', ruId)
   
     if (ruId !== null && ruId !== undefined) {
       const selectedRU = ruList.value.find(ru => ru.RU_id === ruId)
@@ -330,26 +332,26 @@
   // 格式化座標顯示 - 修復版本（加強調試）
   function formatCoordinate(value) {
     // 添加調試資訊
-    console.log('formatCoordinate 輸入值:', value, '類型:', typeof value)
+    log.debug('formatCoordinate 輸入值:', value, '類型:', typeof value)
   
     if (value === null || value === undefined) {
-      console.log('座標值為 null 或 undefined')
+      log.debug('座標值為 null 或 undefined')
       return 'N/A'
     }
   
     if (typeof value === 'number') {
       const formatted = value.toFixed(6)
-      console.log('格式化後的座標:', formatted)
+      log.debug('格式化後的座標:', formatted)
       return formatted
     }
   
     if (typeof value === 'string' && !isNaN(parseFloat(value))) {
       const formatted = parseFloat(value).toFixed(6)
-      console.log('字串轉數字後格式化:', formatted)
+      log.debug('字串轉數字後格式化:', formatted)
       return formatted
     }
   
-    console.log('座標值無法格式化，返回原值:', String(value))
+    log.debug('座標值無法格式化，返回原值:', String(value))
     return String(value)
   }
 
@@ -373,7 +375,7 @@
 
   // 生命週期
   onMounted(() => {
-    console.log(`組件已掛載，開始載入專案 ${currentProjectId.value} 的資料`)
+    log.debug(`組件已掛載，開始載入專案 ${currentProjectId.value} 的資料`)
     fetchRuData()
   })
 </script>

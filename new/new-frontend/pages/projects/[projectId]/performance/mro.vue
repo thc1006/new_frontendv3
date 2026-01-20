@@ -60,8 +60,8 @@
     }
   }
 
-  // 預留 projectId 使用，未來可能需要依專案載入不同 dashboard
-  console.log('Performance MRO - Project ID:', projectId)
+  // projectId reserved for future dashboard filtering
+  void projectId
 </script>
 
 <style scoped>
