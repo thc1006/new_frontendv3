@@ -186,7 +186,7 @@
   // 只取 abstract metrics 的 display_name 與 id，並初始化一組 input 欄位
   async function fetchAllMetrics(): Promise<void> {
     const res = await $apiClient.abstractMetrics.abstractMetricsList()
-    allMetrics.value = res.data.map((m: AbstractMetrics) => ({
+    allMetrics.value = res.data.map(m => ({
       abstract_metrics_id: m.id ?? 0,
       display_name: m.display_name ?? '',
       selected: false,
@@ -208,6 +208,7 @@
   }
 
   function openDeleteDialog(brandId: number): void {
+    if (brandId == null || Number.isNaN(brandId)) return
     deleteTargetId.value = brandId
     confirmDeleteDialog.value = true
   }
@@ -235,7 +236,7 @@
 
     // 組合 brand_metrics（只取勾選且填寫的 metrics，且不含 id）
     const selectedMetrics: BrandMetricsRequest[] = []
-    allMetrics.value.forEach((metric: SelectableMetric) => {
+    allMetrics.value.forEach(metric => {
       if (metric.selected && metric.input.name.trim()) {
         selectedMetrics.push({
           abstract_metrics_id: metric.abstract_metrics_id,
@@ -244,7 +245,7 @@
           interval: metric.input.interval ? Number(metric.input.interval) : null,
           name: metric.input.name,
           operator: metric.input.operator || null,
-          type: metric.input.type,
+          type: metric.input.type || '',
           unit: metric.input.unit || null
         })
       }
@@ -276,19 +277,19 @@
       firstMetrics = brandList.value[0].brand_metrics
     }
     // 依照 allMetrics，把第一個品牌的 metrics 填入 input
-    allMetrics.value.forEach((metric: SelectableMetric) => {
+    allMetrics.value.forEach(metric => {
       // 找到同 abstract_metrics_id 的 metric
-      const found = firstMetrics.find((m: BrandMetrics) => m.abstract_metrics_id === metric.abstract_metrics_id)
+      const found = firstMetrics.find(m => m.abstract_metrics_id === metric.abstract_metrics_id)
       if (found) {
         metric.selected = true
         metric.input = {
-          name: found.name || '',
-          description: found.description || '',
-          api_source: found.api_source || '',
-          type: found.type || '',
+          name: found.name ?? '',
+          description: found.description ?? '',
+          api_source: found.api_source ?? '',
+          type: found.type ?? '',
           interval: found.interval ?? '',
-          operator: found.operator || '',
-          unit: found.unit || ''
+          operator: found.operator ?? '',
+          unit: found.unit ?? ''
         }
       } else {
         metric.selected = false

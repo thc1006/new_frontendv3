@@ -59,7 +59,7 @@ export const useAssistantStore = defineStore('assistant', () => {
       const sessions = response.data as ChatSessionListItem[]
 
       chats.value = {}
-      sessions.forEach((session: ChatSessionListItem) => {
+      sessions.forEach(session => {
         const id = String(session['chat session id'])
         chats.value[id] = {
           title: session['chat session title'],
@@ -81,7 +81,7 @@ export const useAssistantStore = defineStore('assistant', () => {
       const response = await $apiClient.chat.messagesList(Number(chatId))
       const messages = response.data as ChatMessageResponse[]
 
-      chats.value[chatId].message = messages.map((msg: ChatMessageResponse) => ({
+      chats.value[chatId].message = messages.map(msg => ({
         role: msg['chat message role'],
         content: msg['chat message content'],
         time: msg['chat message created_at']

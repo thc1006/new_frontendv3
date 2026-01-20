@@ -438,7 +438,7 @@
     loadError.value = null
     try {
       const res = await $apiClient.primitiveAiModel.primitiveAiModelsList()
-      aiList.value = res.data.sort((a: PrimitiveAIModel, b: PrimitiveAIModel) => (a.model_id ?? 0) - (b.model_id ?? 0))
+      aiList.value = res.data.sort((a, b) => (a.model_id ?? 0) - (b.model_id ?? 0))
       // 初始化各模型的版本選擇
       aiList.value.forEach(ai => {
         const key = getModelKey(ai)
@@ -485,8 +485,8 @@
   async function fetchAllMetrics (): Promise<void> {
     const res = await $apiClient.abstractMetrics.abstractMetricsList()
     allMetrics.value = res.data
-      .filter((m: AbstractMetrics) => m.id !== undefined)
-      .map((m: AbstractMetrics) => ({
+      .filter(m => m.id !== undefined)
+      .map(m => ({
         abstract_metrics_id: m.id!,
         display_name: m.display_name ?? '',
         selected: false,

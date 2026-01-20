@@ -15,8 +15,6 @@
         v-for="user in userList"
         :key="user.user_id"
         class="user-list-row"
-        style="cursor:pointer"
-        @click="showUserProjects(user.user_id)"
       >
         <div>{{ user.account }}</div>
         <div>{{ user.email }}</div>
@@ -53,14 +51,11 @@
   }
 
   async function deleteUser(userId: number): Promise<void> {
+    if (!Number.isFinite(userId) || userId <= 0) return
     if (confirm('確定要刪除此使用者嗎？')) {
       await $apiClient.user.usersDelete(userId)
-      userList.value = userList.value.filter((u: User) => u.user_id !== userId)
+      userList.value = userList.value.filter(u => u.user_id !== userId)
     }
-  }
-
-  function showUserProjects(_userId: number | undefined): void {
-    // TODO: Navigate to user projects page or show dialog
   }
 
   onMounted(fetchUsers)
