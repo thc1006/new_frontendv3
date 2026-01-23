@@ -27,46 +27,32 @@ test.describe('API Endpoints Integration Tests', () => {
     })
 
     test('GET /users/me should return current user info', async ({ page }) => {
-      // 監聽 API 請求
-      const apiResponses: { url: string; status: number }[] = []
-      page.on('response', (response) => {
-        if (response.url().includes('/api/users/me')) {
-          apiResponses.push({ url: response.url(), status: response.status() })
-        }
-      })
-
       // 觸發用戶信息請求（通常在頁面載入時自動發送）
       await page.reload()
-      await page.waitForTimeout(2000)
 
-      // 驗證至少有一個成功的用戶信息請求
-      const successfulRequest = apiResponses.find((r) => r.status === 200)
-      expect(successfulRequest).toBeDefined()
+      // 使用 waitForResponse 等待 /users/me API 請求完成
+      const userResponse = await page.waitForResponse(
+        (response) => response.url().includes('/api/users/me') && response.status() === 200,
+        { timeout: 15000 }
+      )
+
+      // 驗證用戶信息請求成功
+      expect(userResponse.status()).toBe(200)
     })
   })
 
   test.describe('Project API', () => {
     test('GET /projects/me should return user projects', async ({ page }) => {
-      const apiResponses: { url: string; status: number; body?: unknown }[] = []
-
-      page.on('response', async (response) => {
-        if (response.url().includes('/api/projects')) {
-          try {
-            const body = await response.json().catch(() => null)
-            apiResponses.push({ url: response.url(), status: response.status(), body })
-          } catch {
-            apiResponses.push({ url: response.url(), status: response.status() })
-          }
-        }
-      })
-
-      await page.waitForTimeout(3000)
+      // 使用 waitForResponse 等待專案 API 請求完成
+      const projectsResponse = await page.waitForResponse(
+        (response) => response.url().includes('/api/projects') && response.status() === 200,
+        { timeout: 15000 }
+      )
 
       // 驗證項目列表請求成功
-      const projectsRequest = apiResponses.find(
-        (r) => r.url.includes('/projects') && r.status === 200
-      )
-      expect(projectsRequest).toBeDefined()
+      expect(projectsResponse.status()).toBe(200)
+      const data = await projectsResponse.json()
+      expect(data).toBeDefined()
     })
 
     test('GET /projects/{project_id}/maps_frontend should return map data', async ({ page }) => {
@@ -107,21 +93,20 @@ test.describe('API Endpoints Integration Tests', () => {
       await viewProjectBtn.click()
       await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
 
-      // 從 URL 獲取專案 ID
+      // 從 URL 獲取專案 ID，並明確斷言其存在
       const url = page.url()
       const projectId = url.match(/\/projects\/(\d+)/)?.[1]
+      expect(projectId).toBeDefined()
 
-      if (projectId) {
-        // 直接測試 API 端點
-        const apiResponse = await page.request.get(`/api/projects/${projectId}/maps_aodt`)
+      // 直接測試 API 端點
+      const apiResponse = await page.request.get(`/api/projects/${projectId}/maps_aodt`)
 
-        // 端點應該存在（200 或 404 如果沒有數據）
-        expect([200, 404]).toContain(apiResponse.status())
+      // 端點應該存在（200 或 404 如果沒有數據）
+      expect([200, 404]).toContain(apiResponse.status())
 
-        if (apiResponse.status() === 200) {
-          const data = await apiResponse.json()
-          expect(data).toBeDefined()
-        }
+      if (apiResponse.status() === 200) {
+        const data = await apiResponse.json()
+        expect(data).toBeDefined()
       }
     })
 
@@ -134,21 +119,20 @@ test.describe('API Endpoints Integration Tests', () => {
       await viewProjectBtn.click()
       await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
 
-      // 從 URL 獲取專案 ID
+      // 從 URL 獲取專案 ID，並明確斷言其存在
       const url = page.url()
       const projectId = url.match(/\/projects\/(\d+)/)?.[1]
+      expect(projectId).toBeDefined()
 
-      if (projectId) {
-        // 直接測試 API 端點
-        const apiResponse = await page.request.get(`/api/Map_Position/${projectId}`)
+      // 直接測試 API 端點
+      const apiResponse = await page.request.get(`/api/Map_Position/${projectId}`)
 
-        // 端點應該存在（200 或 404 如果沒有數據）
-        expect([200, 404, 500]).toContain(apiResponse.status())
+      // 端點應該存在（200 或 404 如果沒有數據）
+      expect([200, 404, 500]).toContain(apiResponse.status())
 
-        if (apiResponse.status() === 200) {
-          const data = await apiResponse.json()
-          expect(Array.isArray(data)).toBe(true)
-        }
+      if (apiResponse.status() === 200) {
+        const data = await apiResponse.json()
+        expect(Array.isArray(data)).toBe(true)
       }
     })
 
@@ -311,7 +295,7 @@ test.describe('API Endpoints Integration Tests', () => {
 
             if (evaluationId) {
               // 測試 deploy 端點存在（不實際執行部署）
-              // 使用 GET 方法測試端點是否存在
+              // 使用 POST 方法測試端點是否存在（deploy 端點只接受 POST）
               const deployResponse = await page.request.fetch(
                 `/api/projects/${projectId}/deploy/${evaluationId}`,
                 {
@@ -341,7 +325,9 @@ test.describe('API Request Path Verification', () => {
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
   })
 
-  test('All API requests should use /api prefix, not 127.0.0.1', async ({ page }) => {
+  test('No API requests should directly call 127.0.0.1 (should use relative /api paths)', async ({
+    page,
+  }) => {
     const badRequests: string[] = []
 
     page.on('request', (request) => {
@@ -352,15 +338,12 @@ test.describe('API Request Path Verification', () => {
       }
     })
 
-    // 導航到多個頁面來觸發各種 API 請求
-    await page.waitForTimeout(2000)
-
-    // 等待專案卡片載入
+    // 等待專案卡片載入並觸發 API 請求
     try {
       await page.waitForSelector('.project-card', { timeout: 10000 })
       const viewProjectBtn = page.locator('button:has-text("View Project")').first()
       await viewProjectBtn.click()
-      await page.waitForTimeout(2000)
+      await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
     } catch {
       // 如果沒有專案，跳過
     }

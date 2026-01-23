@@ -23,7 +23,8 @@ test.describe('Cross-Version Feature Validation', () => {
     test('User Authentication - session persists across pages', async ({ page }) => {
       // 驗證登入後 session 正確保持
       await page.reload()
-      await page.waitForTimeout(2000)
+      // 使用確定性等待條件，而非固定時間
+      await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 })
 
       // 應該還是在專案頁面，不會被重導向到登入頁
       const url = page.url()
@@ -31,19 +32,14 @@ test.describe('Cross-Version Feature Validation', () => {
     })
 
     test('Project Management - list projects', async ({ page }) => {
-      // 監聽 API 請求
-      const apiResponses: { url: string; status: number }[] = []
-      page.on('response', (response) => {
-        if (response.url().includes('/api/projects')) {
-          apiResponses.push({ url: response.url(), status: response.status() })
-        }
-      })
+      // 使用 waitForResponse 等待專案 API 請求完成
+      const projectsResponse = await page.waitForResponse(
+        (response) => response.url().includes('/api/projects') && response.status() === 200,
+        { timeout: 15000 }
+      )
 
-      await page.waitForTimeout(3000)
-
-      // 驗證至少有一個成功的專案請求
-      const successfulRequest = apiResponses.find((r) => r.status === 200)
-      expect(successfulRequest).toBeDefined()
+      // 驗證請求成功
+      expect(projectsResponse.status()).toBe(200)
     })
 
     test('gNodeB Configuration - CU/DU/RU hierarchy endpoints exist', async ({ page }) => {
@@ -89,15 +85,14 @@ test.describe('Cross-Version Feature Validation', () => {
       await viewProjectBtn.click()
       await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
 
-      // 從 URL 獲取專案 ID
+      // 從 URL 獲取專案 ID，並明確斷言其存在
       const url = page.url()
       const projectId = url.match(/\/projects\/(\d+)/)?.[1]
+      expect(projectId).toBeDefined()
 
-      if (projectId) {
-        // 測試 status 端點
-        const statusResponse = await page.request.get(`/api/projects/${projectId}/status`)
-        expect([200, 404]).toContain(statusResponse.status())
-      }
+      // 測試 status 端點
+      const statusResponse = await page.request.get(`/api/projects/${projectId}/status`)
+      expect([200, 404]).toContain(statusResponse.status())
     })
   })
 

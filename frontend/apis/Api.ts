@@ -4185,10 +4185,10 @@ export class Api<
       this.request<
         {
           MID?: number;
-          position?: object;
+          position?: Record<string, unknown>;
           name?: string;
         }[],
-        string
+        Error
       >({
         path: `/Map_Position/${id}`,
         method: "GET",
