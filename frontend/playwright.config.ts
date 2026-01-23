@@ -4,9 +4,9 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30000,
   use: {
-    baseURL: 'http://localhost',
-    // 本地 Docker 環境目前使用 HTTP，nginx 監聽 port 80
-    ignoreHTTPSErrors: false,
+    baseURL: 'https://localhost',
+    // K8s 環境使用 HTTPS（自簽憑證），nginx 會將 HTTP 重導向至 HTTPS
+    ignoreHTTPSErrors: true,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
   },

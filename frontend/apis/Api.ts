@@ -628,6 +628,15 @@ export interface PrimitiveAIModelRequest {
   ai_metrics?: AIMetricsRequest[];
 }
 
+export interface PrimitiveDTAIModel {
+  /** @example 1 */
+  model_id?: number;
+  /** @example "PrimitiveDTAIModel" */
+  model_name?: string;
+  /** @example "dt_model_1.h5" */
+  MinIO_name_for_DT_AI_model?: string;
+}
+
 export interface AIMetrics {
   /** @example 1 */
   id?: number;
@@ -1948,6 +1957,22 @@ export class Api<
     mapsFrontendList: (projectId: number, params: RequestParams = {}) =>
       this.request<object, Error>({
         path: `/projects/${projectId}/maps_frontend`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Project
+     * @name MapsAodtList
+     * @summary 取得專案的 AODT Map（USD 格式，MinIO 內容）
+     * @request GET:/projects/{project_id}/maps_aodt
+     */
+    mapsAodtList: (projectId: number, params: RequestParams = {}) =>
+      this.request<object, Error>({
+        path: `/projects/${projectId}/maps_aodt`,
         method: "GET",
         format: "json",
         ...params,
@@ -3965,6 +3990,104 @@ export class Api<
         ...params,
       }),
   };
+  primitiveDtAiModel = {
+    /**
+     * No description
+     *
+     * @tags PrimitiveDTAIModel
+     * @name PrimitiveDtAiModelsList
+     * @summary 取得所有 PrimitiveDTAIModel
+     * @request GET:/primitive_dt_ai_models
+     */
+    primitiveDtAiModelsList: (params: RequestParams = {}) =>
+      this.request<PrimitiveDTAIModel[], any>({
+        path: `/primitive_dt_ai_models`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags PrimitiveDTAIModel
+     * @name PrimitiveDtAiModelsCreate
+     * @summary 新增 PrimitiveDTAIModel
+     * @request POST:/primitive_dt_ai_models
+     */
+    primitiveDtAiModelsCreate: (
+      data: {
+        model_name: string;
+        MinIO_name_for_DT_AI_model?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<PrimitiveDTAIModel, any>({
+        path: `/primitive_dt_ai_models`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags PrimitiveDTAIModel
+     * @name PrimitiveDtAiModelsDetail
+     * @summary 取得單一 PrimitiveDTAIModel
+     * @request GET:/primitive_dt_ai_models/{model_id}
+     */
+    primitiveDtAiModelsDetail: (modelId: number, params: RequestParams = {}) =>
+      this.request<PrimitiveDTAIModel, Error>({
+        path: `/primitive_dt_ai_models/${modelId}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags PrimitiveDTAIModel
+     * @name PrimitiveDtAiModelsUpdate
+     * @summary 更新 PrimitiveDTAIModel
+     * @request PUT:/primitive_dt_ai_models/{model_id}
+     */
+    primitiveDtAiModelsUpdate: (
+      modelId: number,
+      data: {
+        model_name?: string;
+        MinIO_name_for_DT_AI_model?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<PrimitiveDTAIModel, Error>({
+        path: `/primitive_dt_ai_models/${modelId}`,
+        method: "PUT",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags PrimitiveDTAIModel
+     * @name PrimitiveDtAiModelsDelete
+     * @summary 刪除 PrimitiveDTAIModel
+     * @request DELETE:/primitive_dt_ai_models/{model_id}
+     */
+    primitiveDtAiModelsDelete: (modelId: number, params: RequestParams = {}) =>
+      this.request<Message, Error>({
+        path: `/primitive_dt_ai_models/${modelId}`,
+        method: "DELETE",
+        format: "json",
+        ...params,
+      }),
+  };
   map = {
     /**
      * No description
@@ -4046,6 +4169,29 @@ export class Api<
       this.request<Message, Error>({
         path: `/maps/${mapId}`,
         method: "DELETE",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Map
+     * @name MapPositionDetail
+     * @summary 取得專案關聯的所有地圖位置信息
+     * @request GET:/Map_Position/{id}
+     */
+    mapPositionDetail: (id: string, params: RequestParams = {}) =>
+      this.request<
+        {
+          MID?: number;
+          position?: object;
+          name?: string;
+        }[],
+        string
+      >({
+        path: `/Map_Position/${id}`,
+        method: "GET",
         format: "json",
         ...params,
       }),
