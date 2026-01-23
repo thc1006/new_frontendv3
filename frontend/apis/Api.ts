@@ -4000,7 +4000,7 @@ export class Api<
      * @request GET:/primitive_dt_ai_models
      */
     primitiveDtAiModelsList: (params: RequestParams = {}) =>
-      this.request<PrimitiveDTAIModel[], any>({
+      this.request<PrimitiveDTAIModel[], Error>({
         path: `/primitive_dt_ai_models`,
         method: "GET",
         format: "json",
@@ -4022,7 +4022,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<PrimitiveDTAIModel, any>({
+      this.request<PrimitiveDTAIModel, Error>({
         path: `/primitive_dt_ai_models`,
         method: "POST",
         body: data,

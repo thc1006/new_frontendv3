@@ -26,7 +26,7 @@ test.describe('API Endpoints Integration Tests', () => {
       await expect(page.locator('.projects-page')).toBeVisible({ timeout: 10000 })
     })
 
-    test('GET /users/me should return current user info', async ({ page, request }) => {
+    test('GET /users/me should return current user info', async ({ page }) => {
       // 監聽 API 請求
       const apiResponses: { url: string; status: number }[] = []
       page.on('response', (response) => {
@@ -47,7 +47,7 @@ test.describe('API Endpoints Integration Tests', () => {
 
   test.describe('Project API', () => {
     test('GET /projects/me should return user projects', async ({ page }) => {
-      const apiResponses: { url: string; status: number; body?: any }[] = []
+      const apiResponses: { url: string; status: number; body?: unknown }[] = []
 
       page.on('response', async (response) => {
         if (response.url().includes('/api/projects')) {
