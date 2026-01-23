@@ -80,24 +80,20 @@ test.describe('API Endpoints Integration Tests', () => {
       // 等待導航到專案頁面
       await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
 
-      // 監聯 maps_frontend 請求
-      const mapResponses: { url: string; status: number }[] = []
-      page.on('response', (response) => {
-        if (response.url().includes('maps_frontend')) {
-          mapResponses.push({ url: response.url(), status: response.status() })
-        }
-      })
-
-      // 導航到 overviews 頁面（會觸發 maps_frontend 請求）
+      // 從目前 URL 解析專案 ID，並明確斷言其存在
       const url = page.url()
       const projectId = url.match(/\/projects\/(\d+)/)?.[1]
-      if (projectId) {
-        await page.goto(`/projects/${projectId}/overviews`)
-        await page.waitForTimeout(3000)
+      expect(projectId).toBeDefined()
 
-        // 檢查是否有 maps_frontend 請求（可能成功或 404）
-        expect(mapResponses.length).toBeGreaterThanOrEqual(0)
-      }
+      // 導航到 overviews 頁面（應觸發 maps_frontend 請求）
+      await page.goto(`/projects/${projectId}/overviews`)
+
+      // 精準等待 maps_frontend 請求，並驗證回應狀態（端點存在時應為 200 或 404）
+      const mapsFrontendResponse = await page.waitForResponse(
+        (response) => response.url().includes('maps_frontend'),
+        { timeout: 15000 }
+      )
+      expect([200, 404]).toContain(mapsFrontendResponse.status())
     })
   })
 
