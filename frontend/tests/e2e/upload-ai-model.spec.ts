@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // E2E tests for Upload AI Model page
 // Corresponds to Figma Node 3:662
 test.describe('Upload AI Model Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // Login first
     await page.goto('/login')

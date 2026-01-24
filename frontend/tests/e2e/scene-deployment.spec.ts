@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { login, getFirstProjectId, mockAllExternalServices } from './utils/test-helpers'
+import { login, getFirstProjectId, mockAllExternalServices, skipIfNoBackend } from './utils/test-helpers'
 
 // Scene Deployment 頁面 E2E 測試 (Figma Node 17:156, 17:370)
 // 測試 OUTDOOR/INDOOR Scene Deployment 頁面結構與功能
 test.describe('Scene Deployment Page', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {

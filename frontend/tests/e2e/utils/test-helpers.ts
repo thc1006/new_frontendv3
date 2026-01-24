@@ -1,9 +1,23 @@
 import type { Page } from '@playwright/test'
+import { test } from '@playwright/test'
 
 /**
  * E2E 測試工具函數
  * 提供外部服務 mock、通用登入等功能
  */
+
+/**
+ * 是否在 CI 環境中（沒有 backend）
+ */
+export const isCI = !!process.env.CI
+
+/**
+ * 在 CI 環境中跳過需要 backend 的測試
+ * 使用方式：在 test.describe 開頭呼叫 skipIfNoBackend()
+ */
+export function skipIfNoBackend() {
+  test.skip(isCI, 'Skipped in CI: requires backend API')
+}
 
 /**
  * Mock MinIO API 請求

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { login, mockAllExternalServices } from './utils/test-helpers'
+import { login, mockAllExternalServices, skipIfNoBackend } from './utils/test-helpers'
 
 // Helper function: wait for Vuetify overlay scrim to disappear
 async function waitForOverlayToDisappear(page: import('@playwright/test').Page) {
@@ -17,6 +17,8 @@ async function waitForOverlayToDisappear(page: import('@playwright/test').Page) 
 // E2E tests for navigation menu
 // Tests sidebar menu structure and navigation functionality
 test.describe('Navigation Menu', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // Mock 外部服務
     await mockAllExternalServices(page)

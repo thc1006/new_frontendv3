@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // AI Application Simulator 頁面 E2E 測試 (Figma Node 277:952)
 // 測試 Model List、NES Model 控制面板、訓練流程
 test.describe('AI Application Simulator Page', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {

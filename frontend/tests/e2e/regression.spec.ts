@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 /**
  * 回歸測試 - 防止已修復的問題再次發生
@@ -57,6 +58,8 @@ test.describe('Regression Tests', () => {
   // Solution: 使用 CSS class + transform-origin: bottom center
   // ============================================================
   test.describe('Marker Hover Position Stability', () => {
+    skipIfNoBackend()
+
     test.beforeEach(async ({ page }) => {
       // 先登入
       await page.goto('/login')

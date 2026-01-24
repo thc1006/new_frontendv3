@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 /**
  * 跨版本功能驗證測試
@@ -10,6 +11,8 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Cross-Version Feature Validation', () => {
+  skipIfNoBackend()
+
   // 測試前先登入
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')

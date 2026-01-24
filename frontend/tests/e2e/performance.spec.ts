@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // Performance 頁面的 E2E 測試
 // 測試 NES 和 MRO 頁面的 Grafana iframe 嵌入功能
 test.describe('Performance Pages', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {
