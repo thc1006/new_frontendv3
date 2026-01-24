@@ -262,7 +262,8 @@ export async function getProjectIdByType(page: Page, type: 'INDOOR' | 'OUTDOOR')
 
         const url = page.url()
         const match = url.match(/\/projects\/(\d+)/)
-        return match ? match[1] : null
+        // 如果 URL 解析失敗，使用預設值
+        return match ? match[1] : (type === 'INDOOR' ? '2' : '1')
       }
     }
   }

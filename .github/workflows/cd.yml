@@ -16,8 +16,8 @@ env:
   K8S_NAMESPACE: wisdon-frontend
 
 jobs:
-  build-and-push:
-    name: Build & Push Image
+  build:
+    name: Build & Verify Image
     runs-on: self-hosted
     outputs:
       image_tag: ${{ steps.meta.outputs.version }}
@@ -47,24 +47,30 @@ jobs:
 
       - name: Verify image built
         run: |
-          # K8s 使用 imagePullPolicy: Never，直接使用本地 podman image
-          podman images | grep ${{ env.IMAGE_NAME }} | head -5
-          echo "✅ Image built successfully: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
+          # 使用 podman image exists 精確驗證 image 是否存在
+          if podman image exists ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest; then
+            echo "✅ Image built successfully: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            echo "   (Also tagged as: ${{ steps.meta.outputs.version }})"
+            podman images | grep ${{ env.IMAGE_NAME }} | head -3
+          else
+            echo "❌ Image not found: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+            exit 1
+          fi
 
   deploy:
     name: Deploy to K8s
     runs-on: self-hosted
-    needs: build-and-push
+    needs: build
     environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Update K8s deployment
+      - name: Restart K8s deployment
         run: |
-          # 更新 deployment 使用新的 image
-          kubectl set image deployment/frontend \
-            frontend=${{ needs.build-and-push.outputs.full_image }} \
+          # K8s 使用 imagePullPolicy: Never + :latest tag
+          # 使用 rollout restart 強制重新拉取本地 :latest image
+          kubectl rollout restart deployment/frontend \
             -n ${{ env.K8S_NAMESPACE }}
 
       - name: Wait for rollout
@@ -99,7 +105,7 @@ jobs:
   notify:
     name: Notify Deployment
     runs-on: self-hosted
-    needs: [build-and-push, deploy]
+    needs: [build, deploy]
     if: always()
     steps:
       - name: Create deployment summary
@@ -108,7 +114,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Image | \`${{ needs.build-and-push.outputs.full_image }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ needs.build.outputs.full_image }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Deploy Status | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
