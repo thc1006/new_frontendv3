@@ -11,7 +11,6 @@ on:
 
 env:
   NODE_VERSION: '20'
-  PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
 
 jobs:
   # Lint and Test run in parallel for faster feedback
@@ -70,10 +69,18 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      - name: Set Playwright cache path
+        run: |
+          # 使用絕對路徑設定 Playwright 瀏覽器快取位置
+          CACHE_PATH="$HOME/.cache/ms-playwright"
+          echo "PLAYWRIGHT_BROWSERS_PATH=$CACHE_PATH" >> $GITHUB_ENV
+          echo "Playwright browsers will be cached at: $CACHE_PATH"
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: playwright-cache
         with:
+          # actions/cache 會正確展開 ~ 路徑
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
           restore-keys: |
@@ -118,7 +125,8 @@ jobs:
             echo "✅ Container build file found"
             echo "Would build image: frontend:${{ steps.meta.outputs.version }}"
           else
-            echo "⚠️ No Containerfile/Dockerfile found"
+            echo "❌ No Containerfile/Dockerfile found - build would fail"
+            exit 1
           fi
 
   pr-status:

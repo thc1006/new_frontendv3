@@ -1,10 +1,14 @@
 import { defineConfig, devices } from '@playwright/test'
 
 // 環境變數配置，支援本地開發 (HTTP) 和 K8s 環境 (HTTPS)
-// CI 環境使用 preview server (http://localhost:3000)
+// CI 環境使用 preview server (http://localhost:3000)，除非有設定 PLAYWRIGHT_BASE_URL
 const isCI = !!process.env.CI
+const hasExternalBaseURL = !!process.env.PLAYWRIGHT_BASE_URL
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || (isCI ? 'http://localhost:3000' : 'https://localhost')
 const ignoreHTTPSErrors = process.env.PLAYWRIGHT_IGNORE_HTTPS_ERRORS !== 'false'
+
+// 只在 CI 環境且沒有外部 URL 時啟動 webServer
+const shouldStartWebServer = isCI && !hasExternalBaseURL
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -17,8 +21,8 @@ export default defineConfig({
     timeout: isCI ? 10000 : 15000,
   },
 
-  // 重試失敗的測試（CI 減少重試以加速）
-  retries: isCI ? 1 : 1,
+  // 重試失敗的測試
+  retries: 1,
 
   // 並行執行
   fullyParallel: true,
@@ -50,8 +54,8 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
   },
 
-  // CI 環境自動啟動 Nuxt preview server
-  webServer: isCI
+  // CI 環境自動啟動 Nuxt preview server（除非有設定外部 PLAYWRIGHT_BASE_URL）
+  webServer: shouldStartWebServer
     ? {
       command: 'pnpm run build && pnpm run preview',
       url: 'http://localhost:3000',

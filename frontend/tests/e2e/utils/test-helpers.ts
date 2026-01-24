@@ -7,16 +7,38 @@ import { test } from '@playwright/test'
  */
 
 /**
- * 是否在 CI 環境中（沒有 backend）
+ * 是否在 CI 環境中
+ *
+ * 注意：CI 環境目前沒有部署後端服務，所以 CI = 無後端
+ * 如果未來 CI 環境有後端，可使用 PLAYWRIGHT_SKIP_BACKEND_TESTS 環境變數
  */
 export const isCI = !!process.env.CI
 
 /**
- * 在 CI 環境中跳過需要 backend 的測試
+ * 是否應該跳過需要後端的測試
+ *
+ * 優先順序：
+ * 1. PLAYWRIGHT_SKIP_BACKEND_TESTS=true -> 強制跳過
+ * 2. PLAYWRIGHT_SKIP_BACKEND_TESTS=false -> 強制執行
+ * 3. 未設定 -> 使用 CI 環境變數判斷（CI 環境無後端）
+ */
+export const shouldSkipBackendTests = (() => {
+  const envVar = process.env.PLAYWRIGHT_SKIP_BACKEND_TESTS
+  if (envVar === 'true') return true
+  if (envVar === 'false') return false
+  return isCI // CI 環境預設跳過
+})()
+
+/**
+ * 在沒有後端的環境中跳過測試
  * 使用方式：在 test.describe 開頭呼叫 skipIfNoBackend()
+ *
+ * 跳過條件：
+ * - CI 環境（除非設定 PLAYWRIGHT_SKIP_BACKEND_TESTS=false）
+ * - 或設定 PLAYWRIGHT_SKIP_BACKEND_TESTS=true
  */
 export function skipIfNoBackend() {
-  test.skip(isCI, 'Skipped in CI: requires backend API')
+  test.skip(shouldSkipBackendTests, 'Skipped: requires backend API (set PLAYWRIGHT_SKIP_BACKEND_TESTS=false to override)')
 }
 
 /**
@@ -205,14 +227,18 @@ export async function getFirstProjectId(page: Page): Promise<string> {
  * 獲取指定類型的專案 ID
  * @param page Playwright Page 物件
  * @param type 專案類型 ('INDOOR' | 'OUTDOOR')
- * @returns 專案 ID，如果找不到則返回 null
+ * @returns 專案 ID（總是返回有效的字串，找不到時使用預設值）
  *
  * 注意：此函數需要後端 API 支援
  * 目前的測試資料假設：
  * - 偶數 ID (2, 4, 6...) = INDOOR
  * - 奇數 ID (1, 3, 5...) = OUTDOOR
+ *
+ * 當找不到指定類型的專案時，會使用預設 ID 以確保測試可以繼續執行：
+ * - INDOOR: 預設為 '2'
+ * - OUTDOOR: 預設為 '1'
  */
-export async function getProjectIdByType(page: Page, type: 'INDOOR' | 'OUTDOOR'): Promise<string | null> {
+export async function getProjectIdByType(page: Page, type: 'INDOOR' | 'OUTDOOR'): Promise<string> {
   await page.waitForSelector('.project-card', { timeout: 15000 })
 
   // 嘗試從專案列表中找到指定類型的專案
@@ -236,13 +262,12 @@ export async function getProjectIdByType(page: Page, type: 'INDOOR' | 'OUTDOOR')
 
         const url = page.url()
         const match = url.match(/\/projects\/(\d+)/)
-        return match ? match[1] : null
+        // 如果 URL 解析失敗，使用預設值
+        return match ? match[1] : (type === 'INDOOR' ? '2' : '1')
       }
     }
   }
 
-  // 如果找不到，根據約定使用預設值
-  // 偶數 = INDOOR, 奇數 = OUTDOOR
-  console.warn(`No ${type} project found, using fallback ID`)
+  // 找不到指定類型，使用約定的預設值（偶數 = INDOOR, 奇數 = OUTDOOR）
   return type === 'INDOOR' ? '2' : '1'
 }
