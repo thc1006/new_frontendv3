@@ -11,9 +11,9 @@ on:
 
 env:
   NODE_VERSION: '20'
-  REGISTRY: localhost:5000  # 本地 registry，可改為 Docker Hub 或其他
-  IMAGE_NAME: frontend
-  K8S_NAMESPACE: default
+  REGISTRY: localhost  # 本地 podman registry
+  IMAGE_NAME: wisdon-frontend
+  K8S_NAMESPACE: wisdon-frontend
 
 jobs:
   build-and-push:
@@ -45,10 +45,11 @@ jobs:
             --label "git.branch=${{ github.ref_name }}" \
             .
 
-      - name: Push to registry
+      - name: Verify image built
         run: |
-          podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # K8s 使用 imagePullPolicy: Never，直接使用本地 podman image
+          podman images | grep ${{ env.IMAGE_NAME }} | head -5
+          echo "✅ Image built successfully: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}"
 
   deploy:
     name: Deploy to K8s
@@ -62,20 +63,20 @@ jobs:
       - name: Update K8s deployment
         run: |
           # 更新 deployment 使用新的 image
-          kubectl set image deployment/frontend-deployment \
+          kubectl set image deployment/frontend \
             frontend=${{ needs.build-and-push.outputs.full_image }} \
             -n ${{ env.K8S_NAMESPACE }}
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/frontend-deployment \
+          kubectl rollout status deployment/frontend \
             -n ${{ env.K8S_NAMESPACE }} \
             --timeout=300s
 
       - name: Verify deployment
         run: |
           echo "=== Deployment Status ==="
-          kubectl get deployment frontend-deployment -n ${{ env.K8S_NAMESPACE }}
+          kubectl get deployment frontend -n ${{ env.K8S_NAMESPACE }}
           echo ""
           echo "=== Pod Status ==="
           kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app=frontend
