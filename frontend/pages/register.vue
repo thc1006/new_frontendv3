@@ -31,33 +31,55 @@
               <!-- Account 欄位 -->
               <div class="form-row">
                 <label for="account-input" class="field-label">Account</label>
-                <input
-                  id="account-input"
-                  v-model="form.account"
-                  name="account"
-                  type="text"
-                  class="field-input"
-                  placeholder="Account"
-                  required
-                  aria-required="true"
-                  @input="debouncedCheckAccount(form.account)"
-                >
+                <div class="input-wrapper">
+                  <input
+                    id="account-input"
+                    v-model="form.account"
+                    name="account"
+                    type="text"
+                    :class="['field-input', getFieldClass('account')]"
+                    placeholder="Account"
+                    required
+                    aria-required="true"
+                    @input="debouncedCheckAccount(form.account)"
+                  >
+                  <span v-if="accountCheckStatus === 'checking'" class="field-status checking">
+                    <v-progress-circular indeterminate size="16" width="2" />
+                  </span>
+                  <span v-else-if="accountCheckStatus === 'available'" class="field-status success">
+                    <v-icon color="success" size="18">mdi-check-circle</v-icon>
+                  </span>
+                  <span v-else-if="accountCheckStatus === 'taken'" class="field-status error">
+                    <v-icon color="error" size="18">mdi-close-circle</v-icon>
+                  </span>
+                </div>
               </div>
 
               <!-- Email 欄位 -->
               <div class="form-row">
                 <label for="email-input" class="field-label">Email</label>
-                <input
-                  id="email-input"
-                  v-model="form.email"
-                  name="email"
-                  type="email"
-                  class="field-input"
-                  placeholder="Email"
-                  required
-                  aria-required="true"
-                  @input="debouncedCheckEmail(form.email)"
-                >
+                <div class="input-wrapper">
+                  <input
+                    id="email-input"
+                    v-model="form.email"
+                    name="email"
+                    type="email"
+                    :class="['field-input', getFieldClass('email')]"
+                    placeholder="Email"
+                    required
+                    aria-required="true"
+                    @input="debouncedCheckEmail(form.email)"
+                  >
+                  <span v-if="emailCheckStatus === 'checking'" class="field-status checking">
+                    <v-progress-circular indeterminate size="16" width="2" />
+                  </span>
+                  <span v-else-if="emailCheckStatus === 'available'" class="field-status success">
+                    <v-icon color="success" size="18">mdi-check-circle</v-icon>
+                  </span>
+                  <span v-else-if="emailCheckStatus === 'taken'" class="field-status error">
+                    <v-icon color="error" size="18">mdi-close-circle</v-icon>
+                  </span>
+                </div>
               </div>
 
               <!-- Password 欄位 -->
@@ -242,6 +264,14 @@
   function isValidEmail(emailStr: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(emailStr)
+  }
+
+  // 取得欄位的 CSS class
+  function getFieldClass(field: 'account' | 'email'): string {
+    const status = field === 'account' ? accountCheckStatus.value : emailCheckStatus.value
+    if (status === 'available') return 'field-valid'
+    if (status === 'taken') return 'field-invalid'
+    return ''
   }
 
   // 返回登入頁
@@ -513,6 +543,25 @@
   gap: 12px;
 }
 
+.input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper .field-input {
+  padding-right: 36px;
+}
+
+.field-status {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .field-label {
   font-family: 'Inter', sans-serif;
   font-size: 16px;
@@ -540,6 +589,20 @@
   &:focus {
     border-color: #006ab5;
     box-shadow: 0 0 0 2px rgba(0, 106, 181, 0.15);
+  }
+
+  &.field-valid {
+    border-color: #4caf50;
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+    }
+  }
+
+  &.field-invalid {
+    border-color: #f44336;
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.15);
+    }
   }
 }
 

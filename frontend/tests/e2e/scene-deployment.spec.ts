@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { login, getFirstProjectId, mockAllExternalServices } from './utils/test-helpers'
 
 // Scene Deployment 頁面 E2E 測試 (Figma Node 17:156, 17:370)
 // 測試 OUTDOOR/INDOOR Scene Deployment 頁面結構與功能
@@ -6,23 +7,14 @@ test.describe('Scene Deployment Page', () => {
   let projectId: string
 
   test.beforeEach(async ({ page }) => {
-    // 先登入
-    await page.goto('/login')
-    await page.locator('input[type="text"]').first().fill('admin1')
-    await page.locator('input[type="password"]').first().fill('admin1')
-    await page.locator('button:has-text("Login")').click()
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+    // Mock 外部服務以避免依賴問題
+    await mockAllExternalServices(page)
 
-    // 等待首頁載入並獲取第一個專案的 ID
-    await page.waitForSelector('.project-card', { timeout: 15000 })
-    const viewProjectBtn = page.locator('button:has-text("View Project")').first()
-    await viewProjectBtn.click()
-    await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+    // 登入
+    await login(page)
 
-    // 從 URL 提取專案 ID
-    const url = page.url()
-    const match = url.match(/\/projects\/(\d+)/)
-    projectId = match ? match[1] : '3'
+    // 獲取第一個專案的 ID
+    projectId = await getFirstProjectId(page)
   })
 
   // 頁面結構測試 (使用 OUTDOOR project ID 3)

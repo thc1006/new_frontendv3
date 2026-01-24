@@ -44,29 +44,55 @@
       <div class="pa-4">
         <span class="text-h4">Menu</span>
       </div>
+      <!-- Breadcrumbs -->
+      <div v-if="breadcrumbs.length > 1" class="breadcrumbs pa-3">
+        <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+          <span
+            :class="['breadcrumb-item', { 'breadcrumb-current': index === breadcrumbs.length - 1 }]"
+            @click="index < breadcrumbs.length - 1 ? menuNavigate(crumb.path) : null"
+          >
+            {{ crumb.title }}
+          </span>
+          <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">/</span>
+        </template>
+      </div>
+      <v-divider v-if="breadcrumbs.length > 1" />
       <v-list>
         <template v-for="item in currentMenu" :key="item.title">
           <v-list-item
             v-if="!('children' in item)"
+            :class="{ 'v-list-item--active': isActiveRoute(item.to) }"
             @click="menuNavigate(item.to)"
           >
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
+            <template #prepend>
+              <v-icon v-if="isActiveRoute(item.to)" color="primary" size="small">mdi-chevron-right</v-icon>
+            </template>
+            <v-list-item-title :class="{ 'font-weight-bold text-primary': isActiveRoute(item.to) }">
+              {{ item.title }}
+            </v-list-item-title>
           </v-list-item>
           <v-list-group
             v-else
             no-action
+            :value="isGroupActive(item)"
           >
             <template #activator="{ props }">
-              <v-list-item v-bind="props">
-                <v-list-item-title>{{ item.title }}</v-list-item-title>
+              <v-list-item v-bind="props" :class="{ 'v-list-item--active': isGroupActive(item) }">
+                <v-list-item-title :class="{ 'font-weight-bold text-primary': isGroupActive(item) }">
+                  {{ item.title }}
+                </v-list-item-title>
               </v-list-item>
             </template>
             <v-list-item
               v-for="child in item.children"
               :key="child.title"
+              :class="{ 'v-list-item--active': isActiveRoute(child.to) }"
               @click="menuNavigate(child.to)"
             >
-              <v-list-item-title>
+              <template #prepend>
+                <v-icon v-if="isActiveRoute(child.to)" color="primary" size="small">mdi-chevron-right</v-icon>
+              </template>
+              <v-list-item-title :class="{ 'font-weight-bold text-primary': isActiveRoute(child.to) }">
                 {{ child.title }}
               </v-list-item-title>
             </v-list-item>
@@ -195,6 +221,48 @@
     return filteredMainMenu.value
   })
 
+  // 檢查路由是否為當前活躍路由
+  const isActiveRoute = (path: string): boolean => {
+    return route.path === path
+  }
+
+  // 檢查群組是否包含活躍路由
+  const isGroupActive = (item: { children?: { to: string }[] }): boolean => {
+    if (!item.children) return false
+    return item.children.some(child => route.path === child.to)
+  }
+
+  // 麵包屑導航
+  const breadcrumbs = computed(() => {
+    const crumbs: { title: string; path: string }[] = []
+
+    if (route.path === '/' || route.path === '/login' || route.path === '/register') {
+      return crumbs
+    }
+
+    crumbs.push({ title: 'Home', path: '/' })
+
+    if (route.path.startsWith('/projects/') && projectId.value) {
+      crumbs.push({ title: `Project ${projectId.value}`, path: `/projects/${projectId.value}/overviews` })
+
+      // 找到當前頁面的標題
+      const flatMenu = projectMenu.value.flatMap(item =>
+        'children' in item && item.children ? item.children : [item]
+      )
+      const currentItem = flatMenu.find(item => item.to === route.path)
+      if (currentItem) {
+        crumbs.push({ title: currentItem.title, path: route.path })
+      }
+    } else {
+      const currentItem = filteredMainMenu.value.find(item => item.to === route.path)
+      if (currentItem) {
+        crumbs.push({ title: currentItem.title, path: route.path })
+      }
+    }
+
+    return crumbs
+  })
+
   // Disable if not log in
   const isSidebarDisabled = computed(() => {
     return (
@@ -264,5 +332,41 @@
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
+}
+
+/* Breadcrumbs navigation */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 13px;
+  color: #666;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumb-item:hover:not(.breadcrumb-current) {
+  color: #006ab5;
+  text-decoration: underline;
+}
+
+.breadcrumb-current {
+  color: #006ab5;
+  font-weight: 500;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: #999;
+  margin: 0 2px;
+}
+
+/* Active route highlighting */
+.v-list-item--active {
+  background-color: rgba(0, 106, 181, 0.08) !important;
 }
 </style>

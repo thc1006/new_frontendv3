@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test'
+import { login, mockAllExternalServices } from './utils/test-helpers'
 
 // Create Project 頁面的 E2E 測試
 // 對應 Figma Node 3:785, 3:814
 test.describe('Create Project Page', () => {
   test.beforeEach(async ({ page }) => {
-    // 先登入
-    await page.goto('/login')
-    await page.locator('input[type="text"]').first().fill('admin1')
-    await page.locator('input[type="password"]').first().fill('admin1')
-    await page.locator('button:has-text("Login")').click()
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+    // Mock 外部服務 (MinIO, Geocoding)
+    await mockAllExternalServices(page)
+
+    // 登入
+    await login(page)
 
     // 導航到建立專案頁面
-    await page.goto('/projects/create')
+    await page.goto('/projects/create', { waitUntil: 'domcontentloaded' })
   })
 
   // Task 8.1: 頁面結構測試

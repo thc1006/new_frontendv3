@@ -556,9 +556,24 @@
     })
   }
 
+  // 清理地圖資源
+  const cleanupMap = () => {
+    if (map) {
+      map.remove()
+      map = null
+    }
+    if (window.tb) {
+      window.tb = null
+    }
+    mapInitialized.value = false
+  }
+
   // 初始化地圖
   const initializeMap = async () => {
-    if (map) return
+    // 如果地圖已存在，先清理再重新初始化
+    if (map) {
+      cleanupMap()
+    }
     const mapContainer = document.getElementById('sceneMapContainer')
     if (!mapContainer) {
       console.error('Map container not found')
@@ -588,6 +603,40 @@
     }
   }
 
+  // 載入 3D 模型的核心函數
+  const loadModelWithUrl = (modelUrl: string) => {
+    map?.addLayer({
+      id: 'scene-threebox-model',
+      type: 'custom',
+      renderingMode: '3d',
+      onAdd: function (mapInstance, gl) {
+        const tb = (window.tb = new Threebox.Threebox(
+          mapInstance,
+          gl,
+          { defaultLights: true }
+        ))
+        const options = {
+          obj: modelUrl,
+          type: 'gltf',
+          scale: { x: 1, y: 1, z: 1 },
+          units: 'meters',
+          rotation: { x: 0, y: 0, z: 180 },
+          anchor: 'center'
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tb.loadObj(options, (model: any) => {
+          model.setCoords?.(mapCenter.value)
+          tb.add(model)
+        })
+      },
+      render: function () {
+        if (window.tb) {
+          window.tb.update()
+        }
+      }
+    })
+  }
+
   // 載入 3D 模型
   const load3DModel = async () => {
     if (!validProjectId.value || !map) return
@@ -600,40 +649,18 @@
       reader.onloadend = () => {
         const base64data = reader.result as string
         const base64Content = base64data.split(',')[1]
-        map?.addLayer({
-          id: 'scene-threebox-model',
-          type: 'custom',
-          renderingMode: '3d',
-          onAdd: function (mapInstance, gl) {
-            const tb = (window.tb = new Threebox.Threebox(
-              mapInstance,
-              gl,
-              { defaultLights: true }
-            ))
-            const options = {
-              obj: 'data:text/plain;base64,' + base64Content,
-              type: 'gltf',
-              scale: { x: 1, y: 1, z: 1 },
-              units: 'meters',
-              rotation: { x: 0, y: 0, z: 180 },
-              anchor: 'center'
-            }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            tb.loadObj(options, (model: any) => {
-              model.setCoords?.(mapCenter.value)
-              tb.add(model)
-            })
-          },
-          render: function () {
-            if (window.tb) {
-              window.tb.update()
-            }
-          }
-        })
+        loadModelWithUrl('data:text/plain;base64,' + base64Content)
       }
     } catch (error) {
-      // 沒有 3D 模型也沒關係，只顯示地圖
-      console.warn('No 3D model available for this project:', error)
+      // API 返回 404 時，嘗試載入靜態 3D 模型作為 fallback
+      console.warn('No 3D model from API, trying static fallback:', error)
+      try {
+        // 嘗試載入工程四館的 3D 模型（預設 fallback）
+        loadModelWithUrl('/3d/8Fmesh_rotated.gltf')
+        console.warn('Loaded static 3D model as fallback')
+      } catch (fallbackError) {
+        console.warn('Static 3D model also not available:', fallbackError)
+      }
     }
   }
 
@@ -655,6 +682,19 @@
     { immediate: true }
   )
 
+  // 監聽 projectId 變化，處理路由切換時的地圖重新初始化
+  watch(
+    () => projectId.value,
+    (newProjectId, oldProjectId) => {
+      if (newProjectId !== oldProjectId && oldProjectId) {
+        log.lifecycle('projectId changed', { from: oldProjectId, to: newProjectId })
+        // 清理舊地圖並重置狀態
+        cleanupMap()
+        // 等待新專案數據載入後會自動觸發上面的 watch 重新初始化
+      }
+    }
+  )
+
   // Lifecycle hooks with logging
   onMounted(() => {
     log.lifecycle('mounted', { projectId: projectId.value })
@@ -671,13 +711,7 @@
   // 清理資源
   onUnmounted(() => {
     log.lifecycle('unmounting', { projectId: projectId.value })
-    if (map) {
-      map.remove()
-      map = null
-    }
-    if (window.tb) {
-      window.tb = null
-    }
+    cleanupMap()
     log.lifecycle('unmounted')
   })
 </script>

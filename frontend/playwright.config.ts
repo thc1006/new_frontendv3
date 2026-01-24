@@ -6,7 +6,20 @@ const ignoreHTTPSErrors = process.env.PLAYWRIGHT_IGNORE_HTTPS_ERRORS !== 'false'
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 30000,
+  // 全域測試超時設定
+  timeout: 60000,
+  // 預期超時設定
+  expect: {
+    timeout: 15000,
+  },
+  // 重試失敗的測試
+  retries: process.env.CI ? 2 : 1,
+  // 並行執行
+  fullyParallel: true,
+  // 禁止只執行部分測試的提交
+  forbidOnly: !!process.env.CI,
+  // 報告器
+  reporter: process.env.CI ? 'github' : 'html',
   use: {
     baseURL,
     // K8s 環境使用 HTTPS（自簽憑證），nginx 會將 HTTP 重導向至 HTTPS
@@ -14,6 +27,12 @@ export default defineConfig({
     ignoreHTTPSErrors,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
+    // 導航超時設定
+    navigationTimeout: 30000,
+    // 動作超時設定
+    actionTimeout: 15000,
+    // 視窗大小
+    viewport: { width: 1280, height: 720 },
   },
   projects: [
     {

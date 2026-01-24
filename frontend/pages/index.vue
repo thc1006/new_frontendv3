@@ -19,9 +19,15 @@
       </div>
 
       <!-- 錯誤狀態 -->
-      <v-alert v-else-if="isError" type="error" class="mx-4">
-        Failed to load projects: {{ error }}
-      </v-alert>
+      <div v-else-if="isError" class="error-state">
+        <v-alert type="error" class="mx-4 mb-4">
+          Failed to load projects: {{ error }}
+        </v-alert>
+        <v-btn color="primary" variant="outlined" @click="refetchProjects">
+          <v-icon start>mdi-refresh</v-icon>
+          Retry
+        </v-btn>
+      </div>
 
       <!-- 無專案狀態 -->
       <div v-else-if="!projects || projects.length === 0" class="empty-state">
@@ -142,7 +148,7 @@
   const isAdmin = computed(() => userStore.user?.role === 'ADMIN')
 
   // Query to fetch projects based on user role
-  const { data: projects, isPending, isError, error } = useQuery({
+  const { data: projects, isPending, isError, error, refetch } = useQuery({
     queryKey: ['projects', userStore.user?.role, isAdmin.value],
     queryFn: async () => {
       if (isAdmin.value) {
@@ -155,6 +161,11 @@
     },
     enabled: !!userStore.user
   })
+
+  // 重新嘗試載入專案
+  const refetchProjects = () => {
+    refetch()
+  }
 
   // 安全取得專案 ID
   const getProjectId = (project: Project): number => {
@@ -461,6 +472,15 @@
   justify-content: center;
   align-items: center;
   flex: 1;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 20px;
 }
 
 .empty-state {

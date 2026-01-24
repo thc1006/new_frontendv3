@@ -120,6 +120,7 @@
   import * as Threebox from 'threebox-plugin'
   import { createModuleLogger } from '~/utils/logger'
   import { useUserStore } from '~/stores/user'
+  import { getHeatmapConfig } from '~/utils/mapCoordinatetools'
   import * as THREE from 'three'
 
   const log = createModuleLogger('Overviews')
@@ -463,7 +464,45 @@
         });
       };
     } catch (error) {
-      console.error('Error loading 3D model:', error);
+      // API 返回 404 時，嘗試載入靜態 3D 模型作為 fallback
+      console.warn('No 3D model from API, trying static fallback:', error);
+      try {
+        // 嘗試載入工程四館的 3D 模型（預設 fallback）
+        map?.addLayer({
+          id: 'custom-threebox-model',
+          type: 'custom',
+          renderingMode: '3d',
+          onAdd: function (mapInstance, gl) {
+            const tb = (window.tb = new Threebox.Threebox(
+              mapInstance,
+              gl,
+              { defaultLights: true }
+            ));
+            const options = {
+              obj: '/3d/8Fmesh_rotated.gltf',
+              type: 'gltf',
+              scale: { x: 1, y: 1, z: 1 },
+              units: 'meters',
+              rotation: { x: 0, y: 0, z: 180 },
+              anchor: 'center'
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tb.loadObj(options, (model: any) => {
+              model.setCoords?.(mapCenter.value);
+              threeboxModel = model;
+              tb.add(model);
+              console.warn('Loaded static 3D model as fallback');
+            });
+          },
+          render: function () {
+            if (window.tb) {
+              window.tb.update();
+            }
+          }
+        });
+      } catch (fallbackError) {
+        console.warn('Static 3D model also not available:', fallbackError);
+      }
     }
   };
 
@@ -542,9 +581,98 @@
   const lastUpdatedTime = ref('2025/07/27')
 
   // Toggle heatmap visibility
-  function onHeatmapToggle() {
-    if (map && map.getLayer('localHeatmapLayer')) {
-      map.setLayoutProperty('localHeatmapLayer', 'visibility', heatmapEnabled.value ? 'visible' : 'none')
+  async function onHeatmapToggle() {
+    if (!map) return
+
+    if (heatmapEnabled.value) {
+      // 啟用時，載入熱力圖數據
+      await loadHeatmapData()
+    } else {
+      // 停用時，隱藏圖層
+      if (map.getLayer('localHeatmapLayer')) {
+        map.setLayoutProperty('localHeatmapLayer', 'visibility', 'none')
+      }
+    }
+  }
+
+  // 載入熱力圖數據
+  async function loadHeatmapData() {
+    if (!map || !validProjectId.value) return
+
+    try {
+      let heatmapData: { lat: number; lon: number; calc: number }[] = []
+      const projectIdNum = validProjectId.value
+
+      // 根據選擇的類型獲取數據
+      if (heatmapType.value === HeatmapTypeEnum.RSRP) {
+        const response = await $apiClient.project.rsrpList(projectIdNum)
+        if (Array.isArray(response.data)) {
+          heatmapData = response.data as unknown as { lat: number; lon: number; calc: number }[]
+        }
+      } else if (heatmapType.value === HeatmapTypeEnum.RSRP_DT) {
+        const response = await $apiClient.project.rsrpDtList(projectIdNum)
+        if (Array.isArray(response.data)) {
+          heatmapData = response.data as unknown as { lat: number; lon: number; calc: number }[]
+        }
+      } else if (heatmapType.value === HeatmapTypeEnum.THROUGHPUT) {
+        const response = await $apiClient.project.throughputList(projectIdNum)
+        if (Array.isArray(response.data)) {
+          heatmapData = response.data as unknown as { lat: number; lon: number; calc: number }[]
+        }
+      } else if (heatmapType.value === HeatmapTypeEnum.THROUGHPUT_DT) {
+        const response = await $apiClient.project.throughputDtList(projectIdNum)
+        if (Array.isArray(response.data)) {
+          heatmapData = response.data as unknown as { lat: number; lon: number; calc: number }[]
+        }
+      }
+
+      if (heatmapData.length === 0) {
+        console.warn('No heatmap data available for this project')
+        return
+      }
+
+      // 轉換為 GeoJSON
+      const geojsonData: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: heatmapData.map(point => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [point.lon, point.lat]
+          },
+          properties: {
+            calc: point.calc
+          }
+        }))
+      }
+
+      // 移除舊圖層和數據源（如果存在）
+      if (map.getLayer('localHeatmapLayer')) {
+        map.removeLayer('localHeatmapLayer')
+      }
+      if (map.getSource('heatmapSource')) {
+        map.removeSource('heatmapSource')
+      }
+
+      // 添加數據源
+      map.addSource('heatmapSource', {
+        type: 'geojson',
+        data: geojsonData
+      })
+
+      // 計算數據範圍
+      const isRsrp = heatmapType.value === HeatmapTypeEnum.RSRP || heatmapType.value === HeatmapTypeEnum.RSRP_DT
+      const min = isRsrp ? -140 : 0
+      const max = isRsrp ? -55 : Math.max(...heatmapData.map(d => d.calc))
+
+      // 使用工具函數獲取配置並添加圖層
+      const config = getHeatmapConfig('localHeatmapLayer', 'heatmapSource', 'visible', 'calc', min, max)
+      map.addLayer(config as mapboxgl.AnyLayer)
+
+      lastUpdatedTime.value = new Date().toLocaleString('zh-TW')
+      log.debug(`Heatmap loaded with ${heatmapData.length} points`)
+    } catch (error) {
+      console.warn('Failed to load heatmap data:', error)
     }
   }
 
@@ -557,12 +685,16 @@
       colorBarMax.value = 'max Mbps'
       colorBarMin.value = '0 Mbps'
     }
-    updateHeatmap()
+    if (heatmapEnabled.value) {
+      loadHeatmapData()
+    }
   })
 
   // Update heatmap
   function updateHeatmap() {
-    lastUpdatedTime.value = new Date().toISOString().slice(0, 10)
+    if (heatmapEnabled.value) {
+      loadHeatmapData()
+    }
   }
   onMounted(() => {
     log.lifecycle('mounted', { projectId: projectId.value })

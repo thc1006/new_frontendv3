@@ -129,43 +129,43 @@
       { account: account.value, password: password.value },
       {
         onSuccess: async () => {
-          popupMessage.value = '登入成功'
+          popupMessage.value = 'Login successful'
           showSuccess.value = true
           setTimeout(() => {
             navigateTo('/')
           }, 1000)
         },
         onError: (error) => {
-          let message = '登入失敗，請檢查帳號密碼'
+          let message = 'Login failed. Please check your account and password.'
           const err = error as { response?: { status?: number } }
           if (err.response?.status) {
             switch (err.response.status) {
             case 400:
-              message = '請檢查輸入資料格式'
+              message = 'Invalid input format. Please check your data.'
               break
             case 401:
-              message = '帳號或密碼錯誤'
+              message = 'Incorrect account or password.'
               break
             case 403:
-              message = '帳號已被鎖定，請聯絡管理員'
+              message = 'Account is locked. Please contact administrator.'
               break
             case 404:
-              message = '查無此帳號'
+              message = 'Account not found.'
               break
             case 429:
-              message = '請求過於頻繁，請稍後再試'
+              message = 'Too many requests. Please try again later.'
               break
             case 500:
-              message = '系統異常，請稍後再試'
+              message = 'System error. Please try again later.'
               break
             case 503:
-              message = '服務暫時無法使用，請稍後再試'
+              message = 'Service temporarily unavailable. Please try again later.'
               break
             }
           }
           popupMessage.value = message
           showError.value = true
-          console.error('登入失敗：', error)
+          console.error('Login failed:', error)
         },
       }
     )

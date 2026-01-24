@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { login, mockAllExternalServices } from './utils/test-helpers'
 
 // Helper function: wait for Vuetify overlay scrim to disappear
 async function waitForOverlayToDisappear(page: import('@playwright/test').Page) {
@@ -17,12 +18,11 @@ async function waitForOverlayToDisappear(page: import('@playwright/test').Page) 
 // Tests sidebar menu structure and navigation functionality
 test.describe('Navigation Menu', () => {
   test.beforeEach(async ({ page }) => {
-    // Login first
-    await page.goto('/login')
-    await page.locator('input[type="text"]').first().fill('admin1')
-    await page.locator('input[type="password"]').first().fill('admin1')
-    await page.locator('button:has-text("Login")').click()
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
+    // Mock 外部服務
+    await mockAllExternalServices(page)
+
+    // 登入
+    await login(page)
   })
 
   test.describe('Main Menu (No project context)', () => {
