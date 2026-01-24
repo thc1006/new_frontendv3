@@ -1,0 +1,119 @@
+# CI Pipeline - 在 PR 時執行測試
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci.yml'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run Type Check
+        working-directory: frontend
+        run: npm run typecheck
+
+  test:
+    name: E2E Tests
+    runs-on: self-hosted
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        working-directory: frontend
+        run: npx playwright test --reporter=github
+        env:
+          CI: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  build:
+    name: Build Image
+    runs-on: self-hosted
+    needs: test
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate image metadata
+        id: meta
+        run: |
+          echo "version=pr-${{ github.event.pull_request.number }}-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build container image (dry-run)
+        working-directory: frontend
+        run: |
+          echo "Would build image: frontend:${{ steps.meta.outputs.version }}"
+          # 實際建構在 CD 階段執行，這裡只做驗證
+          # podman build -t frontend:${{ steps.meta.outputs.version }} .
+
+  pr-status:
+    name: PR Status Check
+    runs-on: self-hosted
+    needs: [lint, test, build]
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          if [[ "${{ needs.lint.result }}" == "success" && \
+                "${{ needs.test.result }}" == "success" && \
+                "${{ needs.build.result }}" == "success" ]]; then
+            echo "✅ All checks passed! Ready for merge."
+            exit 0
+          else
+            echo "❌ Some checks failed:"
+            echo "  - Lint: ${{ needs.lint.result }}"
+            echo "  - Test: ${{ needs.test.result }}"
+            echo "  - Build: ${{ needs.build.result }}"
+            exit 1
+          fi

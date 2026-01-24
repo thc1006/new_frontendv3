@@ -1,0 +1,114 @@
+# CD Pipeline - 合併到 main 後自動佈署
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'k8s/**'
+      - '.github/workflows/cd.yml'
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: localhost:5000  # 本地 registry，可改為 Docker Hub 或其他
+  IMAGE_NAME: frontend
+  K8S_NAMESPACE: default
+
+jobs:
+  build-and-push:
+    name: Build & Push Image
+    runs-on: self-hosted
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+      full_image: ${{ steps.meta.outputs.full_image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate image metadata
+        id: meta
+        run: |
+          VERSION=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          TAG="${VERSION}-${TIMESTAMP}"
+          echo "version=${TAG}" >> $GITHUB_OUTPUT
+          echo "full_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Build container image
+        working-directory: frontend
+        run: |
+          podman build \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }} \
+            --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            --label "git.commit=${{ github.sha }}" \
+            --label "git.branch=${{ github.ref_name }}" \
+            .
+
+      - name: Push to registry
+        run: |
+          podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          podman push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy:
+    name: Deploy to K8s
+    runs-on: self-hosted
+    needs: build-and-push
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update K8s deployment
+        run: |
+          # 更新 deployment 使用新的 image
+          kubectl set image deployment/frontend-deployment \
+            frontend=${{ needs.build-and-push.outputs.full_image }} \
+            -n ${{ env.K8S_NAMESPACE }}
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/frontend-deployment \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get deployment frontend-deployment -n ${{ env.K8S_NAMESPACE }}
+          echo ""
+          echo "=== Pod Status ==="
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app=frontend
+          echo ""
+          echo "=== Service Status ==="
+          kubectl get svc frontend-service -n ${{ env.K8S_NAMESPACE }}
+
+      - name: Health check
+        run: |
+          # 等待服務就緒後進行健康檢查
+          sleep 10
+          FRONTEND_URL="http://localhost:80"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $FRONTEND_URL || echo "000")
+          if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "301" || "$HTTP_STATUS" == "302" ]]; then
+            echo "✅ Health check passed! (HTTP $HTTP_STATUS)"
+          else
+            echo "⚠️ Health check returned HTTP $HTTP_STATUS"
+          fi
+
+  notify:
+    name: Notify Deployment
+    runs-on: self-hosted
+    needs: [build-and-push, deploy]
+    if: always()
+    steps:
+      - name: Create deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ needs.build-and-push.outputs.full_image }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy Status | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
