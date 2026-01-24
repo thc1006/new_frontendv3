@@ -20,24 +20,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
         working-directory: frontend
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run Type Check
         working-directory: frontend
-        run: npm run typecheck
+        run: pnpm run typecheck
 
   test:
     name: E2E Tests
@@ -47,24 +52,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
         working-directory: frontend
-        run: npx playwright test --reporter=github
+        run: pnpm exec playwright test --reporter=github
         env:
           CI: true
 
