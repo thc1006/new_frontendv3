@@ -39,11 +39,11 @@ export default defineConfig({
   // CI 環境自動啟動 Nuxt preview server
   webServer: isCI
     ? {
-        command: 'pnpm run build && pnpm run preview',
-        url: 'http://localhost:3000',
-        reuseExistingServer: false,
-        timeout: 180000, // 3 分鐘給 build + preview 啟動
-      }
+      command: 'pnpm run build && pnpm run preview',
+      url: 'http://localhost:3000',
+      reuseExistingServer: false,
+      timeout: 180000, // 3 分鐘給 build + preview 啟動
+    }
     : undefined,
   projects: [
     {
