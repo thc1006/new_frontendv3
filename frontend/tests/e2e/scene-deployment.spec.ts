@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { login, getFirstProjectId, mockAllExternalServices, skipIfNoBackend } from './utils/test-helpers'
+import { login, getFirstProjectId, getProjectIdByType, mockAllExternalServices, skipIfNoBackend } from './utils/test-helpers'
 
 // Scene Deployment 頁面 E2E 測試 (Figma Node 17:156, 17:370)
 // 測試 OUTDOOR/INDOOR Scene Deployment 頁面結構與功能
@@ -64,16 +64,38 @@ test.describe('Scene Deployment Page', () => {
     })
   })
 
-  // INDOOR 頂部按鈕測試 (使用 project ID 2 = 偶數 = INDOOR)
+  // INDOOR 頂部按鈕測試
+  // 注意：INDOOR 專案的判斷基於專案類型，預設使用 ID 2（測試資料約定）
   test.describe('INDOOR Top Buttons', () => {
+    // INDOOR 專案 ID（透過輔助函數動態獲取，回退到預設值 2）
+    let indoorProjectId: string = '2'
+
+    test.beforeAll(async ({ browser }) => {
+      // 嘗試動態獲取 INDOOR 專案 ID
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      try {
+        await mockAllExternalServices(page)
+        await login(page)
+        const foundId = await getProjectIdByType(page, 'INDOOR')
+        if (foundId) {
+          indoorProjectId = foundId
+        }
+      } catch {
+        // 使用預設值（fallback）
+      } finally {
+        await context.close()
+      }
+    })
+
     test('should display only ADD RU button for INDOOR', async ({ page }) => {
-      await page.goto('/projects/2/scene-deployment')
+      await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("ADD RU")')).toBeVisible()
     })
 
     test('should hide UES SETTINGS button for INDOOR', async ({ page }) => {
-      await page.goto('/projects/2/scene-deployment')
+      await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       // 等待頁面載入完成
       await expect(page.locator('.v-card-title')).not.toContainText('Loading', { timeout: 10000 })
@@ -82,14 +104,14 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should hide SIMULATION CONFIG button for INDOOR', async ({ page }) => {
-      await page.goto('/projects/2/scene-deployment')
+      await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.v-card-title')).not.toContainText('Loading', { timeout: 10000 })
       await expect(page.locator('button:has-text("SIMULATION CONFIG")')).toHaveCount(0)
     })
 
     test('should hide RU POSITION button for INDOOR', async ({ page }) => {
-      await page.goto('/projects/2/scene-deployment')
+      await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.v-card-title')).not.toContainText('Loading', { timeout: 10000 })
       await expect(page.locator('button:has-text("RU POSITION")')).toHaveCount(0)

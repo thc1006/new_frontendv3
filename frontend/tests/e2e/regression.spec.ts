@@ -6,8 +6,11 @@ import { skipIfNoBackend } from './utils/test-helpers'
  *
  * 這些測試涵蓋了曾經出現過的 bug，確保它們不會再次發生。
  * 每當修復一個 bug 時，應該在這裡添加對應的回歸測試。
+ *
+ * 注意：這些測試需要後端（前端初始化需要 API）
  */
 test.describe('Regression Tests', () => {
+  skipIfNoBackend()
 
   // ============================================================
   // Issue: Favicon 未顯示在瀏覽器分頁標籤
@@ -58,7 +61,6 @@ test.describe('Regression Tests', () => {
   // Solution: 使用 CSS class + transform-origin: bottom center
   // ============================================================
   test.describe('Marker Hover Position Stability', () => {
-    skipIfNoBackend()
 
     test.beforeEach(async ({ page }) => {
       // 先登入
