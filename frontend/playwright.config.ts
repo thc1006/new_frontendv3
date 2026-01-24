@@ -1,7 +1,9 @@
 import { defineConfig } from '@playwright/test'
 
 // 環境變數配置，支援本地開發 (HTTP) 和 K8s 環境 (HTTPS)
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'https://localhost'
+// CI 環境使用 preview server (http://localhost:3000)
+const isCI = !!process.env.CI
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || (isCI ? 'http://localhost:3000' : 'https://localhost')
 const ignoreHTTPSErrors = process.env.PLAYWRIGHT_IGNORE_HTTPS_ERRORS !== 'false'
 
 export default defineConfig({
@@ -34,6 +36,15 @@ export default defineConfig({
     // 視窗大小
     viewport: { width: 1280, height: 720 },
   },
+  // CI 環境自動啟動 Nuxt preview server
+  webServer: isCI
+    ? {
+        command: 'pnpm run build && pnpm run preview',
+        url: 'http://localhost:3000',
+        reuseExistingServer: false,
+        timeout: 180000, // 3 分鐘給 build + preview 啟動
+      }
+    : undefined,
   projects: [
     {
       name: 'chromium',
