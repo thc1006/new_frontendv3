@@ -342,6 +342,8 @@ test.describe('Cross-Version Feature Validation', () => {
 })
 
 test.describe('Feature-Specific Page Navigation Tests', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')

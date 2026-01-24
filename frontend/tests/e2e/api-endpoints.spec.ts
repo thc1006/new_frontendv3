@@ -320,6 +320,8 @@ test.describe('API Endpoints Integration Tests', () => {
 })
 
 test.describe('API Request Path Verification', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')
