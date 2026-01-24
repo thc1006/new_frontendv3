@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // AI Model Evaluation 頁面的 E2E 測試
 // 測試模型評估頁面的基本結構與互動功能
 test.describe('AI Model Evaluation Page', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {

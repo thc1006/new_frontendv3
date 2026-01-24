@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // E2E tests for gNB (gNodeB) page
 // Corresponds to Figma Node 3:616
 test.describe('gNB (gNodeB) Page', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {

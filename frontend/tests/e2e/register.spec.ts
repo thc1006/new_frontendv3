@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // Register 頁面的 E2E 測試
 // 對應 Figma Node 3:1042
 test.describe('Register Page', () => {
+  // 跳過 CI 環境（需要後端進行表單驗證和 API 互動）
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/register')
   })

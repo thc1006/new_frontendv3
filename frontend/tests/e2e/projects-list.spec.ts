@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // Projects List 頁面的 E2E 測試
 // 測試專案列表頁面的結構與功能（新版：左側地圖 + 右側卡片）
 test.describe('Projects List Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')

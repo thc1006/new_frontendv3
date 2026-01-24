@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { login, mockAllExternalServices } from './utils/test-helpers'
+import { login, mockAllExternalServices, skipIfNoBackend, getFirstProjectId } from './utils/test-helpers'
 
 // Helper function: wait for Vuetify overlay scrim to disappear
 async function waitForOverlayToDisappear(page: import('@playwright/test').Page) {
@@ -17,6 +17,8 @@ async function waitForOverlayToDisappear(page: import('@playwright/test').Page) 
 // E2E tests for navigation menu
 // Tests sidebar menu structure and navigation functionality
 test.describe('Navigation Menu', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // Mock 外部服務
     await mockAllExternalServices(page)
@@ -55,8 +57,22 @@ test.describe('Navigation Menu', () => {
   })
 
   test.describe('Project Menu (With project context)', () => {
-    // 使用一個存在的專案 ID 來測試
-    const testProjectId = 2
+    // 動態獲取專案 ID（測試開始時透過輔助函數獲取）
+    let testProjectId: string = '1'
+
+    test.beforeAll(async ({ browser }) => {
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      try {
+        await mockAllExternalServices(page)
+        await login(page)
+        testProjectId = await getFirstProjectId(page)
+      } catch {
+        // 使用預設值（fallback）
+      } finally {
+        await context.close()
+      }
+    })
 
     test('should display Performance submenu in project context', async ({ page }) => {
       await page.goto(`/projects/${testProjectId}/overviews`)

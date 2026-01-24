@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // AI Models 頁面的 E2E 測試
 // 依據 CLAUDE.md 要求覆蓋：按鈕狀態、點擊後狀態轉移、Delete 確認流程
 test.describe('AI Models Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')

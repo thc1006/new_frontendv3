@@ -4,7 +4,7 @@
 
 set -e
 
-RUNNER_VERSION="2.321.0"
+RUNNER_VERSION="2.331.0"
 RUNNER_DIR="/home/usepc/actions-runner"
 RUNNER_USER="usepc"
 

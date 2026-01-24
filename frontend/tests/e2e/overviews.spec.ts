@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // Overview 頁面 E2E 測試 (Figma Node 17:143)
 // 測試 OUTDOOR Overview 頁面的結構與互動功能
 test.describe('Overview Page', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {

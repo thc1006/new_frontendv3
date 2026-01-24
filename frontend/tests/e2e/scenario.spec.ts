@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // E2E tests for Scenario page
 // Corresponds to Figma Node 3:517
 test.describe('Scenario Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // Login first
     await page.goto('/login')

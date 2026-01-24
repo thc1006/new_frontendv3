@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 /**
  * API 端點功能測試
@@ -11,6 +12,8 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('API Endpoints Integration Tests', () => {
+  skipIfNoBackend()
+
   // 測試前先登入
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
@@ -317,6 +320,8 @@ test.describe('API Endpoints Integration Tests', () => {
 })
 
 test.describe('API Request Path Verification', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')

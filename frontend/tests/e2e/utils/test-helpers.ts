@@ -1,9 +1,23 @@
 import type { Page } from '@playwright/test'
+import { test } from '@playwright/test'
 
 /**
  * E2E 測試工具函數
  * 提供外部服務 mock、通用登入等功能
  */
+
+/**
+ * 是否在 CI 環境中（沒有 backend）
+ */
+export const isCI = !!process.env.CI
+
+/**
+ * 在 CI 環境中跳過需要 backend 的測試
+ * 使用方式：在 test.describe 開頭呼叫 skipIfNoBackend()
+ */
+export function skipIfNoBackend() {
+  test.skip(isCI, 'Skipped in CI: requires backend API')
+}
 
 /**
  * Mock MinIO API 請求
@@ -185,4 +199,50 @@ export async function getFirstProjectId(page: Page): Promise<string> {
   const url = page.url()
   const match = url.match(/\/projects\/(\d+)/)
   return match ? match[1] : '1'
+}
+
+/**
+ * 獲取指定類型的專案 ID
+ * @param page Playwright Page 物件
+ * @param type 專案類型 ('INDOOR' | 'OUTDOOR')
+ * @returns 專案 ID，如果找不到則返回 null
+ *
+ * 注意：此函數需要後端 API 支援
+ * 目前的測試資料假設：
+ * - 偶數 ID (2, 4, 6...) = INDOOR
+ * - 奇數 ID (1, 3, 5...) = OUTDOOR
+ */
+export async function getProjectIdByType(page: Page, type: 'INDOOR' | 'OUTDOOR'): Promise<string | null> {
+  await page.waitForSelector('.project-card', { timeout: 15000 })
+
+  // 嘗試從專案列表中找到指定類型的專案
+  const projectCards = page.locator('.project-card')
+  const count = await projectCards.count()
+
+  for (let i = 0; i < count; i++) {
+    const card = projectCards.nth(i)
+    const typeLabel = card.locator('.project-type, .category-label')
+
+    // 檢查專案類型標籤
+    if (await typeLabel.count() > 0) {
+      const labelText = await typeLabel.textContent()
+      if (labelText?.toUpperCase().includes(type)) {
+        // 點擊進入專案以獲取 ID
+        await card.locator('button:has-text("View Project")').click()
+        await page.waitForURL((url) => url.pathname.includes('/projects/'), {
+          timeout: 10000,
+          waitUntil: 'domcontentloaded'
+        })
+
+        const url = page.url()
+        const match = url.match(/\/projects\/(\d+)/)
+        return match ? match[1] : null
+      }
+    }
+  }
+
+  // 如果找不到，根據約定使用預設值
+  // 偶數 = INDOOR, 奇數 = OUTDOOR
+  console.warn(`No ${type} project found, using fallback ID`)
+  return type === 'INDOOR' ? '2' : '1'
 }

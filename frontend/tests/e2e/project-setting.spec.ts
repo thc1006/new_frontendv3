@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // E2E tests for Project Setting page
 // Corresponds to Figma Node 3:755, 3:876
 test.describe('Project Setting Page', () => {
+  skipIfNoBackend()
+
   let projectId: string
 
   test.beforeEach(async ({ page }) => {

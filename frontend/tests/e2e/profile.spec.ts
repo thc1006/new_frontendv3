@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // Profile page E2E tests
 // 測試個人資料頁面的顯示和密碼修改功能
 test.describe('Profile Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')

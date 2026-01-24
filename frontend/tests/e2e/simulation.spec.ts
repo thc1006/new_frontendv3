@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { skipIfNoBackend } from './utils/test-helpers'
 
 // Simulation 頁面的 E2E 測試
 // 對應 Figma Node 3:570
 test.describe('Simulation Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // 先登入
     await page.goto('/login')

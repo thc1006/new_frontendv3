@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { login, mockAllExternalServices } from './utils/test-helpers'
+import { login, mockAllExternalServices, skipIfNoBackend } from './utils/test-helpers'
 
 // Create Project 頁面的 E2E 測試
 // 對應 Figma Node 3:785, 3:814
 test.describe('Create Project Page', () => {
+  skipIfNoBackend()
+
   test.beforeEach(async ({ page }) => {
     // Mock 外部服務 (MinIO, Geocoding)
     await mockAllExternalServices(page)
