@@ -1,4 +1,5 @@
 # CI Pipeline - 在 PR 時執行測試
+# Triggers on pull requests to main branch
 name: CI
 
 on:
