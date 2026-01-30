@@ -1090,8 +1090,13 @@
   import { useAppControl } from '~/composables/useAppControl'
   import { useFlTraining, type AppName, type TrainingMode } from '~/composables/useFlTraining'
   import { useTrainingResults, type NESTrainingResults } from '~/composables/useTrainingResults'
+  import { Api, type RU } from '~/apis/Api'
 
   const log = createModuleLogger('AISimulator')
+
+  // API client for fetching RU data
+  const runtimeConfig = useRuntimeConfig()
+  const apiClient = new Api({ baseURL: runtimeConfig.public.apiBaseUrl as string || '' })
   const route = useRoute()
   const projectId = computed(() => route.params.projectId as string)
 
@@ -1356,19 +1361,57 @@
   const nesHeatmapType = ref('RSRP')
   let nesReviewMap: mapboxgl.Map | null = null
 
-  // gNB 標記數據
-  interface GnbMarker {
+  // RU 標記數據 - 從 API 動態獲取
+  interface RUMarker {
     id: number
     lng: number
     lat: number
+    name: string
     color: string
   }
-  const nesGnbMarkers: GnbMarker[] = [
-    { id: 1, lng: 120.9965, lat: 24.7875, color: '#00BCD4' },
-    { id: 2, lng: 120.9975, lat: 24.7865, color: '#E91E63' },
-    { id: 3, lng: 120.9980, lat: 24.7880, color: '#FFEB3B' },
-    { id: 4, lng: 120.9955, lat: 24.7870, color: '#4CAF50' }
+  // RU data fetched from API (use ref for reactive updates)
+  const ruMarkers = ref<RUMarker[]>([])
+  const ruDataLoaded = ref(false)
+
+  // Fallback RU markers (used if API fails) - 工程四館預設位置
+  const defaultRuMarkers: RUMarker[] = [
+    { id: 1, lng: 120.9967, lat: 24.7870, name: 'RU-1', color: '#00BCD4' },
+    { id: 2, lng: 120.9972, lat: 24.7868, name: 'RU-2', color: '#E91E63' },
+    { id: 3, lng: 120.9962, lat: 24.7872, name: 'RU-3', color: '#FFEB3B' },
+    { id: 4, lng: 120.9970, lat: 24.7865, name: 'RU-4', color: '#4CAF50' }
   ]
+
+  // Fetch RU data from backend API
+  async function fetchRuData() {
+    if (ruDataLoaded.value) return
+
+    const pid = parseInt(projectId.value) || 26
+    log.info('Fetching RU data for project:', pid)
+
+    try {
+      const response = await apiClient.project.getProjectRUs(pid)
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        // Map API response to RUMarker format
+        const colors = ['#00BCD4', '#E91E63', '#FFEB3B', '#4CAF50', '#9C27B0', '#FF5722']
+        ruMarkers.value = response.data.map((ru: RU, index: number) => ({
+          id: ru.RU_id || index + 1,
+          lng: ru.lon || 120.9967,
+          lat: ru.lat || 24.787,
+          name: ru.name || `RU-${index + 1}`,
+          color: colors[index % colors.length]
+        }))
+        log.info(`RU data loaded from API: ${ruMarkers.value.length} markers`)
+      } else {
+        log.warn('No RU data from API, using defaults')
+        ruMarkers.value = defaultRuMarkers
+      }
+    } catch (error) {
+      log.error('Failed to fetch RU data:', error)
+      ruMarkers.value = defaultRuMarkers
+    }
+
+    ruDataLoaded.value = true
+  }
 
   // NES Finetune 狀態 (Figma 277:1326, 277:1366, 277:1405)
   const nesPretrainDone = ref(false)
@@ -2393,6 +2436,9 @@
       nesReviewMap = null
     }
 
+    // Fetch RU data from API before initializing map
+    await fetchRuData()
+
     await nextTick()
     const mapContainer = document.getElementById('nesReviewMap')
     if (!mapContainer) return
@@ -2404,35 +2450,50 @@
       nesReviewMap = new mapboxgl.Map({
         container: 'nesReviewMap',
         style: initialStyle,
-        center: [120.997, 24.787],
+        center: [120.9967, 24.787],
         zoom: 17
       })
 
       nesReviewMap.addControl(new mapboxgl.NavigationControl())
 
-      // 地圖載入完成後添加 gNB 標記
+      // 地圖載入完成後添加 RU 標記
       nesReviewMap.on('load', () => {
-        addNesGnbMarkers()
+        addNesRuMarkers()
       })
     } catch (error) {
       console.error('NES Review map initialization error:', error)
     }
   }
 
-  // 添加 gNB 標記到地圖
-  function addNesGnbMarkers() {
+  // 添加 RU 標記到地圖 (使用 ru.svg 圖片)
+  function addNesRuMarkers() {
     if (!nesReviewMap) return
 
-    nesGnbMarkers.forEach(gnb => {
+    const markers = ruMarkers.value.length > 0 ? ruMarkers.value : defaultRuMarkers
+
+    markers.forEach(ru => {
+      // Create marker element using ru.svg image
       const el = document.createElement('div')
-      el.innerHTML = '📶'
-      el.style.fontSize = '20px'
-      el.style.filter = `drop-shadow(0 0 2px ${gnb.color})`
+      el.className = 'ru-marker'
+      el.style.width = '32px'
+      el.style.height = '32px'
+      el.style.backgroundImage = 'url(/img/ru.svg)'
+      el.style.backgroundSize = 'contain'
+      el.style.backgroundRepeat = 'no-repeat'
+      el.style.cursor = 'pointer'
+      el.title = ru.name
+
+      // Add popup with RU info
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`<div style="padding: 4px;"><strong>${ru.name}</strong><br/>Lng: ${ru.lng.toFixed(6)}<br/>Lat: ${ru.lat.toFixed(6)}</div>`)
 
       new mapboxgl.Marker(el)
-        .setLngLat([gnb.lng, gnb.lat])
+        .setLngLat([ru.lng, ru.lat])
+        .setPopup(popup)
         .addTo(nesReviewMap!)
     })
+
+    log.info(`Added ${markers.length} RU markers to NES Review map`)
   }
 
   // 添加 UE 標記（根據場景）
@@ -2867,6 +2928,9 @@
       nesEnableMap = null
     }
 
+    // Ensure RU data is loaded
+    await fetchRuData()
+
     await nextTick()
     const mapContainer = document.getElementById('nesEnableMap')
     if (!mapContainer) return
@@ -2878,19 +2942,25 @@
       nesEnableMap = new mapboxgl.Map({
         container: 'nesEnableMap',
         style: initialStyle,
-        center: [120.997, 24.787],
+        center: [120.9967, 24.787],
         zoom: 17
       })
 
       nesEnableMap.addControl(new mapboxgl.NavigationControl())
 
       nesEnableMap.on('load', () => {
-        // 添加 gNB 標記
-        nesGnbMarkers.forEach(gnb => {
+        // 添加 RU 標記 (使用 ru.svg)
+        const markers = ruMarkers.value.length > 0 ? ruMarkers.value : defaultRuMarkers
+        markers.forEach(ru => {
           const el = document.createElement('div')
-          el.innerHTML = '📶'
-          el.style.fontSize = '20px'
-          new mapboxgl.Marker(el).setLngLat([gnb.lng, gnb.lat]).addTo(nesEnableMap!)
+          el.className = 'ru-marker'
+          el.style.width = '28px'
+          el.style.height = '28px'
+          el.style.backgroundImage = 'url(/img/ru.svg)'
+          el.style.backgroundSize = 'contain'
+          el.style.backgroundRepeat = 'no-repeat'
+          el.title = ru.name
+          new mapboxgl.Marker(el).setLngLat([ru.lng, ru.lat]).addTo(nesEnableMap!)
         })
         // 添加 UE 標記
         const uePositions = [[120.9965, 24.7875], [120.9975, 24.7865], [120.9980, 24.7880]]
