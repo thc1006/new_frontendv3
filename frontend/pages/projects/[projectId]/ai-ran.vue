@@ -340,8 +340,8 @@
   Chart.register(...registerables)
   log.lifecycle('setup:start')
 
-  // Mapbox token
-  const MAPBOX_TOKEN = 'pk.eyJ1IjoibmV3c2xhYiIsImEiOiJjbDdkNGpyYmQwaDF5M29tcWYzNzNwcGd2In0.2D21D19iczQMljmu7mDnog'
+  // Mapbox token (same as other pages - dariuslung account)
+  const MAPBOX_TOKEN = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
 
   // Model 清單 (與 AI Simulator 相同)
   const modelList = [

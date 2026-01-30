@@ -1330,7 +1330,8 @@
     trainLoss: 0,
     valLoss: 0
   })
-  const posFinetuneData = ref({
+  // IMPORTANT: Use shallowRef to prevent deep reactivity stack overflow
+  const posFinetuneData = shallowRef({
     epochs: [] as number[],
     trainLosses: [] as number[],
     valLosses: [] as number[]
@@ -1378,7 +1379,8 @@
     actorLoss: 0,
     criticLoss: 0
   })
-  const nesFinetuneData = ref({
+  // IMPORTANT: Use shallowRef to prevent deep reactivity stack overflow
+  const nesFinetuneData = shallowRef({
     epochs: [] as number[],
     rewards: [] as number[],
     rewardsMA10: [] as number[],
@@ -1431,7 +1433,9 @@
   const nesFinetuneActorLossChart = shallowRef<Chart | null>(null)
 
   // 訓練數據存儲 (NES)
-  const trainingData = ref({
+  // IMPORTANT: Use shallowRef to prevent deep reactivity tracking on arrays
+  // This avoids "Maximum call stack size exceeded" when pushing to arrays frequently
+  const trainingData = shallowRef({
     epochs: [] as number[],
     rewards: [] as number[],
     rewardsMA10: [] as number[],
@@ -1442,7 +1446,8 @@
   })
 
   // Positioning 訓練數據存儲
-  const posTrainingData = ref({
+  // IMPORTANT: Use shallowRef to prevent deep reactivity tracking
+  const posTrainingData = shallowRef({
     epochs: [] as number[],
     trainLosses: [] as number[],
     valLosses: [] as number[]
@@ -1664,30 +1669,33 @@
   }
 
   // 更新圖表數據
+  // IMPORTANT: Use spread operator to create copies of reactive arrays
+  // to avoid Vue Proxy <-> Chart.js circular reactivity causing stack overflow
   function updateCharts() {
     const data = trainingData.value
 
     // 更新 Reward 圖表
     if (rewardChart.value) {
-      rewardChart.value.data.labels = data.epochs
-      rewardChart.value.data.datasets[0].data = data.rewards
-      rewardChart.value.data.datasets[1].data = data.rewardsMA10
-      rewardChart.value.data.datasets[2].data = data.bestRewards
-      rewardChart.value.data.datasets[3].data = data.bestRewardsMA10
+      // Create copies of arrays to break Vue reactivity chain
+      rewardChart.value.data.labels = [...data.epochs]
+      rewardChart.value.data.datasets[0].data = [...data.rewards]
+      rewardChart.value.data.datasets[1].data = [...data.rewardsMA10]
+      rewardChart.value.data.datasets[2].data = [...data.bestRewards]
+      rewardChart.value.data.datasets[3].data = [...data.bestRewardsMA10]
       rewardChart.value.update('none')
     }
 
     // 更新 Critic Loss 圖表
     if (criticLossChart.value) {
-      criticLossChart.value.data.labels = data.epochs
-      criticLossChart.value.data.datasets[0].data = data.criticLosses
+      criticLossChart.value.data.labels = [...data.epochs]
+      criticLossChart.value.data.datasets[0].data = [...data.criticLosses]
       criticLossChart.value.update('none')
     }
 
     // 更新 Actor Loss 圖表
     if (actorLossChart.value) {
-      actorLossChart.value.data.labels = data.epochs
-      actorLossChart.value.data.datasets[0].data = data.actorLosses
+      actorLossChart.value.data.labels = [...data.epochs]
+      actorLossChart.value.data.datasets[0].data = [...data.actorLosses]
       actorLossChart.value.update('none')
     }
   }
@@ -1705,19 +1713,24 @@
     const epochs = Array.from({ length: results.current_epoch + 1 }, (_, i) => i)
 
     // Calculate moving averages for rewards
-    const rewardsMA10 = calculateMovingAverage(results.reward, 10)
-    const bestRewards = calculateRunningMax(results.reward)
+    // Use spread operator to ensure we're working with plain arrays, not reactive proxies
+    const rewardsArray = [...(results.reward || [])]
+    const criticLossArray = [...(results.critic_loss || [])]
+    const actorLossArray = [...(results.actor_loss || [])]
+
+    const rewardsMA10 = calculateMovingAverage(rewardsArray, 10)
+    const bestRewards = calculateRunningMax(rewardsArray)
     const bestRewardsMA10 = calculateMovingAverage(bestRewards, 10)
 
-    // Update training data reactive object
+    // Update training data reactive object with plain arrays
     trainingData.value = {
       epochs,
-      rewards: results.reward,
+      rewards: rewardsArray,
       rewardsMA10,
       bestRewards,
       bestRewardsMA10,
-      criticLosses: results.critic_loss,
-      actorLosses: results.actor_loss
+      criticLosses: criticLossArray,
+      actorLosses: actorLossArray
     }
 
     // Update epoch display
@@ -1895,12 +1908,13 @@
   }
 
   // 更新 Positioning 圖表數據
+  // IMPORTANT: Use spread operator to avoid Vue Proxy <-> Chart.js circular reactivity
   function updatePosChart() {
     const data = posTrainingData.value
     if (posLossChart.value) {
-      posLossChart.value.data.labels = data.epochs
-      posLossChart.value.data.datasets[0].data = data.trainLosses
-      posLossChart.value.data.datasets[1].data = data.valLosses
+      posLossChart.value.data.labels = [...data.epochs]
+      posLossChart.value.data.datasets[0].data = [...data.trainLosses]
+      posLossChart.value.data.datasets[1].data = [...data.valLosses]
       posLossChart.value.update('none')
     }
   }
@@ -2675,24 +2689,25 @@
   }
 
   // 更新 NES Finetune 圖表
+  // IMPORTANT: Use spread operator to avoid Vue Proxy <-> Chart.js circular reactivity
   function updateNesFinetuneCharts() {
     const data = nesFinetuneData.value
     if (nesFinetuneRewardChart.value) {
-      nesFinetuneRewardChart.value.data.labels = data.epochs
-      nesFinetuneRewardChart.value.data.datasets[0].data = data.rewards
-      nesFinetuneRewardChart.value.data.datasets[1].data = data.rewardsMA10
-      nesFinetuneRewardChart.value.data.datasets[2].data = data.bestRewards
-      nesFinetuneRewardChart.value.data.datasets[3].data = data.bestRewardsMA10
+      nesFinetuneRewardChart.value.data.labels = [...data.epochs]
+      nesFinetuneRewardChart.value.data.datasets[0].data = [...data.rewards]
+      nesFinetuneRewardChart.value.data.datasets[1].data = [...data.rewardsMA10]
+      nesFinetuneRewardChart.value.data.datasets[2].data = [...data.bestRewards]
+      nesFinetuneRewardChart.value.data.datasets[3].data = [...data.bestRewardsMA10]
       nesFinetuneRewardChart.value.update('none')
     }
     if (nesFinetuneCriticLossChart.value) {
-      nesFinetuneCriticLossChart.value.data.labels = data.epochs
-      nesFinetuneCriticLossChart.value.data.datasets[0].data = data.criticLosses
+      nesFinetuneCriticLossChart.value.data.labels = [...data.epochs]
+      nesFinetuneCriticLossChart.value.data.datasets[0].data = [...data.criticLosses]
       nesFinetuneCriticLossChart.value.update('none')
     }
     if (nesFinetuneActorLossChart.value) {
-      nesFinetuneActorLossChart.value.data.labels = data.epochs
-      nesFinetuneActorLossChart.value.data.datasets[0].data = data.actorLosses
+      nesFinetuneActorLossChart.value.data.labels = [...data.epochs]
+      nesFinetuneActorLossChart.value.data.datasets[0].data = [...data.actorLosses]
       nesFinetuneActorLossChart.value.update('none')
     }
   }
@@ -3148,12 +3163,13 @@
   }
 
   // 更新 Finetune 圖表數據
+  // IMPORTANT: Use spread operator to avoid Vue Proxy <-> Chart.js circular reactivity
   function updateFinetuneChart() {
     const data = posFinetuneData.value
     if (posFinetuneChart.value) {
-      posFinetuneChart.value.data.labels = data.epochs
-      posFinetuneChart.value.data.datasets[0].data = data.trainLosses
-      posFinetuneChart.value.data.datasets[1].data = data.valLosses
+      posFinetuneChart.value.data.labels = [...data.epochs]
+      posFinetuneChart.value.data.datasets[0].data = [...data.trainLosses]
+      posFinetuneChart.value.data.datasets[1].data = [...data.valLosses]
       posFinetuneChart.value.update('none')
     }
   }
