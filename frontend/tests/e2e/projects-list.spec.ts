@@ -129,6 +129,25 @@ test.describe('Projects List Page', () => {
 
   // 互動功能
   test.describe('Interactions', () => {
+    test('should navigate to overviews page when clicking View Project', async ({ page }) => {
+      await page.goto('/')
+
+      // 等待專案卡片載入
+      await page.waitForSelector('.project-card', { timeout: 15000 })
+
+      // 點擊 View Project
+      const viewLink = page.locator('.view-project-link').first()
+      await viewLink.click()
+
+      // 等待導航完成
+      await page.waitForURL((url) => url.pathname.includes('/projects/'), { timeout: 10000 })
+
+      // 驗證導向 overviews 頁面
+      const url = page.url()
+      expect(url).toContain('/overviews')
+      expect(url).not.toContain('/evaluations')
+    })
+
     test('should navigate to create page on button click', async ({ page }) => {
       await page.goto('/')
 

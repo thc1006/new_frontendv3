@@ -1,53 +1,34 @@
-# Use a smaller base image
-FROM python:3.10
+# FROM python:3.10
+# WORKDIR /app
+# ADD . /app
+# COPY flask_requirement.txt .
+# RUN pip install -r flask_requirement.txt
+# RUN test -d ./img || mkdir ./img && chmod -R 777 ./img
+# COPY . .
 
-# Set working directory
+# ENV FLASK_RUN_HOST=0.0.0.0
+# ENV FLASK_APP=app.py
+# ENV DEBIAN_FRONTEND noninteractive
+# EXPOSE 8000
+# CMD ["flask", "run", "--host=0.0.0.0", "--port=8000"]
+# CMD ["python", "app.py"]
+# CMD ["gunicorn", "-w", "12", "--threads", "2", "-b", "0.0.0.0:8000", "config:app"]
+
+FROM python:3.10
 WORKDIR /app
 
-# System deps (optional): uncomment if you need build tools for wheels
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     build-essential gcc \
-#  && rm -rf /var/lib/apt/lists/*
+COPY requirement.txt /app/
+RUN pip install -r requirement.txt
+COPY . /app/
 
-# Install Python deps first for better layer caching
-COPY requirements.txt .
-# Use BuildKit cache if available; fallback to no-cache
-# syntax=docker/dockerfile:1.6
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install -r requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Create required directories
+RUN mkdir -p ./img && chmod -R 777 ./img
+RUN mkdir -p /tmp/prometheus && chmod -R 777 /tmp/prometheus
 
-# Copy app source
-COPY . .
-
-# Create directories for uploads and Prometheus multiproc metrics
-# Avoid 777; set proper ownership instead.
-RUN mkdir -p /app/img /prometheus/tmp \
- && adduser --disabled-password --gecos "" appuser \
- && chown -R appuser:appuser /app /prometheus
-
-# Environment: keep it minimal and relevant
-ENV PYTHONUNBUFFERED=1
-ENV PROMETHEUS_MULTIPROC_DIR=/prometheus/tmp
-
-# Expose the application port
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_APP=app.py
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
 EXPOSE 8000
 
-# Drop privileges
-USER appuser
-
-# Gunicorn: tune workers based on CPU count at runtime if desired.
-# For CPU-bound Flask, gthread won't beat GIL; threads can still help with I/O.
-# Consider starting with workers=2*CPU+1 and threads=1~2.
-# Add sane timeouts and log to stdout.
-CMD ["gunicorn", \
-     "--workers", "5", \
-     "--threads", "2", \
-     "--timeout", "60", \
-     "--graceful-timeout", "30", \
-     "--keep-alive", "5", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-", \
-     "--bind", "0.0.0.0:8000", \
-     "--worker-class", "gthread", \
-     "app:app"]
+CMD ["gunicorn", "-w", "4", "--threads", "4", "-b", "0.0.0.0:8000", "config:app", "--worker-class=gthread", "--timeout", "120"]

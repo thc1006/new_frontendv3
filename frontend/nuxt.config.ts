@@ -28,6 +28,14 @@ export default defineNuxtConfig({
       drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
       pure: process.env.NODE_ENV === 'production' ? ['console.log'] : [],
     },
+    // 強制 bundler 使用單一 three.js 實例，避免多實例警告
+    // 注意: threebox-plugin 內部 bundled 了自己的 three.js (r132)，使用 CommonJS require('./three.js')
+    // Vite dedupe 和 alias 無法攔截這種相對路徑的 CommonJS import
+    // 這是 threebox-plugin 的已知限制，console 會顯示 "Multiple instances of Three.js" 警告
+    // 但不影響功能，只是提示訊息
+    resolve: {
+      dedupe: ['three'],
+    },
     // Code Splitting: 將大型依賴分離成獨立 chunk
     build: {
       rollupOptions: {
@@ -55,6 +63,20 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+  // Nitro server configuration
+  nitro: {
+    // Proxy external APIs to bypass CORS
+    routeRules: {
+      // App Control API proxy (140.113.144.121:8088)
+      '/api/app-control/**': {
+        proxy: 'http://140.113.144.121:8088/**'
+      },
+      // FL Training API proxy (140.113.144.121:3032, 正式上線改 9005)
+      '/api/fl-training/**': {
+        proxy: 'http://140.113.144.121:3032/**'
+      }
+    }
   },
   runtimeConfig: {
     public: {

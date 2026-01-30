@@ -7,6 +7,11 @@ const hasExternalBaseURL = !!process.env.PLAYWRIGHT_BASE_URL
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || (isCI ? 'http://localhost:3000' : 'https://localhost')
 const ignoreHTTPSErrors = process.env.PLAYWRIGHT_IGNORE_HTTPS_ERRORS !== 'false'
 
+// 硬體加速配置 (Intel i9-9900KF + RTX 2070 SUPER)
+// 使用 RAM disk 作為快取目錄，並啟用 GPU 加速
+const useHardwareAcceleration = process.env.PLAYWRIGHT_HW_ACCEL !== 'false'
+const playwrightCacheDir = useHardwareAcceleration ? '/dev/shm/playwright-cache' : undefined
+
 // 只在 CI 環境且沒有外部 URL 時啟動 webServer
 const shouldStartWebServer = isCI && !hasExternalBaseURL
 
@@ -71,7 +76,22 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        // 硬體加速配置 - RTX 2070 SUPER GPU 加速
+        launchOptions: useHardwareAcceleration ? {
+          args: [
+            '--enable-gpu-rasterization',
+            '--enable-zero-copy',
+            '--enable-features=VaapiVideoDecoder',
+            '--disable-software-rasterizer',
+            '--enable-accelerated-2d-canvas',
+            '--enable-accelerated-video-decode',
+            '--ignore-gpu-blocklist',
+          ],
+        } : undefined,
       },
     },
   ],
+
+  // 輸出目錄配置 - 使用 RAM disk 加速
+  outputDir: useHardwareAcceleration ? '/dev/shm/playwright-cache/test-results' : 'test-results',
 })

@@ -619,8 +619,11 @@
               // --- End compute side length ---
 
               // --- Compute scale factor and apply ---
+              // Scale model to match real building size
+              // projectMargin = building max dimension from database (e.g., 77m)
+              // computedSideLength = GLTF model max dimension (e.g., 30.315)
               if (projectMargin.value && computedSideLength > 0) {
-                scaleFactor.value = projectMargin.value / computedSideLength /12;
+                scaleFactor.value = projectMargin.value / computedSideLength;
                 if (model.object3d && model.object3d.scale && typeof model.object3d.scale.set === 'function') {
                   model.object3d.scale.set(scaleFactor.value, scaleFactor.value, scaleFactor.value);
                 }
@@ -752,7 +755,29 @@
 
     const config = useRuntimeConfig()
     const isOnline = config.public?.isOnline
-    const onlineStyle = 'mapbox://styles/mapbox/streets-v12'
+    // 使用國土測繪中心 WMTS 圖資（與 overviews 頁面一致）
+    const onlineStyle: mapboxgl.StyleSpecification = {
+      version: 8,
+      sources: {
+        'nlsc-emap': {
+          type: 'raster',
+          tiles: [
+            'https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}'
+          ],
+          tileSize: 256,
+          attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">國土測繪中心</a>'
+        }
+      },
+      layers: [
+        {
+          id: 'nlsc-emap-layer',
+          type: 'raster',
+          source: 'nlsc-emap',
+          minzoom: 0,
+          maxzoom: 20
+        }
+      ]
+    }
     const offlineStyle = config.public?.offlineMapboxGLJSURL
 
     try {
@@ -1714,13 +1739,15 @@
     // Apply rotation_offset (clockwise, radians) to x_cm/y_cm
     // Get rotation_offset, lat_offset, lon_offset from project data
     // Use fallback 0 if not available
-    const rotation = typeof modelRotateOffset.value !== 'undefined' && modelRotateOffset.value !== null ? modelRotateOffset.value : 0;
+    // rotation_offset is in DEGREES, must convert to radians for Math.cos/sin
+    const rotationDegrees = typeof modelRotateOffset.value !== 'undefined' && modelRotateOffset.value !== null ? modelRotateOffset.value : 0;
+    const rotationRadians = rotationDegrees * Math.PI / 180;  // Convert degrees to radians
     const lat_offset = typeof modelLatOffset.value !== 'undefined' && modelLatOffset.value !== null ? modelLatOffset.value : 0;
     const lon_offset = typeof modelLonOffset.value !== 'undefined' && modelLonOffset.value !== null ? modelLonOffset.value : 0;
 
     // Rotate (x_cm, y_cm) by rotation_offset (clockwise)
-    const cosR = Math.cos(rotation);
-    const sinR = Math.sin(rotation);
+    const cosR = Math.cos(rotationRadians);
+    const sinR = Math.sin(rotationRadians);
     const x_rot = x_cm * cosR - y_cm * sinR;
     const y_rot = x_cm * sinR + y_cm * cosR;
 

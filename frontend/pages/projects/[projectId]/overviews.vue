@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container fluid class="overview-page pa-0">
     <!-- Error Dialog -->
     <v-dialog v-model="errorDialog" max-width="400">
       <v-card>
@@ -14,82 +14,122 @@
       </v-card>
     </v-dialog>
 
-    <v-row v-if="isLoadingProject">
+    <!-- Page Title - Figma: 17:532 -->
+    <h1 class="overview-title">Overview</h1>
+
+    <!-- Loading 狀態：專案資料載入中，專案ID尚未設定，或權限資料載入中（非管理員） -->
+    <v-row v-if="isLoadingProject || isProjectPending || (!isAdmin && isLoadingPermissions && projectExists)" class="px-4">
       <v-col cols="12" class="text-center">
         <v-progress-circular indeterminate color="primary" />
-        <p class="mt-2">Checking if project exists...</p>
+        <p class="mt-2">{{ isLoadingProject ? 'Loading project...' : 'Checking permissions...' }}</p>
       </v-col>
     </v-row>
 
-    <v-row v-else-if="projectExists && hasProjectAccess">
-      <v-col cols="12">
-        <v-card>
-          <v-card-title class="text-h5">
-            Project ID : {{ projectTitle || projectId }}
-            <v-chip v-if="projectType === 'INDOOR'" size="small" color="info" class="ml-2">INDOOR</v-chip>
-          </v-card-title>
-          <v-card-text style="position:relative;">
-            <!-- Map Container -->
-            <div id="mapContainer"/>
-            <!-- Control Panel -->
-            <div id="optionsList" class="list-group no-select control-panel-pos">
-              <li class="list-group-item pb-3">
-                <div class="d-flex align-items-left">
-                  <v-switch
-                    v-model="heatmapEnabled"
-                    label="Heatmap"
-                    color="primary"
-                    hide-details
-                    :disabled="isLoadingProject"
-                    density="compact"
-                    class="me-2 mini-switch"
-                    @change="onHeatmapToggle"
-                  />
-                </div>
-                <div class="d-flex align-items-left">
-                  <v-select
-                    v-model="heatmapType"
-                    :items="[
-                      { title: 'RSRP', value: HeatmapTypeEnum.RSRP },
-                      { title: 'RSRP_DT', value: HeatmapTypeEnum.RSRP_DT },
-                      { title: 'Throughput', value: HeatmapTypeEnum.THROUGHPUT },
-                      { title: 'Throughput_DT', value: HeatmapTypeEnum.THROUGHPUT_DT }
-                    ]"
-                    :disabled="!heatmapEnabled"
-                    density="compact"
-                    hide-details
-                    class="mini-select"
-                  />
-                </div>
-                <div class="d-flex align-items-left mt-2">
-                  <v-switch
-                    v-model="modelEditEnabled"
-                    label="Edit Model"
-                    color="deep-purple"
-                    hide-details
-                    density="compact"
-                    class="me-2 mini-switch"
-                  />
-                </div>
-              </li>
-              <li class="list-group-item d-flex flex-column justify-content-center align-items-center">
-                <button class="btn btn-primary mb-1 update-heatmap-btn" @click="updateHeatmap">Update Heatmap</button>
-                <label id="heatmapUpdateTime" style="font-size: small;">Last updated: </label><span>{{ lastUpdatedTime }}</span>
-              </li>
-            </div>
-            <!-- Color Bar -->
-            <div v-show="heatmapEnabled" id="colorBarContainer" class="color-bar-container color-bar-pos">
-              <div id="colorBar" class="rounded color-bar"/>
-              <div class="color-bar-label" style="top: 0%;">{{ colorBarMax }}</div>
-              <div class="color-bar-label" style="top: 100%;">{{ colorBarMin }}</div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Main Content Card - Figma: 141:26092 -->
+    <div v-else-if="projectExists && hasProjectAccess" class="overview-card mx-4">
+      <!-- Project ID Header - Figma: 141:26112 -->
+      <div class="project-header">
+        <span class="project-title">Project ID : {{ projectTitle || projectId }}</span>
+        <v-chip v-if="projectType === 'INDOOR'" size="small" color="info" class="ml-2">INDOOR</v-chip>
+      </div>
+
+      <!-- Map Container - Figma: 141:26115 -->
+      <div class="map-wrapper">
+        <div id="mapContainer"/>
+
+        <!-- Control Panel - Figma design matching -->
+        <div class="control-panel">
+          <!-- Heatmap Toggle -->
+          <div class="control-item">
+            <span class="control-label">Heatmap</span>
+            <v-switch
+              v-model="heatmapEnabled"
+              color="primary"
+              hide-details
+              :disabled="isLoadingProject"
+              density="compact"
+              class="control-switch"
+              @change="onHeatmapToggle"
+            />
+          </div>
+
+          <!-- Heatmap Type Selector -->
+          <div class="control-item">
+            <v-select
+              v-model="heatmapType"
+              :items="[
+                { title: 'RSRP', value: HeatmapTypeEnum.RSRP },
+                { title: 'RSRP_DT', value: HeatmapTypeEnum.RSRP_DT },
+                { title: 'Throughput', value: HeatmapTypeEnum.THROUGHPUT },
+                { title: 'Throughput_DT', value: HeatmapTypeEnum.THROUGHPUT_DT }
+              ]"
+              :disabled="!heatmapEnabled"
+              density="compact"
+              hide-details
+              variant="outlined"
+              class="heatmap-select"
+            />
+          </div>
+
+          <!-- Edit Model Toggle -->
+          <div class="control-item">
+            <span class="control-label">Edit Model</span>
+            <v-switch
+              v-model="modelEditEnabled"
+              color="deep-purple"
+              hide-details
+              density="compact"
+              class="control-switch"
+            />
+          </div>
+
+          <!-- Upload 3D Model Button -->
+          <div class="control-item upload-section">
+            <input
+              ref="gltfFileInput"
+              type="file"
+              accept=".gltf"
+              style="display: none;"
+              @change="handleGltfUpload"
+            />
+            <v-btn
+              size="small"
+              color="teal"
+              variant="outlined"
+              class="upload-btn"
+              @click="triggerGltfUpload"
+            >
+              <v-icon start size="small">mdi-upload</v-icon>
+              Upload 3D
+            </v-btn>
+            <span class="upload-hint">僅限.gltf格式檔名的模型</span>
+          </div>
+
+          <!-- Update Heatmap Button - Figma blue button -->
+          <button class="update-heatmap-btn" @click="updateHeatmap">
+            Update Heatmap
+          </button>
+
+          <!-- Last Updated -->
+          <div class="last-updated">
+            <span>Last updated:</span>
+            <span>{{ lastUpdatedTime }}</span>
+          </div>
+        </div>
+
+        <!-- Color Bar -->
+        <div v-show="heatmapEnabled" class="color-bar-container">
+          <div class="color-bar-labels">
+            <span class="color-bar-max">{{ colorBarMax }}</span>
+            <span class="color-bar-min">{{ colorBarMin }}</span>
+          </div>
+          <div class="color-bar"/>
+        </div>
+      </div>
+    </div>
 
     <!-- Fallback for access denied or project not found -->
-    <v-row v-else>
+    <v-row v-else class="px-4">
       <v-col cols="12" class="text-center">
         <v-alert type="warning" class="mb-4">
           <template v-if="!projectExists">
@@ -127,11 +167,13 @@
 
   const route = useRoute()
   const router = useRouter()
-  const projectId = ref('')
+  // Initialize projectId directly from route params to avoid first-render race condition
+  const projectId = ref(route.params.projectId ? String(route.params.projectId) : '')
   const { $apiClient } = useNuxtApp()
   const config = useRuntimeConfig()
   const isOnline = config.public?.isOnline
 
+  // Keep projectId in sync with route changes (for navigation between projects)
   watchEffect(() => {
     if (route.params.projectId) {
       projectId.value = String(route.params.projectId)
@@ -141,11 +183,33 @@
   let map: mapboxgl.Map | null = null
   const mapAccessToken = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
   // Two styles: prefer online style when online; fallback to local style when offline
-  const onlineStyle = 'mapbox://styles/mapbox/streets-v12'
+  // 使用國土測繪中心 WMTS 圖資
+  const onlineStyle: mapboxgl.StyleSpecification = {
+    version: 8,
+    sources: {
+      'nlsc-emap': {
+        type: 'raster',
+        tiles: [
+          'https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">國土測繪中心</a>'
+      }
+    },
+    layers: [
+      {
+        id: 'nlsc-emap-layer',
+        type: 'raster',
+        source: 'nlsc-emap',
+        minzoom: 0,
+        maxzoom: 20
+      }
+    ]
+  }
   const offlineStyle = config.public?.offlineMapboxGLJSURL
   const errorDialog = ref(false)
   const errorMessage = ref('')
-  const projectExists = ref(false)
+  // Note: projectExists is now computed from query data (see below)
 
   const validProjectId = computed(() => {
     const id = projectId.value
@@ -166,49 +230,128 @@
   const modelLatOffset = ref<number | null>(null)
   const modelRotateOffset = ref<number | null>(null)
   const modelScalingOffset = ref<number | null>(null)
+  // Full 4x4 rotation matrix from map_position for 3D model orientation
+  const modelRotationMatrix = ref<number[] | null>(null)
 
-  const { isLoading: isLoadingProject } = useQuery({
+  const { isLoading: isLoadingProject, data: projectQueryData, isError: isProjectError, isPending: isProjectPending } = useQuery({
     queryKey: ['project', projectId],
     queryFn: async () => {
+      if (!validProjectId.value) {
+        throw new Error('Invalid project ID')
+      }
       try {
-        if (!validProjectId.value) {
-          throw new Error('Invalid project ID')
-        }
         const response = await $apiClient.project.projectsDetail(validProjectId.value)
-        projectExists.value = true
-        projectLat.value = response.data.lat ? Number(response.data.lat) : null
-        projectLon.value = response.data.lon ? Number(response.data.lon) : null
-        projectMargin.value = response.data.margin ? Number(response.data.margin) : null
-
-        modelLatOffset.value = response.data.lat_offset ? Number(response.data.lat_offset) : null;
-        modelLonOffset.value = response.data.lon_offset ? Number(response.data.lon_offset) : null;
-        modelRotateOffset.value = response.data.rotation_offset ? Number(response.data.rotation_offset) : null;
-        modelScalingOffset.value = response.data.scale ? Number(response.data.scale) : null;
-
-        // 儲存專案標題並偵測類型
-        projectTitle.value = response.data.title || ''
-        // 偵測邏輯：短 ID 如 "ED8F" 為 INDOOR，長名稱如 "Nanzih" 為 OUTDOOR
-        // 或包含 "indoor"/"室內" 關鍵字則為 INDOOR
-        const title = projectTitle.value.toLowerCase()
-        if (title.includes('indoor') || title.includes('室內') || /^[A-Z0-9]{2,6}$/i.test(projectTitle.value)) {
-          projectType.value = 'INDOOR'
-        } else {
-          projectType.value = 'OUTDOOR'
-        }
-
+        // All data processing is handled by the watcher below
+        // This ensures consistent behavior for both fresh fetches and cached data
         return response.data
       } catch (err: unknown) {
         const axiosError = err as { response?: { status?: number } }
         if (axiosError.response?.status === 404) {
           errorMessage.value = `Project with ID ${projectId.value} not found.`
           errorDialog.value = true
-          projectExists.value = false
         }
         throw err
       }
     },
     enabled: computed(() => !!validProjectId.value)
   })
+
+  // Compute projectExists from query data - this ensures it reflects cached data on remount
+  // When Vue Query serves cached data, projectQueryData will be populated immediately
+  // Also treat as "exists" while query is pending (loading/disabled) to avoid premature "not found" error
+  const projectExists = computed(() => {
+    // If query hasn't completed yet (loading or disabled), assume project exists to avoid flash of error
+    if (isProjectPending.value) return true
+    // Once query completes, check if we have data and no error
+    return !!projectQueryData.value && !isProjectError.value
+  })
+
+  // Sync project data when query data changes (handles both fresh fetch and cache)
+  // This ensures projectLat, projectLon, etc. are set even when data is served from cache
+  watch(projectQueryData, (data) => {
+    if (!data) return
+
+    log.info('[3D Debug] projectQueryData watch triggered', {
+      hasData: !!data,
+      hasMapPosition: !!data.map_position,
+      mapPositionType: typeof data.map_position
+    })
+
+    projectLat.value = data.lat ? Number(data.lat) : null
+    projectLon.value = data.lon ? Number(data.lon) : null
+
+    // Extract model positioning from map_position if available
+    let mapPosition = null
+    if (data.map_position) {
+      try {
+        mapPosition = typeof data.map_position === 'string'
+          ? JSON.parse(data.map_position)
+          : data.map_position
+        log.info('[3D Debug] map_position parsed successfully', {
+          hasRotation: !!mapPosition?.rotation,
+          rotationLength: mapPosition?.rotation?.length,
+          rotationValues: mapPosition?.rotation?.slice?.(0, 4)
+        })
+      } catch (e) {
+        log.warn('Failed to parse map_position from cached data', e)
+      }
+    }
+
+    // Calculate margin from bbox
+    if (mapPosition?.bbox) {
+      const bbox = mapPosition.bbox
+      const width = Math.abs((bbox.max?.x || 0) - (bbox.min?.x || 0))
+      const height = Math.abs((bbox.max?.y || 0) - (bbox.min?.y || 0))
+      projectMargin.value = Math.max(width, height)
+    } else {
+      projectMargin.value = data.margin ? Number(data.margin) : 77
+    }
+
+    // Extract rotation from 4x4 rotation matrix
+    if (mapPosition?.rotation && Array.isArray(mapPosition.rotation) && mapPosition.rotation.length >= 16) {
+      modelRotationMatrix.value = mapPosition.rotation
+      const cosTheta = mapPosition.rotation[0]
+      const sinTheta = mapPosition.rotation[1]
+      const rotationAngle = Math.atan2(sinTheta, cosTheta) * (180 / Math.PI)
+      modelRotateOffset.value = rotationAngle
+      log.info('[3D Debug] Set modelRotationMatrix from 4x4 matrix', {
+        matrixFirst4: mapPosition.rotation.slice(0, 4),
+        rotationAngle
+      })
+    } else if (mapPosition?.rotation && Array.isArray(mapPosition.rotation) && mapPosition.rotation.length >= 2) {
+      const cosTheta = mapPosition.rotation[0]
+      const sinTheta = mapPosition.rotation[1]
+      const rotationAngle = Math.atan2(sinTheta, cosTheta) * (180 / Math.PI)
+      modelRotateOffset.value = rotationAngle
+      modelRotationMatrix.value = [
+        cosTheta, sinTheta, 0, 0,
+        -sinTheta, cosTheta, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+      ]
+      log.info('[3D Debug] Constructed modelRotationMatrix from 2-element array', { rotationAngle })
+    } else {
+      modelRotateOffset.value = data.rotation_offset ? Number(data.rotation_offset) : 0
+      modelRotationMatrix.value = null
+      log.info('[3D Debug] No rotation matrix found, using fallback', {
+        rotationOffset: modelRotateOffset.value,
+        mapPositionRotation: mapPosition?.rotation
+      })
+    }
+
+    modelLatOffset.value = data.lat_offset ? Number(data.lat_offset) : 0
+    modelLonOffset.value = data.lon_offset ? Number(data.lon_offset) : 0
+    modelScalingOffset.value = data.scale ? Number(data.scale) : 1.0
+
+    // Store project title and detect type
+    projectTitle.value = data.title || ''
+    const title = projectTitle.value.toLowerCase()
+    if (title.includes('indoor') || title.includes('室內') || /^[A-Z0-9]{2,6}$/i.test(projectTitle.value)) {
+      projectType.value = 'INDOOR'
+    } else {
+      projectType.value = 'OUTDOOR'
+    }
+  }, { immediate: true })
 
   const mapCenter = computed<[number, number]>(() => {
     if (projectLon.value !== null && projectLat.value !== null) {
@@ -307,6 +450,104 @@
   }
 
   const modelEditEnabled = ref(false)
+
+  // 3D Model Upload functionality
+  const gltfFileInput = ref<HTMLInputElement | null>(null)
+
+  function triggerGltfUpload() {
+    gltfFileInput.value?.click()
+  }
+
+  async function handleGltfUpload(event: Event) {
+    const target = event.target as HTMLInputElement
+    const file = target.files?.[0]
+    if (!file) return
+
+    // Validate file extension
+    if (!file.name.toLowerCase().endsWith('.gltf')) {
+      log.warn('Invalid file type, only .gltf files are allowed')
+      return
+    }
+
+    try {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const content = e.target?.result as string
+        try {
+          // Parse and validate GLTF JSON
+          const gltfData = JSON.parse(content)
+          log.info('GLTF file loaded successfully', { fileName: file.name })
+
+          // TODO: Upload to backend API when endpoint is available
+          // For now, reload the model locally
+          if (map && window.tb) {
+            // Remove existing model layer
+            if (map.getLayer('custom-threebox-model')) {
+              map.removeLayer('custom-threebox-model')
+            }
+
+            // Add new model
+            const blob = new Blob([JSON.stringify(gltfData)], { type: 'application/json' })
+            const blobUrl = URL.createObjectURL(blob)
+
+            map.addLayer({
+              id: 'custom-threebox-model',
+              type: 'custom',
+              renderingMode: '3d',
+              onAdd: function (mapInstance, gl) {
+                const tb = (window.tb = new Threebox.Threebox(mapInstance, gl, { defaultLights: true }))
+                const options = {
+                  obj: blobUrl,
+                  type: 'gltf',
+                  scale: { x: 1, y: 1, z: 1 },
+                  units: 'meters',
+                  rotation: { x: 90, y: 0, z: 0 }, // Y-up to Z-up conversion (building rotation applied via setRotationFromMatrix)
+                  anchor: 'center'
+                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                tb.loadObj(options, (model: any) => {
+                  model.setCoords?.(mapCenter.value)
+                  threeboxModel = model
+
+                  // Apply position offset if available
+                  if (mapOffset.value) {
+                    model.setCoords([mapCenter.value[0]+mapOffset.value[0], mapCenter.value[1]+mapOffset.value[1]]);
+                  }
+
+                  // Apply rotation from map_position if available
+                  if (modelRotationMatrix.value && modelRotationMatrix.value.length >= 16) {
+                    const rotationMatrix = new THREE.Matrix4().fromArray(modelRotationMatrix.value);
+                    if (model.setRotationFromMatrix && typeof model.setRotationFromMatrix === 'function') {
+                      model.setRotationFromMatrix(rotationMatrix);
+                    } else if (model.object3d) {
+                      model.object3d.rotation.setFromRotationMatrix(rotationMatrix);
+                    }
+                  }
+
+                  // Model is loaded at native scale = 1 (correct real-world meters)
+                  // No additional scaling needed - matches old frontend behavior
+                  tb.add(model)
+                  log.info('Custom 3D model loaded from upload at native scale')
+                })
+              },
+              render: function () {
+                if (window.tb) window.tb.update()
+              }
+            })
+          }
+        } catch (parseError) {
+          log.error('Failed to parse GLTF file', { error: parseError })
+        }
+      }
+      reader.readAsText(file)
+    } catch (error) {
+      log.error('Failed to read GLTF file', { error })
+    }
+
+    // Reset input so the same file can be selected again
+    target.value = ''
+  }
+
   watch(modelEditEnabled, (enabled) => {
     if (map) {
       if (enabled) {
@@ -377,9 +618,29 @@
     }
   })
 
+  // Flag to track if model loading is pending (waiting for rotation matrix)
+  const modelLoadPending = ref(false)
+
   // Load 3D model
   const load3DModel = async () => {
+    log.info('[3D Debug] load3DModel called', {
+      validProjectId: validProjectId.value,
+      hasMap: !!map,
+      modelRotationMatrix: modelRotationMatrix.value?.slice?.(0, 4) || null,
+      modelRotateOffset: modelRotateOffset.value,
+      mapOffset: mapOffset.value,
+      mapCenter: mapCenter.value,
+      projectQueryDataExists: !!projectQueryData.value
+    })
     if (!validProjectId.value || !map) return;
+
+    // If projectQueryData exists but rotation matrix not yet extracted, wait for it
+    // This handles the race condition where map loads before data processing completes
+    if (projectQueryData.value && !modelRotationMatrix.value && projectQueryData.value.map_position) {
+      log.info('[3D Debug] Rotation matrix not yet available, marking load as pending')
+      modelLoadPending.value = true
+      return
+    }
     try {
       const response = await $apiClient.project.mapsFrontendList(validProjectId.value);
       const gltfJson = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
@@ -404,52 +665,72 @@
               type: 'gltf',
               scale: { x: 1, y: 1, z: 1 },
               units: 'meters',
-              rotation: { x: 0, y: 0, z: 180 },
+              rotation: { x: 90, y: 0, z: 0 }, // Y-up to Z-up conversion (building rotation applied via setRotationFromMatrix)
               anchor: 'center'
             };
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tb.loadObj(options, (model: any) => {
+              log.info('[3D Debug] Model loaded in tb.loadObj callback', {
+                hasModel: !!model,
+                hasSetRotationFromMatrix: typeof model.setRotationFromMatrix === 'function',
+                hasObject3d: !!model.object3d,
+                currentModelRotationMatrix: modelRotationMatrix.value?.slice?.(0, 4) || null,
+                currentMapOffset: mapOffset.value
+              })
+
+              // Set initial coordinates at map center
               model.setCoords?.(mapCenter.value);
 
-              let boundingBox: THREE.Box3 | null = null;
-              const traverseTarget = model.object3d || model;
-              let computedSideLength = 1;
-              if (traverseTarget && typeof traverseTarget.traverse === 'function') {
-                traverseTarget.traverse((child: THREE.Object3D) => {
-                  const mesh = child as THREE.Mesh
-                  if (mesh.isMesh && mesh.geometry) {
-                    mesh.geometry.computeBoundingBox();
-                    if (!boundingBox) {
-                      boundingBox = mesh.geometry.boundingBox?.clone() ?? null;
-                    } else if (mesh.geometry.boundingBox) {
-                      boundingBox.union(mesh.geometry.boundingBox);
-                    }
-                  }
-                });
-                if (boundingBox) {
-                  const size = (boundingBox as THREE.Box3).getSize(new THREE.Vector3());
-                  computedSideLength = Math.max(size.x, size.y);
-                }
-              }
-              if (projectMargin.value && computedSideLength > 0) {
-                modelScale.value = projectMargin.value / computedSideLength / 10;
-                if (model.object3d && model.object3d.scale && typeof model.object3d.scale.set === 'function') {
-                  model.object3d.scale.set(modelScale.value, modelScale.value, modelScale.value);
-                }
-                if (model.scale && typeof model.scale.set === 'function') {
-                  model.scale.set(modelScale.value, modelScale.value, modelScale.value);
-                }
-              }
+              // The model file is already at correct real-world scale (meters), so use scale = 1
+              // This matches the old frontend behavior where const scale = 1 is used
+              const scale = 1;
+              modelScale.value = scale;
+
               threeboxModel = model;
               if(mapOffset.value){
+                // Apply position offset
                 model.setCoords([mapCenter.value[0]+mapOffset.value[0], mapCenter.value[1]+mapOffset.value[1]]);
-                model.rotation.z = (mapOffset.value[2]);
-                if (threeboxModel.object3d && threeboxModel.object3d.scale && typeof threeboxModel.object3d.scale.set === 'function') {
-                  threeboxModel.object3d.scale.set(modelScale.value, modelScale.value, modelScale.value);
+                log.info('[3D Debug] Model coords set', {
+                  center: mapCenter.value,
+                  offset: [mapOffset.value[0], mapOffset.value[1]],
+                  finalCoords: [mapCenter.value[0]+mapOffset.value[0], mapCenter.value[1]+mapOffset.value[1]]
+                })
+
+                // Apply rotation using the full 4x4 rotation matrix (same approach as old frontend)
+                // This properly orients the 3D model to match the building orientation on the map
+                if (modelRotationMatrix.value && modelRotationMatrix.value.length >= 16) {
+                  const rotationMatrix = new THREE.Matrix4().fromArray(modelRotationMatrix.value);
+                  log.info('[3D Debug] Rotation matrix created from array', {
+                    inputMatrix: modelRotationMatrix.value,
+                    matrixElements: rotationMatrix.elements.slice(0, 8)
+                  })
+                  if (model.setRotationFromMatrix && typeof model.setRotationFromMatrix === 'function') {
+                    model.setRotationFromMatrix(rotationMatrix);
+                    log.info('[3D Debug] Applied rotation via setRotationFromMatrix', { matrix: modelRotationMatrix.value.slice(0, 4) });
+                  } else if (model.object3d) {
+                    // Fallback: apply to underlying Three.js object
+                    model.object3d.rotation.setFromRotationMatrix(rotationMatrix);
+                    log.info('[3D Debug] Applied rotation via object3d.rotation.setFromRotationMatrix', { matrix: modelRotationMatrix.value.slice(0, 4) });
+                  }
+                } else {
+                  // Fallback to Z rotation in degrees
+                  const rotationDegrees = mapOffset.value[2];
+                  log.warn('[3D Debug] No rotation matrix available, using fallback Z rotation', {
+                    rotationDegrees,
+                    modelRotationMatrix: modelRotationMatrix.value
+                  });
+                  if (model.rotation) {
+                    model.rotation.z = rotationDegrees;
+                  }
+                  if (model.object3d && model.object3d.rotation) {
+                    model.object3d.rotation.z = rotationDegrees * (Math.PI / 180);
+                  }
                 }
-                if (threeboxModel.scale && typeof threeboxModel.scale.set === 'function') {
-                  threeboxModel.scale.set(modelScale.value*mapOffset.value[3], modelScale.value*mapOffset.value[3], modelScale.value*mapOffset.value[3]);
-                }
+
+                // Scale is already 1 (model is at correct scale), no additional scaling needed
+                log.info('[3D Debug] Using model at native scale', { scale });
+              } else {
+                log.warn('[3D Debug] mapOffset.value is falsy, skipping position/rotation', { mapOffset: mapOffset.value })
               }
               modelLon.value = mapCenter.value[0];
               modelLat.value = mapCenter.value[1];
@@ -483,15 +764,70 @@
               type: 'gltf',
               scale: { x: 1, y: 1, z: 1 },
               units: 'meters',
-              rotation: { x: 0, y: 0, z: 180 },
+              rotation: { x: 90, y: 0, z: 0 }, // Y-up to Z-up conversion (building rotation applied via setRotationFromMatrix)
               anchor: 'center'
             };
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tb.loadObj(options, (model: any) => {
+              log.info('[3D Debug] Fallback model loaded in tb.loadObj callback', {
+                hasModel: !!model,
+                hasSetRotationFromMatrix: typeof model.setRotationFromMatrix === 'function',
+                hasObject3d: !!model.object3d,
+                currentModelRotationMatrix: modelRotationMatrix.value?.slice?.(0, 4) || null,
+                currentMapOffset: mapOffset.value
+              })
+
               model.setCoords?.(mapCenter.value);
               threeboxModel = model;
+
+              // Apply rotation from map_position if available
+              // The model is already at correct scale (meters), matching the old frontend approach
+              if (mapOffset.value) {
+                // Apply position offset
+                model.setCoords([mapCenter.value[0]+mapOffset.value[0], mapCenter.value[1]+mapOffset.value[1]]);
+                log.info('[3D Debug] Fallback model coords set', {
+                  center: mapCenter.value,
+                  offset: [mapOffset.value[0], mapOffset.value[1]],
+                  finalCoords: [mapCenter.value[0]+mapOffset.value[0], mapCenter.value[1]+mapOffset.value[1]]
+                })
+
+                // Apply rotation using the full 4x4 rotation matrix
+                if (modelRotationMatrix.value && modelRotationMatrix.value.length >= 16) {
+                  const rotationMatrix = new THREE.Matrix4().fromArray(modelRotationMatrix.value);
+                  log.info('[3D Debug] Fallback rotation matrix created from array', {
+                    inputMatrix: modelRotationMatrix.value,
+                    matrixElements: rotationMatrix.elements.slice(0, 8)
+                  })
+                  if (model.setRotationFromMatrix && typeof model.setRotationFromMatrix === 'function') {
+                    model.setRotationFromMatrix(rotationMatrix);
+                    log.info('[3D Debug] Fallback model: applied rotation via setRotationFromMatrix');
+                  } else if (model.object3d) {
+                    model.object3d.rotation.setFromRotationMatrix(rotationMatrix);
+                    log.info('[3D Debug] Fallback model: applied rotation via object3d');
+                  }
+                } else {
+                  // Fallback to Z rotation
+                  const rotationDegrees = mapOffset.value[2];
+                  log.warn('[3D Debug] Fallback model: No rotation matrix, using Z rotation', {
+                    rotationDegrees,
+                    modelRotationMatrix: modelRotationMatrix.value
+                  });
+                  if (model.rotation) {
+                    model.rotation.z = rotationDegrees;
+                  }
+                  if (model.object3d && model.object3d.rotation) {
+                    model.object3d.rotation.z = rotationDegrees * (Math.PI / 180);
+                  }
+                }
+
+                // Model is already at native scale = 1 (correct real-world meters), no scaling needed
+                log.info('[3D Debug] Fallback model: using native scale = 1');
+              } else {
+                log.warn('[3D Debug] Fallback model: mapOffset.value is falsy', { mapOffset: mapOffset.value })
+              }
+
               tb.add(model);
-              console.warn('Loaded static 3D model as fallback');
+              log.warn('[3D Debug] Loaded static 3D model as fallback');
             });
           },
           render: function () {
@@ -505,6 +841,16 @@
       }
     }
   };
+
+  // Watch for modelRotationMatrix changes - if model load was pending, trigger it now
+  // This handles the race condition where map initializes before rotation data is ready
+  watch(modelRotationMatrix, (newMatrix) => {
+    if (newMatrix && modelLoadPending.value && map) {
+      log.info('[3D Debug] Rotation matrix now available, loading pending model')
+      modelLoadPending.value = false
+      load3DModel()
+    }
+  })
 
   watchEffect(() => {
     log.debug('watchEffect triggered', {
@@ -631,6 +977,15 @@
         return
       }
 
+      // 除錯: 顯示載入的數據統計
+      const calcValues = heatmapData.map(d => d.calc)
+      const minCalc = Math.min(...calcValues)
+      const maxCalc = Math.max(...calcValues)
+      const avgCalc = calcValues.reduce((a, b) => a + b, 0) / calcValues.length
+      console.log(`[Heatmap] Type: ${heatmapType.value}`)
+      console.log(`[Heatmap] Points: ${heatmapData.length}`)
+      console.log(`[Heatmap] Calc range: ${minCalc.toFixed(2)} ~ ${maxCalc.toFixed(2)} (avg: ${avgCalc.toFixed(2)})`)
+
       // 轉換為 GeoJSON
       const geojsonData: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
@@ -714,88 +1069,227 @@
 </script>
 
 <style scoped>
+/* Overview Page - Matching Figma Design 17:143 */
+.overview-page {
+  background: #fff;
+  min-height: 100vh;
+}
+
+/* Page Title - Figma: 17:532 */
+.overview-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 48px;
+  font-weight: 400;
+  color: #000;
+  margin: 20px 27px 16px;
+  line-height: 1.2;
+}
+
+/* Main Card - Figma: 141:26092 */
+.overview-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+/* Project Header - Figma: 141:26112 */
+.project-header {
+  padding: 16px 30px;
+  display: flex;
+  align-items: center;
+}
+
+.project-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: #000;
+}
+
+/* Map Wrapper */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 #mapContainer {
   width: 100%;
-  height: 650px;
-  position: relative;
+  height: 700px;
 }
-#optionlist {
+
+/* Control Panel - Figma design matching */
+.control-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 40px;
+  width: 140px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.control-label {
+  font-size: 13px;
+  color: #333;
+  font-weight: 400;
+}
+
+.control-switch {
+  transform: scale(0.8);
+  margin: 0;
+}
+
+.control-switch :deep(.v-switch__track) {
+  height: 16px;
+  width: 32px;
+}
+
+.control-switch :deep(.v-switch__thumb) {
+  width: 12px;
+  height: 12px;
+}
+
+.heatmap-select {
+  width: 100%;
   font-size: 12px;
 }
 
-/* Control panel position: bottom right corner */
-.control-panel-pos {
-  position: absolute;
-  right: 40px;
-  bottom: 40px;
-  width: 120px;
-  background: rgba(255,255,255,0.96);
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  z-index: 20;
-  padding: 5px 6px;
-  font-size: 8px;
-  line-height: 1.5;
-  border: 1px solid #e0e0e0;
-  transition: box-shadow 0.2s;
-  list-style-type: none;
+.heatmap-select :deep(.v-field) {
+  min-height: 32px;
+  font-size: 12px;
 }
 
-/* Color bar position: beside panel */
-.color-bar-pos {
-  position: absolute;
-  right: 260px;
-  bottom: 40px;
-  width: 28px;
-  height: 180px;
-  background: rgba(255,255,255,0.7);
-  border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.heatmap-select :deep(.v-field__input) {
+  padding: 4px 8px;
+  min-height: 32px;
+  font-size: 12px;
+}
+
+/* Upload Section */
+.upload-section {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.upload-btn {
+  width: 100%;
+  font-size: 11px;
+  text-transform: none;
+  height: 28px;
+}
+
+.upload-hint {
+  font-size: 9px;
+  color: #888;
+  text-align: center;
+}
+
+/* Update Heatmap Button - Figma blue button */
+.update-heatmap-btn {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #2196F3;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.update-heatmap-btn:hover {
+  background: #1976D2;
+}
+
+/* Last Updated */
+.last-updated {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #666;
+}
+
+/* Color Bar Container */
+.color-bar-container {
+  position: absolute;
+  right: 170px;
+  bottom: 40px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   z-index: 20;
-  padding: 8px 0;
+  height: 200px;
+}
+
+.color-bar-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 0;
+  margin-right: 6px;
+}
+
+.color-bar-max,
+.color-bar-min {
+  font-size: 11px;
+  color: #333;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
 }
 
 .color-bar {
-  width: 16px;
-  height: 140px;
-  background: linear-gradient(to top, blue, green, yellow, red);
-  border-radius: 8px;
-  border: 1px solid #bbb;
-  margin: 0 auto;
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(to bottom, red, yellow, green, blue);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-.color-bar-label {
-  position: absolute;
-  left: 36px;
-  font-size: 12px;
-  color: #222;
-  background: rgba(255,255,255,0.8);
-  padding: 0 2px;
-  border-radius: 4px;
-  pointer-events: none;
-}
-#colorBarMax {
-  top: 8px;
-}
-#colorBarMin {
-  top:100%;
-}
-.update-heatmap-btn {
-  width: 100%;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 6px 0;
-  border-radius: 8px;
-  background: linear-gradient(90deg, #007bff 60%, #00c6ff 100%);
-  border: none;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0,123,255,0.08);
-  transition: background 0.2s;
-}
-.update-heatmap-btn:hover {
-  background: linear-gradient(90deg, #0056b3 60%, #0099e6 100%);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .overview-title {
+    font-size: 32px;
+    margin: 16px 16px 12px;
+  }
+
+  .project-title {
+    font-size: 24px;
+  }
+
+  #mapContainer {
+    height: 500px;
+  }
+
+  .control-panel {
+    width: 120px;
+    right: 8px;
+    bottom: 8px;
+    padding: 8px;
+  }
+
+  .color-bar-container {
+    right: 140px;
+    height: 160px;
+  }
 }
 </style>

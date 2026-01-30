@@ -130,9 +130,33 @@
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  // Mapbox 設定
+  // 地圖設定
   const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
   const DEFAULT_CENTER: [number, number] = [120.9738, 24.8138] // 新竹預設中心
+
+  // 國土測繪中心 WMTS 圖資樣式
+  const NLSC_STYLE = {
+    version: 8 as const,
+    sources: {
+      'nlsc-emap': {
+        type: 'raster' as const,
+        tiles: [
+          'https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">國土測繪中心</a>'
+      }
+    },
+    layers: [
+      {
+        id: 'nlsc-emap-layer',
+        type: 'raster' as const,
+        source: 'nlsc-emap',
+        minzoom: 0,
+        maxzoom: 20
+      }
+    ]
+  }
 
   // 地圖相關
   let map: mapboxgl.Map | null = null
@@ -156,7 +180,9 @@
         return response.data
       } else {
         const response = await $apiClient.project.getProject()
-        return response.data
+        // Ensure we always return an array
+        const data = response.data
+        return Array.isArray(data) ? data : (data ? [data] : [])
       }
     },
     enabled: !!userStore.user
@@ -188,7 +214,7 @@
 
   // TODO: 後端目前無 category 欄位，暫時使用 project_id 奇偶數模擬分類
   const outdoorProjects = computed(() => {
-    if (!projects.value) return []
+    if (!projects.value || !Array.isArray(projects.value)) return []
     return projects.value.filter(p => {
       const id = getProjectId(p)
       return id > 0 && id % 2 === 1
@@ -196,7 +222,7 @@
   })
 
   const indoorProjects = computed(() => {
-    if (!projects.value) return []
+    if (!projects.value || !Array.isArray(projects.value)) return []
     return projects.value.filter(p => {
       const id = getProjectId(p)
       return id > 0 && id % 2 === 0
@@ -212,7 +238,7 @@
 
     map = new mapboxgl.Map({
       container: 'projectsMap',
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: NLSC_STYLE, // 使用國土測繪中心圖資
       center: DEFAULT_CENTER,
       zoom: 13
     })
@@ -355,22 +381,11 @@
     }
   }
 
-  // 檢視專案
-  const viewProject = async (project: Project) => {
+  // 檢視專案 - 直接導向 overviews 頁面
+  // 無論專案是否有設定 RU，都先讓使用者進入 overviews 看地圖和 3D 模型
+  const viewProject = (project: Project) => {
     const projectId = getProjectId(project)
-    try {
-      const response = await $apiClient.project.getProjectRUs(projectId)
-      if (response.data && response.data.length > 0) {
-        router.push(`/projects/${projectId}/overviews`)
-      } else {
-        router.push(`/projects/${projectId}/config/evaluations`)
-      }
-    } catch (err) {
-      console.error('Error checking project RUs:', err)
-      dialogMessage.value = 'Error checking project resources'
-      dialogRedirectPath.value = `/projects/${projectId}/config/evaluations`
-      dialogVisible.value = true
-    }
+    router.push(`/projects/${projectId}/overviews`)
   }
 
   // 刪除專案

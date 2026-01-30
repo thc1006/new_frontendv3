@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-init
+  namespace: wisdon-frontend
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: minio-init
+          image: minio/mc:latest
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: MINIO_ROOT_PASSWORD
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for MinIO to be ready..."
+              sleep 10
+
+              # Configure mc alias
+              mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+
+              # Create buckets
+              mc mb myminio/rsrp --ignore-existing
+              mc mb myminio/rsrp-dt --ignore-existing
+              mc mb myminio/throughput --ignore-existing
+              mc mb myminio/throughput-dt --ignore-existing
+              mc mb myminio/mapaodt --ignore-existing
+              mc mb myminio/mapfrontend --ignore-existing
+              mc mb myminio/gltf --ignore-existing
+              mc mb myminio/all-ai-model --ignore-existing
+              mc mb myminio/dt-ai-model --ignore-existing
+
+              # Set public policy for frontend accessible buckets
+              mc anonymous set download myminio/mapfrontend
+              mc anonymous set download myminio/gltf
+
+              echo "MinIO buckets initialized successfully!"
+              mc ls myminio
+  backoffLimit: 3

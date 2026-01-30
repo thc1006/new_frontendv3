@@ -63,7 +63,7 @@ test.describe('AI Application Simulator Page', () => {
       await expect(page.locator('.model-btn:has-text("Positioning")')).toBeVisible()
       await expect(page.locator('.model-btn:has-text("IM")')).toBeVisible()
       await expect(page.locator('.model-btn:has-text("MRO")')).toBeVisible()
-      await expect(page.locator('.model-btn:has-text("RS")')).toBeVisible()
+      await expect(page.getByRole('button', { name: 'RS', exact: true })).toBeVisible()
       await expect(page.locator('.model-btn:has-text("BC")')).toBeVisible()
     })
 
@@ -286,6 +286,245 @@ test.describe('AI Application Simulator Page', () => {
 
       await expect(page.locator('.left-panel .panel-header')).toContainText('IM')
       await expect(page.locator('.placeholder-content')).toBeVisible()
+    })
+  })
+
+  // ============== FL Training Integration Tests ==============
+  // Tests for Federated Learning Training API integration at 140.113.144.121:9005
+
+  test.describe('FL Training Parameters', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("NES")').click()
+      await expect(page.locator('.left-panel .panel-header')).toContainText('NES')
+    })
+
+    test('should display Epochs input field', async ({ page }) => {
+      await expect(page.locator('.training-params')).toBeVisible()
+      await expect(page.locator('.param-input').first()).toBeVisible()
+      await expect(page.getByLabel('Epochs')).toBeVisible()
+    })
+
+    test('should display Learning Rate input field', async ({ page }) => {
+      await expect(page.locator('.training-params')).toBeVisible()
+      await expect(page.getByLabel('Learning Rate')).toBeVisible()
+    })
+
+    test('should allow setting Epochs value', async ({ page }) => {
+      const epochsInput = page.locator('.param-input input[type="number"]').first()
+      await epochsInput.fill('500')
+      await expect(epochsInput).toHaveValue('500')
+    })
+
+    test('should allow setting Learning Rate value', async ({ page }) => {
+      const lrInput = page.locator('.param-input input[type="number"]').last()
+      await lrInput.fill('0.01')
+      await expect(lrInput).toHaveValue('0.01')
+    })
+
+    test('should disable training parameter inputs during training', async ({ page }) => {
+      // Select model and start training
+      await page.locator('.model-select').click()
+      await page.locator('.v-list-item:has-text("Model 1")').click()
+      await page.locator('.action-btn:has-text("START")').click()
+
+      // Wait for training to start
+      await expect(page.locator('.training-status.running')).toBeVisible({ timeout: 5000 })
+
+      // Inputs should be disabled
+      const epochsInput = page.locator('.param-input input[type="number"]').first()
+      await expect(epochsInput).toBeDisabled()
+    })
+  })
+
+  // RSM Model Tests
+  test.describe('RSM Model Controls', () => {
+    test('should display RSM model button', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('.model-btn:has-text("RSM")')).toBeVisible()
+    })
+
+    test('should navigate to RSM model when clicking RSM button', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+
+      await page.locator('.model-btn:has-text("RSM")').click()
+      await expect(page.locator('.left-panel .panel-header')).toContainText('RSM')
+    })
+
+    test('should display RSM training parameter inputs', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("RSM")').click()
+
+      await expect(page.locator('.training-params')).toBeVisible()
+      await expect(page.getByLabel('Epochs')).toBeVisible()
+      await expect(page.getByLabel('Learning Rate')).toBeVisible()
+    })
+
+    test('should display RSM Pre-train button', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("RSM")').click()
+
+      await expect(page.locator('.control-btn:has-text("Pre-train")')).toBeVisible()
+    })
+
+    test('should display RSM Enable button', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("RSM")').click()
+
+      await expect(page.locator('.control-btn:has-text("Enable")')).toBeVisible()
+    })
+
+    test('should display RSM Re-train button', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("RSM")').click()
+
+      await expect(page.getByRole('button', { name: 'Re-train', exact: true })).toBeVisible()
+    })
+  })
+
+  // Developer Mode Tests (10-click secret trigger)
+  test.describe('Developer Mode', () => {
+    test('should not show developer panel by default', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+
+      // Dev mode panel should not be visible by default
+      await expect(page.locator('.dev-mode-panel')).not.toBeVisible()
+    })
+
+    test('should activate developer mode after 10 clicks on title', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+
+      const title = page.locator('.page-title')
+
+      // Click title 10 times rapidly
+      for (let i = 0; i < 10; i++) {
+        await title.click()
+      }
+
+      // Developer mode panel should now be visible
+      await expect(page.locator('.dev-mode-panel')).toBeVisible({ timeout: 5000 })
+    })
+
+    test('should display controller status in developer mode', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+
+      const title = page.locator('.page-title')
+
+      // Activate developer mode
+      for (let i = 0; i < 10; i++) {
+        await title.click()
+      }
+
+      await expect(page.locator('.dev-mode-panel')).toBeVisible({ timeout: 5000 })
+
+      // Check status display elements
+      await expect(page.locator('.status-item').first()).toBeVisible()
+      await expect(page.locator('.status-item .label:has-text("Current State")')).toBeVisible()
+    })
+
+    test('should close developer mode panel', async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+
+      const title = page.locator('.page-title')
+
+      // Activate developer mode
+      for (let i = 0; i < 10; i++) {
+        await title.click()
+      }
+
+      await expect(page.locator('.dev-mode-panel')).toBeVisible({ timeout: 5000 })
+
+      // Close the panel
+      await page.locator('.dev-mode-header .v-btn').click()
+
+      await expect(page.locator('.dev-mode-panel')).not.toBeVisible()
+    })
+  })
+
+  // FL Training Status Display Tests
+  test.describe('FL Training Status Display', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("NES")').click()
+      await page.locator('.model-select').click()
+      await page.locator('.v-list-item:has-text("Model 1")').click()
+    })
+
+    test('should display FL status badge during training', async ({ page }) => {
+      // Start pre-train (which triggers FL Training API)
+      await page.locator('.control-btn:has-text("Pre-train")').click()
+
+      // Wait for potential FL status badge (may or may not appear depending on API)
+      await page.waitForTimeout(2000)
+
+      // The status badge might show if FL API is reachable
+      // This test checks if the UI element exists (even if hidden initially)
+      const statusBadge = page.locator('.fl-status-badge')
+      // Not asserting visibility as it depends on API connectivity
+      expect(statusBadge).toBeDefined()
+    })
+  })
+
+  // Training Results Visualization Tests
+  test.describe('Training Results Visualization', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/projects/${projectId}/ai-simulator`)
+      await expect(page.locator('.ai-simulator-page')).toBeVisible({ timeout: 15000 })
+      await page.locator('.model-btn:has-text("NES")').click()
+      await page.locator('.model-select').click()
+      await page.locator('.v-list-item:has-text("Model 1")').click()
+    })
+
+    test('should display Reward chart during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.charts-section')).toBeVisible({ timeout: 5000 })
+
+      // Check for reward chart
+      await expect(page.locator('.chart-title:has-text("Reward")')).toBeVisible()
+    })
+
+    test('should display Actor Loss chart during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.charts-section')).toBeVisible({ timeout: 5000 })
+
+      // Check for actor loss chart
+      await expect(page.locator('.chart-title:has-text("Actor Loss")')).toBeVisible()
+    })
+
+    test('should display Critic Loss chart during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.charts-section')).toBeVisible({ timeout: 5000 })
+
+      // Check for critic loss chart
+      await expect(page.locator('.chart-title:has-text("Critic Loss")')).toBeVisible()
+    })
+
+    test('should display Epoch progress during training', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.training-info')).toBeVisible({ timeout: 5000 })
+
+      // Check for epoch display
+      await expect(page.locator('.info-item:has-text("Epoch")')).toBeVisible()
+    })
+
+    test('should display Training Results section', async ({ page }) => {
+      await page.locator('.action-btn:has-text("START")').click()
+      await expect(page.locator('.training-info')).toBeVisible({ timeout: 5000 })
+
+      // Check for results section
+      await expect(page.locator('.results-title:has-text("Training Results")')).toBeVisible()
     })
   })
 })

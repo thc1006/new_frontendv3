@@ -14,10 +14,10 @@
       </v-card>
     </v-dialog>
 
-    <!-- 載入狀態 -->
-    <div v-if="isLoadingProject" class="loading-state">
+    <!-- 載入狀態：專案資料載入中，或權限資料載入中（非管理員） -->
+    <div v-if="isLoadingProject || (!isAdmin && isLoadingPermissions && projectExists)" class="loading-state">
       <v-progress-circular indeterminate color="primary" />
-      <p class="mt-2">Loading project...</p>
+      <p class="mt-2">{{ isLoadingProject ? 'Loading project...' : 'Checking permissions...' }}</p>
     </div>
 
     <!-- 主要內容 -->
@@ -295,13 +295,37 @@
   // 地圖相關
   let map: mapboxgl.Map | null = null
   const mapAccessToken = 'pk.eyJ1IjoiZGFyaXVzbHVuZyIsImEiOiJjbHk3MWhvZW4wMTl6MmlxMnVhNzI3cW0yIn0.WGvtamOAfwfk3Ha4KsL3BQ'
-  const onlineStyle = 'mapbox://styles/mapbox/streets-v12'
+  // 使用國土測繪中心 WMTS 圖資（與 overviews 頁面一致）
+  const onlineStyle: mapboxgl.StyleSpecification = {
+    version: 8,
+    sources: {
+      'nlsc-emap': {
+        type: 'raster',
+        tiles: [
+          'https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">國土測繪中心</a>'
+      }
+    },
+    layers: [
+      {
+        id: 'nlsc-emap-layer',
+        type: 'raster',
+        source: 'nlsc-emap',
+        minzoom: 0,
+        maxzoom: 20
+      }
+    ]
+  }
   const offlineStyle = config.public?.offlineMapboxGLJSURL
 
   // 專案座標 (從 API 取得)
   const projectLat = ref<number | null>(null)
   const projectLon = ref<number | null>(null)
   const projectMargin = ref<number | null>(null)
+  const projectRotation = ref<number[]>([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+  const projectBbox = ref<{ min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null>(null)
 
   const mapCenter = computed<[number, number]>(() => {
     if (projectLon.value !== null && projectLat.value !== null) {
@@ -333,6 +357,18 @@
         projectLat.value = response.data.lat ? Number(response.data.lat) : null
         projectLon.value = response.data.lon ? Number(response.data.lon) : null
         projectMargin.value = response.data.margin ? Number(response.data.margin) : null
+        // Extract rotation and bbox from map_position if available
+        if (response.data.map_position) {
+          const mapPos = typeof response.data.map_position === 'string'
+            ? JSON.parse(response.data.map_position)
+            : response.data.map_position
+          if (mapPos.rotation) {
+            projectRotation.value = mapPos.rotation
+          }
+          if (mapPos.bbox) {
+            projectBbox.value = mapPos.bbox
+          }
+        }
         return response.data
       } catch (err: unknown) {
         const axiosError = err as { response?: { status?: number } }
@@ -604,7 +640,12 @@
   }
 
   // 載入 3D 模型的核心函數
+  // 使用與舊前端 overview.js 相同的方式：scale = 1，使用 setRotationFromMatrix 應用旋轉
   const loadModelWithUrl = (modelUrl: string) => {
+    // 模型已經是正確的真實世界尺度（米），使用 scale = 1
+    const scale = { x: 1, y: 1, z: 1 }
+    log.lifecycle('Loading 3D model', { modelUrl, scale })
+
     map?.addLayer({
       id: 'scene-threebox-model',
       type: 'custom',
@@ -618,14 +659,31 @@
         const options = {
           obj: modelUrl,
           type: 'gltf',
-          scale: { x: 1, y: 1, z: 1 },
+          scale: scale,
           units: 'meters',
-          rotation: { x: 0, y: 0, z: 180 },
+          rotation: { x: 90, y: 0, z: 0 },  // x: 90 for Y-up to Z-up conversion (building rotation applied via setRotationFromMatrix)
           anchor: 'center'
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tb.loadObj(options, (model: any) => {
           model.setCoords?.(mapCenter.value)
+
+          // 使用完整的 4x4 旋轉矩陣（與舊前端 overview.js 相同）
+          if (projectRotation.value && projectRotation.value.length >= 16) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const THREE = (window as any).THREE
+            if (THREE && THREE.Matrix4) {
+              const rotationMatrix = new THREE.Matrix4().fromArray(projectRotation.value)
+              if (model.setRotationFromMatrix && typeof model.setRotationFromMatrix === 'function') {
+                model.setRotationFromMatrix(rotationMatrix)
+                log.info('Applied rotation from matrix using setRotationFromMatrix')
+              } else if (model.object3d) {
+                model.object3d.rotation.setFromRotationMatrix(rotationMatrix)
+                log.info('Applied rotation from matrix to object3d')
+              }
+            }
+          }
+
           tb.add(model)
         })
       },

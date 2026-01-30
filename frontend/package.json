@@ -48,13 +48,14 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.4.1",
     "@nuxt/eslint-config": "^1.4.1",
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "^1.58.0",
     "@types/three": "^0.178.1",
     "@typescript-eslint/parser": "^8.35.0",
     "eslint": "^9.30.0",
     "eslint-plugin-vue": "^10.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
+    "patch-package": "^8.0.1",
     "typescript": "^5.8.3",
     "vue-eslint-parser": "^10.1.4",
     "vue-tsc": "^2.2.12"

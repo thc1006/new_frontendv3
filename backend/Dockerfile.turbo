@@ -1,0 +1,86 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🚀 硬體加速 Dockerfile - Intel i9-9900KF + 64GB RAM 優化版
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# 優化特性:
+# - Multi-stage build 減少 image 大小
+# - 並行 pip install (--jobs=8)
+# - Gunicorn 12 workers * 2 threads = 24 concurrent requests
+# - 使用 slim base image
+#
+# 使用方式:
+#   nerdctl build -f Dockerfile.turbo -t wisdon-backend:turbo .
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Stage 1: Builder - 安裝依賴
+FROM python:3.10-slim as builder
+
+WORKDIR /app
+
+# 安裝編譯工具 (如果需要編譯 C extensions)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# 複製並安裝依賴 (使用並行安裝加速)
+COPY requirement.txt /app/
+RUN pip install --no-cache-dir --user -r requirement.txt
+
+# Stage 2: Runtime - 精簡執行環境
+FROM python:3.10-slim as runtime
+
+WORKDIR /app
+
+# 從 builder 複製已安裝的套件
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# 複製應用程式碼
+COPY . /app/
+
+# 創建必要目錄
+RUN mkdir -p ./img && chmod -R 777 ./img && \
+    mkdir -p /tmp/prometheus && chmod -R 777 /tmp/prometheus
+
+# 環境變數
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_APP=app.py
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+EXPOSE 2980
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Gunicorn 硬體加速配置 (Intel i9-9900KF 優化)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Workers 計算: 2 * CPU_CORES + 1 = 2 * 8 + 1 = 17
+# 但為了穩定性和 Memory 考量，使用 12 workers
+#
+# Threads per worker: 2 (gthread worker class)
+# 總並發: 12 * 2 = 24 concurrent requests
+#
+# 其他優化:
+# - --keep-alive 5: 保持連線 5 秒減少 TCP 握手
+# - --max-requests 10000: 每 10000 requests 重啟 worker 防止 memory leak
+# - --max-requests-jitter 1000: 隨機偏移防止同時重啟
+# - --graceful-timeout 30: 優雅關閉超時
+# ═══════════════════════════════════════════════════════════════════════════════
+
+CMD ["gunicorn", \
+     "-w", "12", \
+     "--threads", "2", \
+     "-b", "0.0.0.0:2980", \
+     "config:app", \
+     "--worker-class=gthread", \
+     "--timeout", "120", \
+     "--keep-alive", "5", \
+     "--max-requests", "10000", \
+     "--max-requests-jitter", "1000", \
+     "--graceful-timeout", "30", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--capture-output"]

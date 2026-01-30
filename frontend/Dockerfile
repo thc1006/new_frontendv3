@@ -11,9 +11,11 @@ RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 # RUN apk add --no-cache python3 make g++ libc6-compat
 
 # Copy dependency files first for better caching
+# Include patches directory for pnpm patch feature (threebox-plugin patch)
 COPY package.json pnpm-lock.yaml ./
-# Use frozen-lockfile for reproducible installs
-RUN pnpm install --frozen-lockfile
+COPY patches/ ./patches/
+# Install with prefer-frozen-lockfile to allow patch hash recalculation while keeping deps locked
+RUN pnpm install --prefer-frozen-lockfile
 
 # Copy source code and build
 COPY . .

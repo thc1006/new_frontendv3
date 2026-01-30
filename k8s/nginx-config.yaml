@@ -45,6 +45,33 @@ data:
             add_header Referrer-Policy "strict-origin-when-cross-origin" always;
             add_header Permissions-Policy "geolocation=(self), microphone=()" always;
 
+            # AI Training Platform - App Control API (140.113.144.121:8088)
+            location /api/app-control/ {
+                rewrite ^/api/app-control/(.*)$ /$1 break;
+                proxy_pass http://140.113.144.121:8088;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 60s;
+                proxy_read_timeout 60s;
+            }
+
+            # AI Training Platform - FL Training API (140.113.144.121:3032, 正式上線改 9005)
+            location /api/fl-training/ {
+                rewrite ^/api/fl-training/(.*)$ /$1 break;
+                proxy_pass http://140.113.144.121:3032;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 120s;
+                proxy_read_timeout 120s;
+            }
+
+            # Internal Backend API
             location /api/ {
                 rewrite ^/api/(.*)$ /$1 break;
                 proxy_pass http://backend;

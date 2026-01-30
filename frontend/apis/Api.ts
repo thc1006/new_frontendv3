@@ -163,6 +163,16 @@ export interface Project {
   owner?: User;
   /** @example false */
   is_deployed?: boolean;
+  /** Map position data including rotation matrix and bbox */
+  map_position?: string | {
+    rotation?: number[];
+    bbox?: {
+      min: { x: number; y: number; z: number };
+      max: { x: number; y: number; z: number };
+    };
+    coordinates?: { lat: number; lng: number };
+    boundary?: number;
+  };
 }
 
 export interface ProjectPostRequest {
