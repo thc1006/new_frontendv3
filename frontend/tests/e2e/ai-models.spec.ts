@@ -1,12 +1,79 @@
 import { test, expect } from '@playwright/test'
 import { skipIfNoBackend } from './utils/test-helpers'
 
+// Mock data for AI models
+const mockAiModels = [
+  {
+    model_id: 1,
+    model_name: 'NES Model',
+    ai_metrics: [
+      { id: 1, name: 'Metric 1', description: 'Description 1', type: 'gauge', unit: '%' }
+    ]
+  },
+  {
+    model_id: 2,
+    model_name: 'Positioning Model',
+    ai_metrics: [
+      { id: 2, name: 'Metric 2', description: 'Description 2', type: 'counter', unit: 'count' }
+    ]
+  }
+]
+
+const mockAbstractMetrics = [
+  { id: 1, display_name: 'Abstract Metric 1' },
+  { id: 2, display_name: 'Abstract Metric 2' }
+]
+
 // AI Models 頁面的 E2E 測試
 // 依據 CLAUDE.md 要求覆蓋：按鈕狀態、點擊後狀態轉移、Delete 確認流程
 test.describe('AI Models Page', () => {
   skipIfNoBackend()
 
   test.beforeEach(async ({ page }) => {
+    // Mock AI models API endpoints
+    await page.route('**/api/primitive_ai_models**', async (route) => {
+      const method = route.request().method()
+      const url = route.request().url()
+
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockAiModels)
+        })
+      } else if (method === 'POST') {
+        const newModel = { model_id: Date.now(), model_name: 'New Model', ai_metrics: [] }
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify(newModel)
+        })
+      } else if (method === 'DELETE') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true })
+        })
+      } else if (method === 'PUT' || method === 'PATCH') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ model_id: 1, model_name: 'Updated Model' })
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Mock abstract metrics API
+    await page.route('**/api/abstract_metrics**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(mockAbstractMetrics)
+      })
+    })
+
     // 先登入
     await page.goto('/login')
     await page.locator('input[type="text"]').first().fill('admin1')

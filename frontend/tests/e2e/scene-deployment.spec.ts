@@ -37,7 +37,8 @@ test.describe('Scene Deployment Page', () => {
     })
   })
 
-  // OUTDOOR 頂部按鈕測試 (使用 project ID 3 = 奇數 = OUTDOOR)
+  // OUTDOOR 頂部按鈕測試 (奇數 ID = OUTDOOR)
+  // 注意：專案 ID 決定 INDOOR/OUTDOOR：偶數=INDOOR，奇數=OUTDOOR
   test.describe('OUTDOOR Top Buttons', () => {
     test('should display ADD RU button', async ({ page }) => {
       await page.goto(`/projects/${projectId}/scene-deployment`)
@@ -46,55 +47,40 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should display UES SETTINGS button for OUTDOOR', async ({ page }) => {
-      await page.goto(`/projects/${projectId}/scene-deployment`)
+      // 使用奇數專案 ID 27 (OUTDOOR 模式)
+      await page.goto('/projects/27/scene-deployment')
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("UES SETTINGS")')).toBeVisible()
     })
 
     test('should display SIMULATION CONFIG button for OUTDOOR', async ({ page }) => {
-      await page.goto(`/projects/${projectId}/scene-deployment`)
+      // 使用奇數專案 ID 27 (OUTDOOR 模式)
+      await page.goto('/projects/27/scene-deployment')
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("SIMULATION CONFIG")')).toBeVisible()
     })
 
     test('should display RU POSITION button for OUTDOOR', async ({ page }) => {
-      await page.goto(`/projects/${projectId}/scene-deployment`)
+      // 使用奇數專案 ID 27 (OUTDOOR 模式)
+      await page.goto('/projects/27/scene-deployment')
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("RU POSITION")')).toBeVisible()
     })
   })
 
   // INDOOR 頂部按鈕測試
-  // 注意：INDOOR 專案的判斷基於專案類型，預設使用 ID 2（測試資料約定）
+  // 注意：專案 ID 決定 INDOOR/OUTDOOR：偶數=INDOOR，奇數=OUTDOOR
   test.describe('INDOOR Top Buttons', () => {
-    // INDOOR 專案 ID（透過輔助函數動態獲取，回退到預設值 2）
-    let indoorProjectId: string = '2'
-
-    test.beforeAll(async ({ browser }) => {
-      // 嘗試動態獲取 INDOOR 專案 ID
-      const context = await browser.newContext()
-      const page = await context.newPage()
-      try {
-        await mockAllExternalServices(page)
-        await login(page)
-        const foundId = await getProjectIdByType(page, 'INDOOR')
-        if (foundId) {
-          indoorProjectId = foundId
-        }
-      } catch {
-        // 使用預設值（fallback）
-      } finally {
-        await context.close()
-      }
-    })
-
     test('should display only ADD RU button for INDOOR', async ({ page }) => {
+      // 使用偶數 ID 確保是 INDOOR 模式 (project 26 是 INDOOR)
+      const indoorProjectId = Number(projectId) % 2 === 0 ? projectId : '26'
       await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('button:has-text("ADD RU")')).toBeVisible()
     })
 
     test('should hide UES SETTINGS button for INDOOR', async ({ page }) => {
+      const indoorProjectId = Number(projectId) % 2 === 0 ? projectId : '26'
       await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       // 等待頁面載入完成
@@ -104,6 +90,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should hide SIMULATION CONFIG button for INDOOR', async ({ page }) => {
+      const indoorProjectId = Number(projectId) % 2 === 0 ? projectId : '26'
       await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.v-card-title')).not.toContainText('Loading', { timeout: 10000 })
@@ -111,6 +98,7 @@ test.describe('Scene Deployment Page', () => {
     })
 
     test('should hide RU POSITION button for INDOOR', async ({ page }) => {
+      const indoorProjectId = Number(projectId) % 2 === 0 ? projectId : '26'
       await page.goto(`/projects/${indoorProjectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.v-card-title')).not.toContainText('Loading', { timeout: 10000 })
@@ -151,9 +139,11 @@ test.describe('Scene Deployment Page', () => {
       // 點擊下拉選單
       await page.locator('.heatmap-select').click()
 
-      // 確認有正確的選項
-      await expect(page.locator('.v-list-item:has-text("RSRP (success)")')).toBeVisible({ timeout: 3000 })
-      await expect(page.locator('.v-list-item:has-text("Throughput (waiting)")')).toBeVisible()
+      // 確認有正確的選項 (RSRP, RSRP_DT, Throughput, Throughput_DT) - 使用 getByRole 精確匹配
+      await expect(page.getByRole('option', { name: 'RSRP', exact: true })).toBeVisible({ timeout: 3000 })
+      await expect(page.getByRole('option', { name: 'RSRP_DT' })).toBeVisible()
+      await expect(page.getByRole('option', { name: 'Throughput', exact: true })).toBeVisible()
+      await expect(page.getByRole('option', { name: 'Throughput_DT' })).toBeVisible()
     })
 
     test('should hide color bar when heatmap is disabled', async ({ page }) => {
@@ -196,7 +186,8 @@ test.describe('Scene Deployment Page', () => {
 
       // 切換到 Throughput
       await page.locator('.heatmap-select').click()
-      await page.locator('.v-list-item:has-text("Throughput (waiting)")').click()
+      // 使用精確匹配避免選到 Throughput_DT
+      await page.locator('.v-list-item').filter({ hasText: /^Throughput$/ }).click()
 
       // 應顯示 Mbps 單位
       await expect(page.locator('.color-bar-labels-vertical')).toContainText('Mbps')
@@ -307,7 +298,7 @@ test.describe('Scene Deployment Page', () => {
       await expect(page.locator('.v-dialog')).toBeHidden({ timeout: 3000 })
     })
 
-    test('should show placeholder message when clicking save', async ({ page }) => {
+    test('should successfully save new RU configuration', async ({ page }) => {
       await page.goto(`/projects/${projectId}/scene-deployment`)
       await expect(page.locator('.scene-deployment-page')).toBeVisible({ timeout: 15000 })
 
@@ -317,9 +308,9 @@ test.describe('Scene Deployment Page', () => {
       // 點擊儲存按鈕
       await page.locator('.v-dialog button:has-text("儲存設定")').click()
 
-      // 應該顯示 placeholder 訊息
-      await expect(page.locator('.v-snackbar')).toBeVisible({ timeout: 3000 })
-      await expect(page.locator('.v-snackbar')).toContainText('尚未實作')
+      // 應該顯示成功訊息
+      await expect(page.locator('.v-snackbar')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('.v-snackbar')).toContainText('新增成功')
     })
 
     test('should close dialog with X button', async ({ page }) => {

@@ -26,19 +26,19 @@
     </v-row>
 
     <!-- Main Content Card - Figma: 141:26092 -->
-    <div v-else-if="projectExists && hasProjectAccess" class="overview-card mx-4">
+    <v-card v-else-if="projectExists && hasProjectAccess" class="overview-card mx-4">
       <!-- Project ID Header - Figma: 141:26112 -->
-      <div class="project-header">
+      <v-card-title class="project-header">
         <span class="project-title">Project ID : {{ projectTitle || projectId }}</span>
         <v-chip v-if="projectType === 'INDOOR'" size="small" color="info" class="ml-2">INDOOR</v-chip>
-      </div>
+      </v-card-title>
 
       <!-- Map Container - Figma: 141:26115 -->
       <div class="map-wrapper">
         <div id="mapContainer"/>
 
         <!-- Control Panel - Figma design matching -->
-        <div class="control-panel">
+        <div id="optionsList" class="control-panel">
           <!-- Heatmap Toggle -->
           <div class="control-item">
             <span class="control-label">Heatmap</span>
@@ -48,7 +48,7 @@
               hide-details
               :disabled="isLoadingProject"
               density="compact"
-              class="control-switch"
+              class="control-switch mini-switch"
               @change="onHeatmapToggle"
             />
           </div>
@@ -67,7 +67,7 @@
               density="compact"
               hide-details
               variant="outlined"
-              class="heatmap-select"
+              class="heatmap-select mini-select"
             />
           </div>
 
@@ -112,7 +112,7 @@
 
           <!-- Last Updated -->
           <div class="last-updated">
-            <span>Last updated:</span>
+            <span id="heatmapUpdateTime">Last updated:</span>
             <span>{{ lastUpdatedTime }}</span>
           </div>
         </div>
@@ -120,13 +120,13 @@
         <!-- Color Bar -->
         <div v-show="heatmapEnabled" class="color-bar-container">
           <div class="color-bar-labels">
-            <span class="color-bar-max">{{ colorBarMax }}</span>
-            <span class="color-bar-min">{{ colorBarMin }}</span>
+            <span class="color-bar-max color-bar-label">{{ colorBarMax }}</span>
+            <span class="color-bar-min color-bar-label">{{ colorBarMin }}</span>
           </div>
           <div class="color-bar"/>
         </div>
       </div>
-    </div>
+    </v-card>
 
     <!-- Fallback for access denied or project not found -->
     <v-row v-else class="px-4">
@@ -161,7 +161,9 @@
   import { createModuleLogger } from '~/utils/logger'
   import { useUserStore } from '~/stores/user'
   import { getHeatmapConfig } from '~/utils/mapCoordinatetools'
-  import * as THREE from 'three'
+  // Import types from 'three' but use runtime from Threebox to avoid version conflicts
+  import type * as THREETypes from 'three'
+  const THREE: typeof THREETypes = (Threebox as any).THREE
 
   const log = createModuleLogger('Overviews')
 

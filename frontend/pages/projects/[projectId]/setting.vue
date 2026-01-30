@@ -303,7 +303,7 @@
         const response = await $apiClient.project.projectsDetail(validProjectId.value)
         projectExists.value = true
         projectName.value = response.data.title ? String(response.data.title) : null
-        coordinates.value = (response.data.lon && response.data.lat) ? { x: response.data.lon, y: response.data.lat } : { x: 0, y: 0}
+        coordinates.value = (response.data.lon && response.data.lat) ? { x: Number(response.data.lon), y: Number(response.data.lat) } : { x: 0, y: 0 }
         visibleScope.value = response.data.margin ? Number(response.data.margin*2) : 0
         // Initialize member list (first one is Owner)
         const ownerData = response.data.owner as { account?: string; email?: string } | undefined
